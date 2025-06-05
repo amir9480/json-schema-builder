@@ -387,6 +387,101 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     }
   };
 
+  // Helper function to deep copy a SchemaField, generating new IDs for all children
+  const deepCopyField = (field: SchemaField): SchemaField => {
+    const newField: SchemaField = {
+      ...field,
+      id: uuidv4(), // Generate a new ID for the copied field
+      parentId: undefined, // Clear parentId as it's now a root of a reusable type
+    };
+    if (newField.children) {
+      newField.children = newField.children.map(deepCopyField); // Recursively copy children
+    }
+    return newField;
+  };
+
+  const handleConvertToReusableType = (fieldId: string) => {
+    let foundField: SchemaField | undefined;
+    let parentField: SchemaField | undefined;
+
+    // Function to find the field and its parent recursively
+    const findFieldAndParent = (fields: SchemaField[], targetId: string, currentParent?: SchemaField): boolean => {
+      for (const field of fields) {
+        if (field.id === targetId) {
+          foundField = field;
+          parentField = currentParent;
+          return true;
+        }
+        if (field.type === "object" && field.children && findFieldAndParent(field.children, targetId, field)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    findFieldAndParent(schemaFields, fieldId);
+
+    if (foundField) {
+      // 1. Create a new reusable type from the found field
+      const newReusableType = deepCopyField(foundField);
+      newReusableType.name = newReusableType.name || "UnnamedType"; // Ensure a name for the reusable type
+      newReusableType.type = "object"; // Reusable types are always objects
+      newReusableType.isMultiple = false; // Reusable types themselves are not 'multiple'
+      newReusableType.isRequired = false; // Reusable types themselves are not 'required'
+      newReusableType.title = newReusableType.title || `Reusable ${newReusableType.name}`;
+      newReusableType.description = newReusableType.description || `Reusable definition for ${newReusableType.name}`;
+
+      setReusableTypes((prev) => {
+        // Ensure unique name for the new reusable type
+        let uniqueName = newReusableType.name;
+        let counter = 1;
+        while (prev.some(rt => rt.name === uniqueName)) {
+          uniqueName = `${newReusableType.name}${counter++}`;
+        }
+        newReusableType.name = uniqueName;
+        return [...prev, newReusableType];
+      });
+
+      // 2. Update the original field to be a reference to the new reusable type
+      const updatedOriginalField: SchemaField = {
+        ...foundField,
+        type: "ref",
+        refId: newReusableType.id,
+        children: undefined, // A reference field does not have children directly
+        // Clear other properties that don't apply to a ref type
+        minValue: undefined,
+        maxValue: undefined,
+        minItems: undefined,
+        maxItems: undefined,
+        currency: undefined,
+        example: undefined,
+        description: undefined,
+        title: foundField.title || foundField.name, // Keep original title/name for display
+      };
+
+      // Function to update the field in the schemaFields tree
+      const updateFieldInSchema = (fields: SchemaField[]): SchemaField[] => {
+        return fields.map((field) => {
+          if (field.id === fieldId) {
+            return updatedOriginalField;
+          } else if (field.type === "object" && field.children) {
+            return {
+              ...field,
+              children: updateFieldInSchema(field.children),
+            };
+          }
+          return field;
+        });
+      };
+
+      setSchemaFields(updateFieldInSchema(schemaFields));
+      showSuccess(`Field "${foundField.name}" converted to reusable type "${newReusableType.name}"!`);
+    } else {
+      showError("Could not find the field to convert.");
+    }
+  };
+
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <h1 className="text-4xl font-bold text-center mb-8">
@@ -594,6 +689,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                       isFirst={index === 0}
                       isLast={index === schemaFields.length - 1}
                       onManageReusableTypes={() => setIsManageTypesOpen(true)}
+                      onConvertToReusableType={handleConvertToReusableType} // Pass the new function here
                     />
                   ))}
                 </div>
