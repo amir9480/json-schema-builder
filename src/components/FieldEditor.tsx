@@ -2,7 +2,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
+  Select, // Keep Select for reference type selection
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -29,10 +29,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"; // Import DropdownMenu components
 import FieldTypeIcon from "./FieldTypeIcon"; // Import the new component
 
 export type SchemaFieldType =
@@ -145,6 +146,18 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const paddingLeft = level * 20;
 
+  // Map of SchemaFieldType to its display name for the dropdown
+  const typeOptions: { value: SchemaFieldType; label: string }[] = [
+    { value: "string", label: "String" },
+    { value: "int", label: "Integer" },
+    { value: "float", label: "Float" },
+    { value: "currency", label: "Currency" },
+    { value: "date", label: "Date" },
+    { value: "datetime", label: "DateTime" },
+    { value: "object", label: "Object" },
+    { value: "ref", label: "Reference ($ref)" },
+  ];
+
   return (
     <div
       className={cn(
@@ -155,34 +168,32 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       style={{ paddingLeft: `${paddingLeft + 16}px` }}
     >
       <div className="flex items-center gap-4">
-        {/* Field Type Icon and Popover for selection */}
-        <Popover>
-          <PopoverTrigger asChild>
+        {/* Field Type Icon and DropdownMenu for selection */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="shrink-0">
               <FieldTypeIcon type={field.type} />
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0">
-            <Select
-              value={field.type}
-              onValueChange={(value: SchemaFieldType) => handleTypeChange(value)}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select a type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="string">String</SelectItem>
-                <SelectItem value="int">Integer</SelectItem>
-                <SelectItem value="float">Float</SelectItem>
-                <SelectItem value="currency">Currency</SelectItem>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="datetime">DateTime</SelectItem>
-                <SelectItem value="object">Object</SelectItem>
-                {!hideRefTypeOption && <SelectItem value="ref">Reference ($ref)</SelectItem>}
-              </SelectContent>
-            </Select>
-          </PopoverContent>
-        </Popover>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-auto p-0">
+            {typeOptions.map((option) => {
+              if (hideRefTypeOption && option.value === "ref") return null;
+              return (
+                <DropdownMenuItem
+                  key={option.value}
+                  onSelect={() => handleTypeChange(option.value)}
+                  className={cn(
+                    "flex items-center gap-2 cursor-pointer",
+                    field.type === option.value && "font-bold bg-accent text-accent-foreground"
+                  )}
+                >
+                  <FieldTypeIcon type={option.value} className="!bg-transparent !border-none !text-foreground" />
+                  <span>{option.label}</span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <div className="flex-1 grid gap-2">
           <Label htmlFor={`field-name-${field.id}`}>Field Name</Label>
