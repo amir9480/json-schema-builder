@@ -111,7 +111,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   const currentBorderColor = borderColors[colorIndex];
   const currentBgColor = bgColors[colorIndex];
   const currentTextColor = textColors[colorIndex];
-  const currentHoverBgColor = hoverBgColors[colorIndex];
+  const currentHoverBgColors = hoverBgColors[colorIndex];
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFieldChange({ ...field, name: e.target.value });
