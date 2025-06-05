@@ -325,9 +325,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         </DropdownMenu>
 
         {field.type !== "ref" ? (
-          <div className="flex-1 flex items-end gap-2"> {/* Container for Input and Convert button */}
+          <div className="flex-1 flex items-center gap-2"> {/* Container for Input and Convert button, now items-center */}
             <div className="grid gap-2 flex-1"> {/* Input container */}
-              {/* Removed Label for Field Name */}
               <Input
                 id={`field-name-${field.id}`}
                 value={field.name}
@@ -404,7 +403,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </div>
         )}
 
-        <div> {/* Removed mt-auto pb-2 */}
+        <div>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center space-x-2 cursor-pointer">
@@ -422,7 +421,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </Tooltip>
         </div>
 
-        <div> {/* Removed mt-auto pb-2 */}
+        <div>
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center space-x-2 cursor-pointer">
@@ -446,7 +445,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               <Button
                 variant="destructive"
                 size="icon"
-                // Removed mt-auto
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -457,7 +455,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 <AlertDialogDescription>
                   This action cannot be undone. This will permanently delete the field "{field.name || "Unnamed Field"}" and any nested properties.
                 </AlertDialogDescription>
-              </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
