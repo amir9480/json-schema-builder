@@ -406,20 +406,34 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         )}
 
         <div className="flex items-center space-x-2 mt-auto pb-2">
-          <Switch
-            id={`multiple-switch-${field.id}`}
-            checked={field.isMultiple}
-            onCheckedChange={handleMultipleChange}
-          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Switch
+                id={`multiple-switch-${field.id}`}
+                checked={field.isMultiple}
+                onCheckedChange={handleMultipleChange}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>If enabled, this field will be an array (list) of values.</p>
+            </TooltipContent>
+          </Tooltip>
           <Label htmlFor={`multiple-switch-${field.id}`}>Multiple</Label>
         </div>
 
         <div className="flex items-center space-x-2 mt-auto pb-2">
-          <Switch
-            id={`required-switch-${field.id}`}
-            checked={field.isRequired}
-            onCheckedChange={handleRequiredChange}
-          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Switch
+                id={`required-switch-${field.id}`}
+                checked={field.isRequired}
+                onCheckedChange={handleRequiredChange}
+              />
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>If enabled, this field must be present in the data.</p>
+            </TooltipContent>
+          </Tooltip>
           <Label htmlFor={`required-switch-${field.id}`}>Required</Label>
         </div>
 
