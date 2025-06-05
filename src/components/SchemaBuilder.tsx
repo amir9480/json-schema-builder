@@ -518,17 +518,19 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
       <div className="grid grid-cols-1 gap-8">
         <div className="space-y-6">
-          <SchemaBuilderToolbar
-            onAddField={() => addField()}
-            onClearSchemaTrigger={() => setIsClearConfirmOpen(true)}
-            onImportSchemaTrigger={() => setIsImportDialogOpen(true)}
-            onPreviewSchemaTrigger={() => setIsPreviewOpen(true)}
-            onManageTypesTrigger={() => setIsManageTypesOpen(true)}
-            onExportSchemaTrigger={() => setIsExportDialogOpen(true)}
-            onSaveSchemaTrigger={() => setIsSaveDialogOpen(true)}
-            onLoadSchemaTrigger={() => setIsLoadConfirmOpen(true)} // Trigger confirmation first
-            hasSchemaFields={schemaFields.length > 0}
-          />
+          <div className="sticky top-0 z-10 bg-background pb-4 border-b"> {/* Added sticky classes here */}
+            <SchemaBuilderToolbar
+              onAddField={() => addField()}
+              onClearSchemaTrigger={() => setIsClearConfirmOpen(true)}
+              onImportSchemaTrigger={() => setIsImportDialogOpen(true)}
+              onPreviewSchemaTrigger={() => setIsPreviewOpen(true)}
+              onManageTypesTrigger={() => setIsManageTypesOpen(true)}
+              onExportSchemaTrigger={() => setIsExportDialogOpen(true)}
+              onSaveSchemaTrigger={() => setIsSaveDialogOpen(true)}
+              onLoadSchemaTrigger={() => setIsLoadConfirmOpen(true)} // Trigger confirmation first
+              hasSchemaFields={schemaFields.length > 0}
+            />
+          </div>
 
           {schemaFields.length === 0 ? (
             <p className="text-muted-foreground">
