@@ -107,8 +107,27 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const currentBorderColor = borderColors[(level - 1) % borderColors.length];
 
+  // Helper function to convert camelCase, snake_case, kebab-case to Title Case
+  const toTitleCase = (str: string): string => {
+    if (!str) return "";
+    return str
+      .replace(/([A-Z])/g, " $1") // Add space before capital letters
+      .replace(/[-_]/g, " ") // Replace hyphens and underscores with spaces
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter of each word
+      .join(" ")
+      .trim();
+  };
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFieldChange({ ...field, name: e.target.value });
+    const newName = e.target.value;
+    let updatedField = { ...field, name: newName };
+
+    // If title is empty, generate it from the new name
+    if (!field.title) {
+      updatedField.title = toTitleCase(newName);
+    }
+    onFieldChange(updatedField);
   };
 
   const handleTypeChange = (value: SchemaFieldType) => {
