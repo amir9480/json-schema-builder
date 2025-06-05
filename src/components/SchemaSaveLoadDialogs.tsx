@@ -15,6 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +27,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { XCircle } from "lucide-react";
+import { XCircle, Pencil } from "lucide-react"; // Import Pencil icon
 import { showSuccess, showError } from "@/utils/toast";
 import { SchemaField } from "./FieldEditor";
 
@@ -71,6 +72,9 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
   setReusableTypes,
   hasUnsavedChanges,
 }) => {
+  const [isRenameDialogOpen, setIsRenameDialogOpen] = React.useState(false);
+  const [schemaToRename, setSchemaToRename] = React.useState<string | null>(null);
+  const [newSchemaName, setNewSchemaName] = React.useState("");
 
   const handleSaveSchemaByName = () => {
     if (!saveSchemaName.trim()) {
@@ -142,6 +146,56 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
     } catch (error) {
       console.error("Failed to delete saved schema:", error);
       showError("Failed to delete schema. Please try again.");
+    }
+  };
+
+  const handleRenameSchema = () => {
+    if (!schemaToRename) return;
+
+    const trimmedNewName = newSchemaName.trim();
+    if (!trimmedNewName) {
+      showError("New schema name cannot be empty.");
+      return;
+    }
+    if (trimmedNewName === schemaToRename) {
+      showError("New name is the same as the old name.");
+      return;
+    }
+    if (savedSchemaNames.includes(trimmedNewName)) {
+      showError(`A schema with the name "${trimmedNewName}" already exists. Please choose a different name.`);
+      return;
+    }
+
+    try {
+      // Get old data
+      const oldFields = localStorage.getItem(`dyad_schema_${schemaToRename}_fields`);
+      const oldReusableTypes = localStorage.getItem(`dyad_schema_${schemaToRename}_reusableTypes`);
+
+      // Save with new name
+      if (oldFields) localStorage.setItem(`dyad_schema_${trimmedNewName}_fields`, oldFields);
+      if (oldReusableTypes) localStorage.setItem(`dyad_schema_${trimmedNewName}_reusableTypes`, oldReusableTypes);
+
+      // Delete old entries
+      localStorage.removeItem(`dyad_schema_${schemaToRename}_fields`);
+      localStorage.removeItem(`dyad_schema_${schemaToRename}_reusableTypes`);
+
+      // Update saved names index
+      const updatedNames = savedSchemaNames.map(name =>
+        name === schemaToRename ? trimmedNewName : name
+      );
+      setSavedSchemaNames(updatedNames);
+      localStorage.setItem(LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY, JSON.stringify(updatedNames));
+
+      showSuccess(`Schema "${schemaToRename}" renamed to "${trimmedNewName}" successfully!`);
+      setIsRenameDialogOpen(false);
+      setSchemaToRename(null);
+      setNewSchemaName("");
+      if (selectedLoadSchemaName === schemaToRename) {
+        setSelectedLoadSchemaName(trimmedNewName); // Update selection if renamed
+      }
+    } catch (error) {
+      console.error("Failed to rename schema:", error);
+      showError("Failed to rename schema. Please try again.");
     }
   };
 
@@ -231,18 +285,49 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
                     <SelectItem key={name} value={name}>
                       <div className="flex items-center justify-between w-full">
                         <span>{name}</span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 text-red-500 hover:text-red-600"
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent select from closing
-                            handleDeleteSavedSchema(name);
-                          }}
-                          aria-label={`Delete ${name}`}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-gray-500 hover:text-blue-600"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent select from closing
+                              setSchemaToRename(name);
+                              setNewSchemaName(name);
+                              setIsRenameDialogOpen(true);
+                            }}
+                            aria-label={`Rename ${name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-6 w-6 text-red-500 hover:text-red-600"
+                                onClick={(e) => e.stopPropagation()} // Prevent select from closing
+                                aria-label={`Delete ${name}`}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the saved schema "{name}".
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteSavedSchema(name)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </SelectItem>
                   ))
@@ -253,6 +338,31 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setIsLoadDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleLoadSchemaByName} disabled={!selectedLoadSchemaName}>Load</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Rename Schema Dialog */}
+      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Rename Schema</DialogTitle>
+            <DialogDescription>
+              Enter a new name for "{schemaToRename}".
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Label htmlFor="new-schema-name">New Schema Name</Label>
+            <Input
+              id="new-schema-name"
+              value={newSchemaName}
+              onChange={(e) => setNewSchemaName(e.target.value)}
+              placeholder="e.g., UpdatedProductSchema"
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleRenameSchema}>Rename</Button>
           </div>
         </DialogContent>
       </Dialog>
