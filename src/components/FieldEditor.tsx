@@ -300,34 +300,34 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           <div className="flex items-center gap-2"> {/* Container for Label and Convert button */}
             <Label htmlFor={`field-name-${field.id}`}>Field Name</Label>
             {onConvertToReusableType && field.type !== "ref" && !isRoot && !hideRefTypeOption && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertDialog>
+              <AlertDialog>
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <AlertDialogTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-blue-600" aria-label="Convert to reusable type">
                         <Link className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Convert to Reusable Type?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will convert "{field.name || "Unnamed Field"}" into a new reusable type. The original field will become a reference to this new type. Are you sure you want to proceed?
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => onConvertToReusableType(field.id)}>
-                          Convert
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Convert to Reusable Type</p>
-                </TooltipContent>
-              </Tooltip>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Convert to Reusable Type</p>
+                  </TooltipContent>
+                </Tooltip>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Convert to Reusable Type?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will convert "{field.name || "Unnamed Field"}" into a new reusable type. The original field will become a reference to this new type. Are you sure you want to proceed?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onConvertToReusableType(field.id)}>
+                      Convert
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             )}
           </div>
           <Input
