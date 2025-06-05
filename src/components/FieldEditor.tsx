@@ -36,7 +36,8 @@ export type SchemaFieldType =
   | "datetime"
   | "float"
   | "currency"
-  | "object";
+  | "object"
+  | "ref"; // New type for references
 
 export interface SchemaField {
   id: string;
@@ -47,7 +48,8 @@ export interface SchemaField {
   title?: string;
   description?: string;
   example?: string;
-  children?: SchemaField[];
+  children?: SchemaField[]; // For 'object' type
+  refId?: string; // New: ID of the reusable type it references, if type is 'ref'
 }
 
 interface FieldEditorProps {
@@ -59,6 +61,7 @@ interface FieldEditorProps {
   level?: number;
   activeAdvancedFieldId: string | null;
   setActiveAdvancedFieldId: (id: string | null) => void;
+  reusableTypes?: SchemaField[]; // New prop to pass reusable types
 }
 
 const FieldEditor: React.FC<FieldEditorProps> = ({
@@ -70,6 +73,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   level = 0,
   activeAdvancedFieldId,
   setActiveAdvancedFieldId,
+  reusableTypes = [], // Default to empty array
 }) => {
   const isAdvancedOpen = field.id === activeAdvancedFieldId;
 
@@ -118,7 +122,12 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       ...field,
       type: value,
       children: value === "object" ? field.children || [] : undefined,
+      refId: value === "ref" ? field.refId : undefined, // Clear refId if not 'ref'
     });
+  };
+
+  const handleRefChange = (refId: string) => {
+    onFieldChange({ ...field, refId: refId });
   };
 
   const handleMultipleChange = (checked: boolean) => {
@@ -180,9 +189,36 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               <SelectItem value="date">Date</SelectItem>
               <SelectItem value="datetime">DateTime</SelectItem>
               <SelectItem value="object">Object</SelectItem>
+              <SelectItem value="ref">Reference ($ref)</SelectItem>
             </SelectContent>
           </Select>
         </div>
+
+        {field.type === "ref" && (
+          <div className="flex-1 grid gap-2">
+            <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
+            <Select
+              value={field.refId || ""}
+              onValueChange={handleRefChange}
+            >
+              <SelectTrigger id={`field-ref-${field.id}`}>
+                <SelectValue placeholder="Select a reusable type" />
+              </SelectTrigger>
+              <SelectContent>
+                {reusableTypes.length === 0 && (
+                  <SelectItem value="no-types" disabled>
+                    No reusable types defined.
+                  </SelectItem>
+                )}
+                {reusableTypes.map((rt) => (
+                  <SelectItem key={rt.id} value={rt.id}>
+                    {rt.name || "Unnamed Type"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="flex items-center space-x-2 mt-auto pb-2">
           <Switch
@@ -231,59 +267,61 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         )}
       </div>
 
-      <Collapsible
-        open={isAdvancedOpen}
-        onOpenChange={(open) => {
-          if (open) {
-            setActiveAdvancedFieldId(field.id);
-          } else if (activeAdvancedFieldId === field.id) {
-            setActiveAdvancedFieldId(null);
-          }
-        }}
-        className="w-full space-y-2"
-      >
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="w-full justify-start px-0">
-            {isAdvancedOpen ? (
-              <ChevronUp className="h-4 w-4 mr-2" />
-            ) : (
-              <ChevronDown className="h-4 w-4 mr-2" />
-            )}
-            Advanced options
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
-              <Input
-                id={`field-title-${field.id}`}
-                value={field.title || ""}
-                onChange={handleTitleChange}
-                placeholder="e.g., Product Name"
-              />
+      {field.type !== "ref" && ( // Advanced options not applicable for references
+        <Collapsible
+          open={isAdvancedOpen}
+          onOpenChange={(open) => {
+            if (open) {
+              setActiveAdvancedFieldId(field.id);
+            } else if (activeAdvancedFieldId === field.id) {
+              setActiveAdvancedFieldId(null);
+            }
+          }}
+          className="w-full space-y-2"
+        >
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-start px-0">
+              {isAdvancedOpen ? (
+                <ChevronUp className="h-4 w-4 mr-2" />
+              ) : (
+                <ChevronDown className="h-4 w-4 mr-2" />
+              )}
+              Advanced options
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
+                <Input
+                  id={`field-title-${field.id}`}
+                  value={field.title || ""}
+                  onChange={handleTitleChange}
+                  placeholder="e.g., Product Name"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor={`field-description-${field.id}`}>Description (Optional)</Label>
+                <Input
+                  id={`field-description-${field.id}`}
+                  value={field.description || ""}
+                  onChange={handleDescriptionChange}
+                  placeholder="e.g., Name of the product"
+                />
+              </div>
+              <div className="grid gap-2 col-span-full">
+                <Label htmlFor={`field-example-${field.id}`}>Example Value (Optional)</Label>
+                <Input
+                  id={`field-example-${field.id}`}
+                  value={field.example || ""}
+                  onChange={handleExampleChange}
+                  placeholder="e.g., 'Laptop', 123, '2023-10-26'"
+                />
+              </div>
             </div>
-            <div className="grid gap-2">
-              <Label htmlFor={`field-description-${field.id}`}>Description (Optional)</Label>
-              <Input
-                id={`field-description-${field.id}`}
-                value={field.description || ""}
-                onChange={handleDescriptionChange}
-                placeholder="e.g., Name of the product"
-              />
-            </div>
-            <div className="grid gap-2 col-span-full">
-              <Label htmlFor={`field-example-${field.id}`}>Example Value (Optional)</Label>
-              <Input
-                id={`field-example-${field.id}`}
-                value={field.example || ""}
-                onChange={handleExampleChange}
-                placeholder="e.g., 'Laptop', 123, '2023-10-26'"
-              />
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {field.type === "object" && (
         <div className="flex flex-col gap-4 mt-4 border-t pt-4">
@@ -299,6 +337,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 level={level + 1}
                 activeAdvancedFieldId={activeAdvancedFieldId}
                 setActiveAdvancedFieldId={setActiveAdvancedFieldId}
+                reusableTypes={reusableTypes} // Pass reusable types to children
               />
             ))
           ) : (
@@ -314,7 +353,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 "w-full",
                 currentBorderColor, // Match border color
                 currentTextColor,   // Match text color
-                currentHoverBgColor, // Match hover background color
+                currentHoverBgColors, // Match hover background color
                 "hover:text-foreground" // Ensure text color on hover is readable
               )}
             >
