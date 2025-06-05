@@ -27,7 +27,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"; // Import AlertDialog components
+} from "@/components/ui/alert-dialog";
 
 export type SchemaFieldType =
   | "string"
@@ -73,6 +73,42 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 }) => {
   const isAdvancedOpen = field.id === activeAdvancedFieldId;
 
+  // Define a set of colors to cycle through for nested objects
+  const borderColors = [
+    "border-blue-400",
+    "border-green-400",
+    "border-purple-400",
+    "border-yellow-400",
+    "border-red-400",
+  ];
+  const bgColors = [
+    "bg-blue-50/30",
+    "bg-green-50/30",
+    "bg-purple-50/30",
+    "bg-yellow-50/30",
+    "bg-red-50/30",
+  ];
+  const textColors = [
+    "text-blue-600",
+    "text-green-600",
+    "text-purple-600",
+    "text-yellow-600",
+    "text-red-600",
+  ];
+  const hoverBgColors = [
+    "hover:bg-blue-100",
+    "hover:bg-green-100",
+    "hover:bg-purple-100",
+    "hover:bg-yellow-100",
+    "hover:bg-red-100",
+  ];
+
+  const colorIndex = level % borderColors.length;
+  const currentBorderColor = borderColors[colorIndex];
+  const currentBgColor = bgColors[colorIndex];
+  const currentTextColor = textColors[colorIndex];
+  const currentHoverBgColor = hoverBgColors[colorIndex];
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFieldChange({ ...field, name: e.target.value });
   };
@@ -111,7 +147,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     <div
       className={cn(
         "flex flex-col gap-4 p-4 border rounded-md",
-        level > 0 && "bg-muted/50",
+        level > 0 ? currentBgColor : "bg-background", // Use specific color for nested, default for root
+        currentBorderColor // Apply specific border color
       )}
       style={{ paddingLeft: `${paddingLeft + 16}px` }}
     >
@@ -273,9 +310,15 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             <Button
               variant="outline"
               onClick={() => onAddField(field.id)}
-              className="w-full"
+              className={cn(
+                "w-full",
+                currentBorderColor, // Match border color
+                currentTextColor,   // Match text color
+                currentHoverBgColor, // Match hover background color
+                "hover:text-foreground" // Ensure text color on hover is readable
+              )}
             >
-              <PlusCircle className="h-4 w-4 mr-2" /> Add Property
+              <PlusCircle className="h-4 w-4 mr-2" /> Add Property to {field.name || "Unnamed Object"}
             </Button>
           )}
         </div>
