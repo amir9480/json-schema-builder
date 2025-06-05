@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
+import { toTitleCase } from "@/lib/utils"; // Import toTitleCase
 
 interface SchemaDisplayProps {
   schemaFields: SchemaField[];
@@ -74,9 +75,9 @@ const buildPropertiesAndRequired = (
       if (format) {
         fieldSchema.format = format;
       }
-      if (field.title) {
-        fieldSchema.title = field.title;
-      }
+      // Use field.title if available, otherwise generate from field.name
+      fieldSchema.title = field.title || toTitleCase(field.name);
+      
       if (field.description) {
         fieldSchema.description = field.description;
       }
