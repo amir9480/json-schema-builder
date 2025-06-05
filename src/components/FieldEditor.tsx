@@ -421,23 +421,26 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </Tooltip>
         </div>
 
-        <div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center space-x-2 cursor-pointer">
-                <Switch
-                  id={`required-switch-${field.id}`}
-                  checked={field.isRequired}
-                  onCheckedChange={handleRequiredChange}
-                />
-                <Label htmlFor={`required-switch-${field.id}`}>Required</Label>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>If enabled, this field must be present in the data.</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
+        {/* Conditionally render the Required toggle */}
+        {!isRoot && (
+          <div>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center space-x-2 cursor-pointer">
+                  <Switch
+                    id={`required-switch-${field.id}`}
+                    checked={field.isRequired}
+                    onCheckedChange={handleRequiredChange}
+                  />
+                  <Label htmlFor={`required-switch-${field.id}`}>Required</Label>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>If enabled, this field must be present in the data.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        )}
 
         {!isRoot && onRemoveField && (
           <AlertDialog>
