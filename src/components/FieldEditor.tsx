@@ -10,13 +10,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react"; // Added Chevron icons
+import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"; // Added Collapsible imports
+} from "@/components/ui/collapsible";
 
 export type SchemaFieldType =
   | "string"
@@ -33,9 +33,10 @@ export interface SchemaField {
   type: SchemaFieldType;
   isMultiple: boolean;
   isRequired: boolean;
-  title?: string; // Added title property
-  description?: string; // Added description property
-  children?: SchemaField[]; // For 'object' types
+  title?: string;
+  description?: string;
+  example?: string; // Added example property
+  children?: SchemaField[];
 }
 
 interface FieldEditorProps {
@@ -55,7 +56,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   isRoot = false,
   level = 0,
 }) => {
-  const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false); // State for collapsible
+  const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFieldChange({ ...field, name: e.target.value });
@@ -85,7 +86,11 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     onFieldChange({ ...field, description: e.target.value });
   };
 
-  const paddingLeft = level * 20; // Adjust indentation based on level
+  const handleExampleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFieldChange({ ...field, example: e.target.value });
+  };
+
+  const paddingLeft = level * 20;
 
   return (
     <div
@@ -192,6 +197,15 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 placeholder="e.g., Name of the product"
               />
             </div>
+            <div className="grid gap-2 col-span-full">
+              <Label htmlFor={`field-example-${field.id}`}>Example Value (Optional)</Label>
+              <Input
+                id={`field-example-${field.id}`}
+                value={field.example || ""}
+                onChange={handleExampleChange}
+                placeholder="e.g., 'Laptop', 123, '2023-10-26'"
+              />
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>
@@ -204,7 +218,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               <FieldEditor
                 key={childField.id}
                 field={childField}
-                onFieldChange={onFieldChange}
+                onFieldChange={handleFieldChange} // Use handleFieldChange from parent
                 onAddField={onAddField}
                 onRemoveField={onRemoveField}
                 level={level + 1}

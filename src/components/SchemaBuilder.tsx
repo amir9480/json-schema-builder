@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, Eye } from "lucide-react"; // Added Eye icon
 import FieldEditor, { SchemaField, SchemaFieldType } from "./FieldEditor";
 import SchemaDisplay from "./SchemaDisplay";
+import SchemaFormPreview from "./SchemaFormPreview"; // Import the new preview component
 import { v4 as uuidv4 } from "uuid";
 import {
   AlertDialog,
@@ -15,6 +16,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"; // Import Dialog components
 import { showSuccess } from "@/utils/toast";
 
 interface SchemaBuilderProps {}
@@ -22,6 +30,7 @@ interface SchemaBuilderProps {}
 const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false); // State for preview dialog
 
   // Load schema from local storage on initial mount
   useEffect(() => {
@@ -135,29 +144,53 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
-            <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" className="text-red-500 hover:text-red-600">
-                  <Trash2 className="h-4 w-4 mr-2" /> Clear All Fields
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete all your defined schema fields.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleClearSchema} className="bg-red-500 hover:bg-red-600 text-white">
-                    Clear Schema
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex gap-2">
+              <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Eye className="h-4 w-4 mr-2" /> Preview Fields
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Schema Form Preview</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4">
+                    {schemaFields.length > 0 ? (
+                      <SchemaFormPreview fields={schemaFields} />
+                    ) : (
+                      <p className="text-muted-foreground text-center">
+                        Add some fields to see a preview.
+                      </p>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="text-red-500 hover:text-red-600">
+                    <Trash2 className="h-4 w-4 mr-2" /> Clear All Fields
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action cannot be undone. This will permanently delete all your defined schema fields.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearSchema} className="bg-red-500 hover:bg-red-600 text-white">
+                      Clear Schema
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
 
           {schemaFields.length === 0 ? (
