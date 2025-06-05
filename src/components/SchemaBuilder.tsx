@@ -231,7 +231,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                   </DialogHeader>
                   <div className="py-4">
                     {schemaFields.length > 0 ? (
-                      <SchemaFormPreview fields={schemaFields} />
+                      <SchemaFormPreview fields={schemaFields} reusableTypes={reusableTypes} />
                     ) : (
                       <p className="text-muted-foreground text-center">
                         Add some fields to see a preview.
