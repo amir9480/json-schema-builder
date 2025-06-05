@@ -42,9 +42,81 @@ const ManageReusableTypes: React.FC<ManageReusableTypesProps> = ({
     showSuccess("New reusable type added!");
   };
 
-  const handleReusableTypeChange = (updatedType: SchemaField) => {
-    setReusableTypes((prev) =>
-      prev.map((type) => (type.id === updatedType.id ? updatedType : type)),
+  // Helper to update a field anywhere in the schema tree (used for onFieldChange)
+  const updateFieldInTree = (fields: SchemaField[], updatedField: SchemaField): SchemaField[] => {
+    return fields.map((field) => {
+      if (field.id === updatedField.id) {
+        return updatedField;
+      } else if (field.type === "object" && field.children) {
+        return {
+          ...field,
+          children: updateFieldInTree(field.children, updatedField),
+        };
+      }
+      return field;
+    });
+  };
+
+  const handleReusableTypeChange = (updatedField: SchemaField) => {
+    setReusableTypes((prev) => updateFieldInTree(prev, updatedField));
+  };
+
+  // Helper to add a new field to a specific parent within a reusable type's children
+  const addFieldToReusableType = (reusableTypeId: string, parentId: string) => {
+    const newField: SchemaField = {
+      id: uuidv4(),
+      name: "",
+      type: "string",
+      isMultiple: false,
+      isRequired: true,
+    };
+
+    setReusableTypes((prevReusableTypes) =>
+      prevReusableTypes.map((rt) => {
+        if (rt.id === reusableTypeId) {
+          const addNested = (fields: SchemaField[]): SchemaField[] => {
+            return fields.map((field) => {
+              if (field.id === parentId) {
+                return {
+                  ...field,
+                  children: field.children ? [...field.children, newField] : [newField],
+                };
+              } else if (field.type === "object" && field.children) {
+                return {
+                  ...field,
+                  children: addNested(field.children),
+                };
+              }
+              return field;
+            });
+          };
+          return { ...rt, children: addNested(rt.children || []) };
+        }
+        return rt;
+      })
+    );
+  };
+
+  // Helper to remove a field from anywhere within a reusable type's children
+  const removeFieldFromReusableType = (reusableTypeId: string, fieldIdToRemove: string) => {
+    setReusableTypes((prevReusableTypes) =>
+      prevReusableTypes.map((rt) => {
+        if (rt.id === reusableTypeId) {
+          const filterNested = (fields: SchemaField[]): SchemaField[] => {
+            return fields.filter((field) => {
+              if (field.id === fieldIdToRemove) {
+                return false;
+              }
+              if (field.type === "object" && field.children) {
+                field.children = filterNested(field.children);
+              }
+              return true;
+            });
+          };
+          return { ...rt, children: filterNested(rt.children || []) };
+        }
+        return rt;
+      })
     );
   };
 
@@ -97,34 +169,8 @@ const ManageReusableTypes: React.FC<ManageReusableTypesProps> = ({
               <FieldEditor
                 field={type}
                 onFieldChange={handleReusableTypeChange}
-                onAddField={(parentId) => {
-                  // Logic to add child field to a reusable type
-                  setReusableTypes((prev) =>
-                    prev.map((rt) =>
-                      rt.id === type.id
-                        ? {
-                            ...rt,
-                            children: rt.children
-                              ? [...rt.children, { id: uuidv4(), name: "", type: "string", isMultiple: false, isRequired: true }]
-                              : [{ id: uuidv4(), name: "", type: "string", isMultiple: false, isRequired: true }],
-                          }
-                        : rt,
-                    ),
-                  );
-                }}
-                onRemoveField={(fieldId) => {
-                  // Logic to remove child field from a reusable type
-                  setReusableTypes((prev) =>
-                    prev.map((rt) =>
-                      rt.id === type.id
-                        ? {
-                            ...rt,
-                            children: rt.children?.filter((child) => child.id !== fieldId),
-                          }
-                        : rt,
-                    ),
-                  );
-                }}
+                onAddField={(parentId) => addFieldToReusableType(type.id, parentId)}
+                onRemoveField={(fieldId) => removeFieldFromReusableType(type.id, fieldId)}
                 isRoot={true} // Treat reusable types as root for their own editing context
                 level={0}
                 activeAdvancedFieldId={activeAdvancedFieldId}

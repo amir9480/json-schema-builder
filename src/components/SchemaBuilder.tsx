@@ -23,6 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription, // Import DialogDescription
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -193,6 +194,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                 <DialogContent className="sm:max-w-[600px]">
                   <DialogHeader>
                     <DialogTitle>Import JSON Schema</DialogTitle>
+                    <DialogDescription>
+                      Paste your JSON Schema below to import it into the builder.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <Label htmlFor="json-input">Paste your JSON Schema here:</Label>
@@ -221,6 +225,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                 <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>Schema Form Preview</DialogTitle>
+                    <DialogDescription>
+                      This is a visual representation of how your defined schema fields might appear in a form.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="py-4">
                     {schemaFields.length > 0 ? (
@@ -290,6 +297,12 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Manage Reusable Types</DialogTitle>
+                <DialogDescription>
+                  Define and organize reusable object schemas for your main schema.
+                </DialogDescription>
+              </DialogHeader>
               <ManageReusableTypes
                 reusableTypes={reusableTypes}
                 setReusableTypes={setReusableTypes}
@@ -308,6 +321,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Generated JSON Schema</DialogTitle>
+                <DialogDescription>
+                  Copy the generated JSON Schema below.
+                </DialogDescription>
               </DialogHeader>
               <div className="py-4">
                 <SchemaDisplay schemaFields={schemaFields} reusableTypes={reusableTypes} /> {/* Pass reusable types */}
