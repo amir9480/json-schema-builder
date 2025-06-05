@@ -19,7 +19,7 @@ const getPlaceholderValue = (type: SchemaFieldType): string => {
     case "float":
       return "123.45";
     case "currency":
-      return "123.45"; // Placeholder for currency value
+      return "USD"; // Placeholder for currency code
     case "date":
       return "2023-01-01";
     case "datetime":
@@ -71,7 +71,7 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
           }
         }
 
-        const isNumberType = displayField.type === "int" || displayField.type === "float" || displayField.type === "currency";
+        const isNumberType = displayField.type === "int" || displayField.type === "float"; // Only int and float are number types now
 
         return (
           <div

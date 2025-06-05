@@ -57,11 +57,11 @@ export interface SchemaField {
   example?: string;
   children?: SchemaField[];
   refId?: string;
-  minValue?: number; // New: Minimum value for number types
-  maxValue?: number; // New: Maximum value for number types
-  minItems?: number; // New: Minimum items for array types
-  maxItems?: number; // New: Maximum items for array types
-  currency?: string; // New: Currency code for 'currency' type
+  minValue?: number; // Minimum value for number types
+  maxValue?: number; // Maximum value for number types
+  minItems?: number; // Minimum items for array types
+  maxItems?: number; // Maximum items for array types
+  currency?: string; // Currency code for 'currency' type
 }
 
 interface FieldEditorProps {
@@ -132,10 +132,10 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       type: value,
       children: value === "object" ? field.children || [] : undefined,
       refId: value === "ref" ? field.refId : undefined,
-      // Clear number/currency specific properties if type changes
-      minValue: (value === "int" || value === "float" || value === "currency") ? field.minValue : undefined,
-      maxValue: (value === "int" || value === "float" || value === "currency") ? field.maxValue : undefined,
-      currency: value === "currency" ? field.currency : undefined,
+      // Clear number specific properties if type changes or is no longer a number type
+      minValue: (value === "int" || value === "float") ? field.minValue : undefined,
+      maxValue: (value === "int" || value === "float") ? field.maxValue : undefined,
+      currency: value === "currency" ? field.currency : undefined, // Keep currency for 'currency' type
     });
   };
 
@@ -206,7 +206,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     { value: "ref", label: "Reference ($ref)" },
   ];
 
-  const isNumberType = field.type === "int" || field.type === "float" || field.type === "currency";
+  const isNumberType = field.type === "int" || field.type === "float"; // Only int and float are number types now
 
   return (
     <div
