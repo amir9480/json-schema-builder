@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Eye, Upload } from "lucide-react";
+import { PlusCircle, Trash2, Eye, Upload, Download } from "lucide-react";
 import FieldEditor, { SchemaField, SchemaFieldType } from "./FieldEditor";
 import SchemaDisplay from "./SchemaDisplay";
 import SchemaFormPreview from "./SchemaFormPreview";
@@ -24,7 +24,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label"; // <--- Added this import
+import { Label } from "@/components/ui/label";
 import { showSuccess, showError } from "@/utils/toast";
 import { jsonSchemaToSchemaFields } from "@/utils/schemaConverter";
 
@@ -35,6 +35,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false); // New state for export modal
   const [importJsonInput, setImportJsonInput] = useState("");
   const [activeAdvancedFieldId, setActiveAdvancedFieldId] = useState<string | null>(null);
 
@@ -162,7 +163,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         JSON Schema Builder
       </h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8"> {/* Removed lg:grid-cols-2 */}
         <div className="space-y-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
@@ -263,12 +264,30 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
           <Button onClick={() => addField()} className="w-full">
             <PlusCircle className="h-4 w-4 mr-2" /> Add New Field
           </Button>
+
+          {/* New Export JSON Schema Button and Modal */}
+          <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white">
+                <Download className="h-4 w-4 mr-2" /> Export Generated JSON Schema
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Generated JSON Schema</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <SchemaDisplay schemaFields={schemaFields} />
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
 
-        <div className="space-y-6">
+        {/* Removed the direct Schema Output panel from here */}
+        {/* <div className="space-y-6">
           <h2 className="text-2xl font-semibold">Schema Output</h2>
           <SchemaDisplay schemaFields={schemaFields} />
-        </div>
+        </div> */}
       </div>
     </div>
   );
