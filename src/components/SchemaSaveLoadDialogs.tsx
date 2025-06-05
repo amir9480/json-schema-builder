@@ -202,7 +202,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
   };
 
   return (
-    <React.Fragment>
+    <div>
       {/* Save Schema Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
@@ -362,7 +362,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
           </div>
         </DialogContent>
       </Dialog>
-    </React.Fragment>
+    </div>
   );
 };
 
