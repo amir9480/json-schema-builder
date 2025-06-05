@@ -34,7 +34,7 @@ const mapTypeToJsonSchemaFormat = (type: SchemaFieldType): string | undefined =>
 
 const buildJsonSchema = (fields: SchemaField[]): any => {
   const properties: { [key: string]: any } = {};
-  const required: string[] = []; // For simplicity, all fields are required for now
+  const required: string[] = [];
 
   fields.forEach((field) => {
     const baseType = mapTypeToJsonSchemaType(field.type);
@@ -47,8 +47,18 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
     }
 
     if (field.type === "object" && field.children) {
-      fieldSchema.properties = buildJsonSchema(field.children).properties;
-      fieldSchema.required = buildJsonSchema(field.children).required;
+      const nestedSchema = buildJsonSchema(field.children);
+      fieldSchema.properties = nestedSchema.properties;
+      if (nestedSchema.required.length > 0) {
+        fieldSchema.required = nestedSchema.required;
+      }
+    }
+
+    // Handle isRequired logic
+    if (!field.isRequired) {
+      fieldSchema.type = Array.isArray(fieldSchema.type)
+        ? [...fieldSchema.type, "null"]
+        : [fieldSchema.type, "null"];
     }
 
     if (field.isMultiple) {
@@ -60,7 +70,7 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
       properties[field.name] = fieldSchema;
     }
 
-    if (field.name) { // Only add to required if name is not empty
+    if (field.name && field.isRequired) { // Only add to required if name is not empty AND isRequired
       required.push(field.name);
     }
   });

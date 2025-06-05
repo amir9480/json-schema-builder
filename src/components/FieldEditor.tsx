@@ -27,6 +27,7 @@ export interface SchemaField {
   name: string;
   type: SchemaFieldType;
   isMultiple: boolean;
+  isRequired: boolean; // Added isRequired property
   children?: SchemaField[]; // For 'object' types
 }
 
@@ -61,6 +62,10 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const handleMultipleChange = (checked: boolean) => {
     onFieldChange({ ...field, isMultiple: checked });
+  };
+
+  const handleRequiredChange = (checked: boolean) => {
+    onFieldChange({ ...field, isRequired: checked });
   };
 
   const paddingLeft = level * 20; // Adjust indentation based on level
@@ -112,6 +117,15 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             onCheckedChange={handleMultipleChange}
           />
           <Label htmlFor={`multiple-switch-${field.id}`}>Multiple</Label>
+        </div>
+
+        <div className="flex items-center space-x-2 mt-auto pb-2">
+          <Switch
+            id={`required-switch-${field.id}`}
+            checked={field.isRequired}
+            onCheckedChange={handleRequiredChange}
+          />
+          <Label htmlFor={`required-switch-${field.id}`}>Required</Label>
         </div>
 
         {!isRoot && onRemoveField && (

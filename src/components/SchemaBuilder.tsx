@@ -16,6 +16,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       name: "",
       type: "string",
       isMultiple: false,
+      isRequired: true, // Default to required
     };
 
     if (parentId) {
