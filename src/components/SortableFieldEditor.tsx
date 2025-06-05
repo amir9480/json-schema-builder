@@ -19,6 +19,7 @@ interface SortableFieldEditorProps {
   isDraggable?: boolean; // New prop to control drag handle visibility
   isFirst?: boolean; // New prop to disable 'move up' for the first item
   isLast?: boolean; // New prop to disable 'move down' for the last item
+  onManageReusableTypes?: () => void; // New prop
 }
 
 const SortableFieldEditor: React.FC<SortableFieldEditorProps> = ({
@@ -34,6 +35,7 @@ const SortableFieldEditor: React.FC<SortableFieldEditorProps> = ({
   isDraggable = true,
   isFirst = false,
   isLast = false,
+  onManageReusableTypes, // Destructure new prop
 }) => {
   const {
     attributes,
@@ -112,6 +114,7 @@ const SortableFieldEditor: React.FC<SortableFieldEditorProps> = ({
             reusableTypes={reusableTypes}
             hideRefTypeOption={hideRefTypeOption}
             isDraggable={isDraggable} // Pass down to control nested drag handles
+            onManageReusableTypes={onManageReusableTypes} // Pass the function here
           />
         </div>
       </div>

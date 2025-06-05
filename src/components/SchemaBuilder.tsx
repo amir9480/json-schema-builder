@@ -402,6 +402,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                       reusableTypes={reusableTypes}
                       isFirst={index === 0}
                       isLast={index === schemaFields.length - 1}
+                      onManageReusableTypes={() => setIsManageTypesOpen(true)} // Pass the function here
                     />
                   ))}
                 </div>
