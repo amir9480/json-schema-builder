@@ -35,7 +35,16 @@ const mapTypeToJsonSchemaFormat = (type: SchemaFieldType): string | undefined =>
   }
 };
 
-const buildJsonSchema = (fields: SchemaField[], reusableTypes: SchemaField[]): any => {
+/**
+ * Recursively builds the properties and required array for a given set of SchemaFields.
+ * This function is designed to be called for the root schema, nested objects, and reusable type definitions.
+ * It takes the full list of reusableTypes and the already built definitions to resolve references.
+ */
+const buildPropertiesAndRequired = (
+  fields: SchemaField[],
+  reusableTypes: SchemaField[],
+  definitions: { [key: string]: any }
+): { properties: any; required: string[] } => {
   const properties: { [key: string]: any } = {};
   const required: string[] = [];
 
@@ -49,10 +58,11 @@ const buildJsonSchema = (fields: SchemaField[], reusableTypes: SchemaField[]): a
 
     if (field.type === "ref") {
       const referencedType = reusableTypes.find(rt => rt.id === field.refId);
-      if (referencedType && referencedType.name) {
+      if (referencedType && referencedType.name && definitions[referencedType.name]) {
+        // Reference to an already built definition
         fieldSchema = { "$ref": `#/definitions/${referencedType.name}` };
       } else {
-        // Fallback if reference is invalid or not found
+        // Fallback if reference is invalid or not found in definitions
         fieldSchema = { type: "object", description: "Invalid or undefined reference" };
       }
     } else {
@@ -92,7 +102,8 @@ const buildJsonSchema = (fields: SchemaField[], reusableTypes: SchemaField[]): a
       }
 
       if (field.type === "object" && field.children) {
-        const nestedSchema = buildJsonSchema(field.children, reusableTypes); // Pass reusableTypes recursively
+        // Recursive call for nested objects, passing definitions for nested refs
+        const nestedSchema = buildPropertiesAndRequired(field.children, reusableTypes, definitions);
         fieldSchema.properties = nestedSchema.properties;
         if (nestedSchema.required.length > 0) {
           fieldSchema.required = nestedSchema.required;
@@ -123,34 +134,59 @@ const buildJsonSchema = (fields: SchemaField[], reusableTypes: SchemaField[]): a
     }
   });
 
+  return { properties, required };
+};
+
+/**
+ * Builds the complete JSON Schema, including definitions for reusable types.
+ * Handles potential circular references among reusable types.
+ */
+const buildFullJsonSchema = (schemaFields: SchemaField[], reusableTypes: SchemaField[]): any => {
   const definitions: { [key: string]: any } = {};
+  const buildingDefinitions = new Set<string>(); // To detect circular references during definition building
+
+  // First pass: Build all reusable type definitions
   reusableTypes.forEach(rt => {
     if (rt.name) {
+      // Prevent infinite recursion for circular definitions
+      if (buildingDefinitions.has(rt.id)) {
+        // If we're already building this definition, skip to prevent stack overflow.
+        // A more advanced solution might involve a "$recursiveRef" or similar.
+        return;
+      }
+      buildingDefinitions.add(rt.id); // Mark as currently building
+
+      // Recursively build properties for the reusable type's children
+      const nestedSchema = buildPropertiesAndRequired(rt.children || [], reusableTypes, definitions);
       definitions[rt.name] = {
         type: "object",
-        properties: buildJsonSchema(rt.children || [], reusableTypes).properties,
-        required: buildJsonSchema(rt.children || [], reusableTypes).required,
+        properties: nestedSchema.properties,
+        required: nestedSchema.required,
         additionalProperties: false,
       };
+      buildingDefinitions.delete(rt.id); // Unmark after building
     }
   });
 
+  // Second pass: Build the main schema properties using the now-complete definitions
+  const mainSchemaContent = buildPropertiesAndRequired(schemaFields, reusableTypes, definitions);
+
   const rootSchema: any = {
     type: "object",
-    properties,
-    required,
+    properties: mainSchemaContent.properties,
+    required: mainSchemaContent.required,
     additionalProperties: false, // Add additionalProperties: false for the root object
   };
 
   if (Object.keys(definitions).length > 0) {
-    rootSchema.definitions = definitions; // Use 'definitions' for older JSON Schema drafts, or '$defs' for draft 2019-09 and later
+    rootSchema.definitions = definitions; // Using 'definitions' for compatibility
   }
 
   return rootSchema;
 };
 
 const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ schemaFields, reusableTypes }) => {
-  const jsonSchema = buildJsonSchema(schemaFields, reusableTypes);
+  const jsonSchema = buildFullJsonSchema(schemaFields, reusableTypes);
   const jsonString = JSON.stringify(jsonSchema, null, 2);
 
   const handleCopy = () => {
