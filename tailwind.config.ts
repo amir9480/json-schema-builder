@@ -62,6 +62,12 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Custom gray shades for nested backgrounds in dark mode
+        gray: {
+          ...require('tailwindcss/colors').gray, // Keep existing gray shades
+          "850": "#1c1c1e", // Slightly darker than gray-800
+          "925": "#0f0f10", // Slightly darker than gray-900
+        },
       },
       borderRadius: {
         lg: "var(--radius)",

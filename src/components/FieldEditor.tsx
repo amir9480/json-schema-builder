@@ -84,33 +84,19 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     "border-yellow-400",
     "border-red-400",
   ];
-  const bgColors = [
-    "bg-blue-50/30",
-    "bg-green-50/30",
-    "bg-purple-50/30",
-    "bg-yellow-50/30",
-    "bg-red-50/30",
-  ];
-  const textColors = [
-    "text-blue-600",
-    "text-green-600",
-    "text-purple-600",
-    "text-yellow-600",
-    "text-red-600",
-  ];
-  const hoverBgColors = [
-    "hover:bg-blue-100",
-    "hover:bg-green-100",
-    "hover:bg-purple-100",
-    "hover:bg-yellow-100",
-    "hover:bg-red-100",
-  ];
 
-  const colorIndex = level % borderColors.length;
-  const currentBorderColor = borderColors[colorIndex];
-  const currentBgColor = bgColors[colorIndex];
-  const currentTextColor = textColors[colorIndex];
-  const currentHoverBgColors = hoverBgColors[colorIndex];
+  // Define background classes for light and dark mode based on nesting level
+  const getBackgroundClasses = (currentLevel: number) => {
+    if (currentLevel === 0) {
+      return "bg-background"; // Root level uses theme-aware background
+    }
+    const lightShades = ["bg-gray-50", "bg-gray-100", "bg-gray-200", "bg-gray-300"];
+    const darkShades = ["dark:bg-gray-800", "dark:bg-gray-850", "dark:bg-gray-900", "dark:bg-gray-925"];
+    const index = (currentLevel - 1) % lightShades.length;
+    return `${lightShades[index]} ${darkShades[index]}`;
+  };
+
+  const currentBorderColor = borderColors[(level - 1) % borderColors.length];
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFieldChange({ ...field, name: e.target.value });
@@ -155,8 +141,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     <div
       className={cn(
         "flex flex-col gap-4 p-4 border rounded-md",
-        level > 0 ? currentBgColor : "bg-background", // Use specific color for nested, default for root
-        currentBorderColor // Apply specific border color
+        getBackgroundClasses(level), // Apply dynamic background classes
+        level > 0 && currentBorderColor // Apply specific border color for nested levels
       )}
       style={{ paddingLeft: `${paddingLeft + 16}px` }}
     >
@@ -343,10 +329,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               onClick={() => onAddField(field.id)}
               className={cn(
                 "w-full",
-                currentBorderColor, // Match border color
-                currentTextColor,   // Match text color
-                currentHoverBgColors, // Match hover background color
-                "hover:text-foreground" // Ensure text color on hover is readable
+                level > 0 && borderColors[level % borderColors.length], // Match border color for nested levels
+                "text-foreground hover:bg-accent hover:text-accent-foreground" // General styling for button
               )}
             >
               <PlusCircle className="h-4 w-4 mr-2" /> Add Property to {field.name || "Unnamed Object"}
