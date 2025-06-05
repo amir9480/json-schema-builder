@@ -62,6 +62,7 @@ interface FieldEditorProps {
   activeAdvancedFieldId: string | null;
   setActiveAdvancedFieldId: (id: string | null) => void;
   reusableTypes?: SchemaField[]; // New prop to pass reusable types
+  hideRefTypeOption?: boolean; // New prop to hide 'ref' type option
 }
 
 const FieldEditor: React.FC<FieldEditorProps> = ({
@@ -74,6 +75,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   activeAdvancedFieldId,
   setActiveAdvancedFieldId,
   reusableTypes = [], // Default to empty array
+  hideRefTypeOption = false, // Default to false
 }) => {
   const isAdvancedOpen = field.id === activeAdvancedFieldId;
 
@@ -189,7 +191,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               <SelectItem value="date">Date</SelectItem>
               <SelectItem value="datetime">DateTime</SelectItem>
               <SelectItem value="object">Object</SelectItem>
-              <SelectItem value="ref">Reference ($ref)</SelectItem>
+              {!hideRefTypeOption && <SelectItem value="ref">Reference ($ref)</SelectItem>}
             </SelectContent>
           </Select>
         </div>
@@ -338,6 +340,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 activeAdvancedFieldId={activeAdvancedFieldId}
                 setActiveAdvancedFieldId={setActiveAdvancedFieldId}
                 reusableTypes={reusableTypes} // Pass reusable types to children
+                hideRefTypeOption={hideRefTypeOption} // Pass down the prop
               />
             ))
           ) : (
