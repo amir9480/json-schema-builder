@@ -203,165 +203,167 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
 
   return (
     <div>
-      {/* Save Schema Dialog */}
-      <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Save Current Schema</DialogTitle>
-            <DialogDescription>
-              Enter a name to save your current schema and reusable types.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Label htmlFor="save-schema-name">Schema Name</Label>
-            <Input
-              id="save-schema-name"
-              value={saveSchemaName}
-              onChange={(e) => setSaveSchemaName(e.target.value)}
-              placeholder="e.g., MyProductSchema"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveSchemaByName}>Save</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <React.Fragment>
+        {/* Save Schema Dialog */}
+        <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Save Current Schema</DialogTitle>
+              <DialogDescription>
+                Enter a name to save your current schema and reusable types.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Label htmlFor="save-schema-name">Schema Name</Label>
+              <Input
+                id="save-schema-name"
+                value={saveSchemaName}
+                onChange={(e) => setSaveSchemaName(e.target.value)}
+                placeholder="e.g., MyProductSchema"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleSaveSchemaByName}>Save</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      {/* Load Schema Confirmation Dialog */}
-      <AlertDialog open={isLoadConfirmOpen} onOpenChange={setIsLoadConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard Current Changes?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes in your current schema. Loading a new schema will overwrite your current work. Do you want to proceed?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmLoad}>
-              Discard and Load
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        {/* Load Schema Confirmation Dialog */}
+        <AlertDialog open={isLoadConfirmOpen} onOpenChange={setIsLoadConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard Current Changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                You have unsaved changes in your current schema. Loading a new schema will overwrite your current work. Do you want to proceed?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmLoad}>
+                Discard and Load
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
-      {/* Actual Load Schema Dialog */}
-      <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Load Saved Schema</DialogTitle>
-            <DialogDescription>
-              Select a schema to load. This will replace your current schema.
-            </DialogDescription>
-          </DialogDescription>
-          <div className="grid gap-4 py-4 flex-1 overflow-hidden">
-            <Label>Saved Schemas</Label>
-            {savedSchemaNames.length === 0 ? (
-              <p className="text-muted-foreground text-center py-4">
-                No schemas saved yet.
-              </p>
-            ) : (
-              <ScrollArea className="h-full max-h-[calc(80vh-180px)] rounded-md border">
-                <div className="p-2">
-                  {savedSchemaNames.map((name) => (
-                    <div
-                      key={name}
-                      className="flex items-center justify-between p-2 mb-2 border rounded-md bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
-                    >
-                      <span className="font-medium truncate flex-1 mr-2">{name}</span>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleLoadSchemaByName(name)}
-                          aria-label={`Load ${name}`}
-                        >
-                          Load
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-gray-500 hover:text-blue-600"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            setSchemaToRename(name);
-                            setNewSchemaName(name);
-                            setIsRenameDialogOpen(true);
-                          }}
-                          aria-label={`Rename ${name}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-red-500 hover:text-red-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
-                              aria-label={`Delete ${name}`}
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the saved schema "{name}".
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteSavedSchema(name)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+        {/* Actual Load Schema Dialog */}
+        <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
+          <DialogContent className="sm:max-w-[425px] max-h-[80vh] flex flex-col">
+            <DialogHeader>
+              <DialogTitle>Load Saved Schema</DialogTitle>
+              <DialogDescription>
+                Select a schema to load. This will replace your current schema.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4 flex-1 overflow-hidden">
+              <Label>Saved Schemas</Label>
+              {savedSchemaNames.length === 0 ? (
+                <p className="text-muted-foreground text-center py-4">
+                  No schemas saved yet.
+                </p>
+              ) : (
+                <ScrollArea className="h-full max-h-[calc(80vh-180px)] rounded-md border">
+                  <div className="p-2">
+                    {savedSchemaNames.map((name) => (
+                      <div
+                        key={name}
+                        className="flex items-center justify-between p-2 mb-2 border rounded-md bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <span className="font-medium truncate flex-1 mr-2">{name}</span>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleLoadSchemaByName(name)}
+                            aria-label={`Load ${name}`}
+                          >
+                            Load
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-blue-600"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              e.preventDefault();
+                              setSchemaToRename(name);
+                              setNewSchemaName(name);
+                              setIsRenameDialogOpen(true);
+                            }}
+                            aria-label={`Rename ${name}`}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-600"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                }}
+                                aria-label={`Delete ${name}`}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete the saved schema "{name}".
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteSavedSchema(name)}>
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
-                    </div>
-                  ))
-                )}
-                </div>
-              </ScrollArea>
-            )}
-          </div>
-          <div className="flex justify-end gap-2 mt-auto">
-            <Button variant="outline" onClick={() => setIsLoadDialogOpen(false)}>Close</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+                    ))
+                  )}
+                  </div>
+                </ScrollArea>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 mt-auto">
+              <Button variant="outline" onClick={() => setIsLoadDialogOpen(false)}>Close</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
-      {/* Rename Schema Dialog */}
-      <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Rename Schema</DialogTitle>
-            <DialogDescription>
-              Enter a new name for "{schemaToRename}".
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Label htmlFor="new-schema-name">New Schema Name</Label>
-            <Input
-              id="new-schema-name"
-              value={newSchemaName}
-              onChange={(e) => setNewSchemaName(e.target.value)}
-              placeholder="e.g., UpdatedProductSchema"
-            />
-          </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleRenameSchema}>Rename</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        {/* Rename Schema Dialog */}
+        <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Rename Schema</DialogTitle>
+              <DialogDescription>
+                Enter a new name for "{schemaToRename}".
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <Label htmlFor="new-schema-name">New Schema Name</Label>
+              <Input
+                id="new-schema-name"
+                value={newSchemaName}
+                onChange={(e) => setNewSchemaName(e.target.value)}
+                placeholder="e.g., UpdatedProductSchema"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsRenameDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleRenameSchema}>Rename</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </React.Fragment>
     </div>
   );
 };
