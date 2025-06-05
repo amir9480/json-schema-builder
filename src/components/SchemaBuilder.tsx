@@ -76,6 +76,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [saveSchemaName, setSaveSchemaName] = useState("");
   const [selectedLoadSchemaName, setSelectedLoadSchemaName] = useState("");
   const [savedSchemaNames, setSavedSchemaNames] = useState<string[]>([]);
+  const [isLoadConfirmOpen, setIsLoadConfirmOpen] = useState(false); // New state for load confirmation
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -481,6 +482,19 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     }
   };
 
+  const handleOpenLoadDialog = () => {
+    if (schemaFields.length > 0 || reusableTypes.length > 0) {
+      setIsLoadConfirmOpen(true);
+    } else {
+      setIsLoadDialogOpen(true);
+    }
+  };
+
+  const handleConfirmLoad = () => {
+    setIsLoadConfirmOpen(false);
+    setIsLoadDialogOpen(true);
+  };
+
 
   return (
     <div className="container mx-auto p-6 space-y-8">
@@ -523,13 +537,31 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                 </DialogContent>
               </Dialog>
 
-              {/* Load Schema Button and Dialog */}
-              <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
+              {/* Load Schema Button and Confirmation Dialog */}
+              <AlertDialog open={isLoadConfirmOpen} onOpenChange={setIsLoadConfirmOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" onClick={handleOpenLoadDialog}>
                     <FolderOpen className="h-4 w-4 mr-2" /> Load Schema
                   </Button>
-                </DialogTrigger>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Discard Current Changes?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You have unsaved changes in your current schema. Loading a new schema will overwrite your current work. Do you want to proceed?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmLoad}>
+                      Discard and Load
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {/* Actual Load Schema Dialog (opened after confirmation or if no unsaved changes) */}
+              <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
                     <DialogTitle>Load Saved Schema</DialogTitle>
