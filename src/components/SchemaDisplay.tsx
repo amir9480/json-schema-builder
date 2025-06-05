@@ -36,7 +36,8 @@ const mapTypeToJsonSchemaType = (type: SchemaFieldType): string => {
       return "number";
     case "date":
     case "datetime":
-    case "currency": // Currency is now a string type
+    case "currency":
+    case "dropdown": // Dropdown is a string type with enum
       return "string";
     default:
       return type;
@@ -128,6 +129,8 @@ const buildPropertiesAndRequired = (
         // \d+ matches one or more digits
         // (?:\.\d{1,2})? matches an optional decimal point followed by 1 or 2 digits
         fieldSchema.pattern = `^${symbol.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s?\\d+(?:\\.\\d{1,2})?$`;
+      } else if (field.type === "dropdown" && field.options && field.options.length > 0) {
+        fieldSchema.enum = field.options;
       }
 
       // Add min/max values for number types (int and float only)
@@ -161,7 +164,7 @@ const buildPropertiesAndRequired = (
     if (field.isMultiple) {
       const arraySchema: any = {
         type: "array",
-        items: fieldSchema,
+        items: fieldSchema, // The item schema is the fieldSchema itself
       };
       if (field.minItems !== undefined) {
         arraySchema.minItems = field.minItems;

@@ -2,6 +2,13 @@ import React from "react";
 import { SchemaField, SchemaFieldType } from "./FieldEditor";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Import Select components
 import { cn, toTitleCase } from "@/lib/utils";
 
 interface SchemaFormPreviewProps {
@@ -28,7 +35,7 @@ const getCurrencySymbol = (code: string | undefined): string => {
   return currencySymbolMap[code] || code; // Fallback to code if symbol not found
 };
 
-const getPlaceholderValue = (type: SchemaFieldType, currencyCode?: string): string => {
+const getPlaceholderValue = (type: SchemaFieldType, currencyCode?: string, options?: string[]): string => {
   switch (type) {
     case "string":
       return "Lorem ipsum string";
@@ -46,6 +53,8 @@ const getPlaceholderValue = (type: SchemaFieldType, currencyCode?: string): stri
       return "";
     case "ref":
       return "Referenced Value";
+    case "dropdown":
+      return options && options.length > 0 ? options[0] : "Select an option";
     default:
       return "N/A";
   }
@@ -63,7 +72,7 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
         if (field.type === "ref" && field.refId) {
           const referencedType = reusableTypes.find(rt => rt.id === field.refId);
           if (referencedType) {
-            displayField = { ...field, type: referencedType.type, children: referencedType.children };
+            displayField = { ...field, type: referencedType.type, children: referencedType.children, options: referencedType.options };
             isReference = true;
           } else {
             return (
@@ -116,6 +125,23 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
                   <p className="text-xs text-muted-foreground italic">No properties defined.</p>
                 )}
               </div>
+            ) : displayField.type === "dropdown" ? (
+              <Select value={displayField.example || (displayField.options && displayField.options.length > 0 ? displayField.options[0] : "")}>
+                <SelectTrigger className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700">
+                  <SelectValue placeholder={getPlaceholderValue(displayField.type, undefined, displayField.options)} />
+                </SelectTrigger>
+                <SelectContent>
+                  {displayField.options && displayField.options.length > 0 ? (
+                    displayField.options.map((option, idx) => (
+                      <SelectItem key={idx} value={option}>
+                        {option}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-options" disabled>No options defined</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
             ) : (
               <>
                 <Input

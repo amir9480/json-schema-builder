@@ -9,6 +9,7 @@ import {
   Link,
   HelpCircle,
   LucideIcon,
+  List, // Import List icon for dropdown
 } from "lucide-react";
 import {
   Tooltip,
@@ -35,6 +36,7 @@ const typeIconMap: Record<
   datetime: { icon: Clock, name: "DateTime" },
   object: { icon: Box, name: "Object" },
   ref: { icon: Link, name: "Reference" },
+  dropdown: { icon: List, name: "Dropdown" }, // Added icon for dropdown
 };
 
 const FieldTypeIcon: React.FC<FieldTypeIconProps> = ({ type, className }) => {
