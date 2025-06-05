@@ -297,7 +297,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       )}
       style={{ paddingLeft: `${paddingLeft + 16}px` }}
     >
-      <div className="flex items-end gap-4"> {/* Changed to items-end for better vertical alignment */}
+      <div className="flex items-center gap-4"> {/* Changed to items-center for better vertical alignment */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="shrink-0">
@@ -457,6 +457,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 <AlertDialogDescription>
                   This action cannot be undone. This will permanently delete the field "{field.name || "Unnamed Field"}" and any nested properties.
                 </AlertDialogDescription>
+              </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
