@@ -59,8 +59,6 @@ interface FieldEditorProps {
   onRemoveField?: (fieldId: string) => void;
   isRoot?: boolean;
   level?: number;
-  activeAdvancedFieldId: string | null;
-  setActiveAdvancedFieldId: (id: string | null) => void;
   reusableTypes?: SchemaField[]; // New prop to pass reusable types
   hideRefTypeOption?: boolean; // New prop to hide 'ref' type option
 }
@@ -72,12 +70,11 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   onRemoveField,
   isRoot = false,
   level = 0,
-  activeAdvancedFieldId,
-  setActiveAdvancedFieldId,
   reusableTypes = [], // Default to empty array
   hideRefTypeOption = false, // Default to false
 }) => {
-  const isAdvancedOpen = field.id === activeAdvancedFieldId;
+  // Manage the open state of advanced options locally within each FieldEditor
+  const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
 
   // Define a set of colors to cycle through for nested objects
   const borderColors = [
@@ -272,13 +269,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       {field.type !== "ref" && ( // Advanced options not applicable for references
         <Collapsible
           open={isAdvancedOpen}
-          onOpenChange={(open) => {
-            if (open) {
-              setActiveAdvancedFieldId(field.id);
-            } else if (activeAdvancedFieldId === field.id) {
-              setActiveAdvancedFieldId(null);
-            }
-          }}
+          onOpenChange={setIsAdvancedOpen} // Update local state
           className="w-full space-y-2"
         >
           <CollapsibleTrigger asChild>
@@ -337,8 +328,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 onAddField={onAddField}
                 onRemoveField={onRemoveField}
                 level={level + 1}
-                activeAdvancedFieldId={activeAdvancedFieldId}
-                setActiveAdvancedFieldId={setActiveAdvancedFieldId}
                 reusableTypes={reusableTypes} // Pass reusable types to children
                 hideRefTypeOption={hideRefTypeOption} // Pass down the prop
               />

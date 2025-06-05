@@ -41,7 +41,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isManageTypesOpen, setIsManageTypesOpen] = useState(false); // New state for manage types modal
   const [importJsonInput, setImportJsonInput] = useState("");
-  const [activeAdvancedFieldId, setActiveAdvancedFieldId] = useState<string | null>(null);
+  // Removed activeAdvancedFieldId and setActiveAdvancedFieldId as they are now managed locally in FieldEditor
 
   // Load schema and reusable types from local storage on initial mount
   useEffect(() => {
@@ -278,8 +278,6 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                   onFieldChange={handleFieldChange}
                   onAddField={addField}
                   onRemoveField={removeField}
-                  activeAdvancedFieldId={activeAdvancedFieldId}
-                  setActiveAdvancedFieldId={setActiveAdvancedFieldId}
                   reusableTypes={reusableTypes} // Pass reusable types to FieldEditor
                 />
               ))}
