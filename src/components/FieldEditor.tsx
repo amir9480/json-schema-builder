@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings } from "lucide-react";
 import { cn, toTitleCase } from "@/lib/utils";
 import {
   Collapsible,
@@ -92,6 +92,7 @@ interface FieldEditorProps {
   reusableTypes?: SchemaField[];
   hideRefTypeOption?: boolean;
   isDraggable?: boolean; // Prop to control drag handle visibility
+  onManageReusableTypes?: () => void; // New prop
 }
 
 const CURRENCY_OPTIONS = [
@@ -118,6 +119,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   reusableTypes = [],
   hideRefTypeOption = false,
   isDraggable = true,
+  onManageReusableTypes, // Destructure new prop
 }) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
   const [isObjectPropertiesOpen, setIsObjectPropertiesOpen] = React.useState(true);
@@ -299,7 +301,19 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
         {field.type === "ref" && (
           <div className="flex-1 grid gap-2">
-            <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
+            <div className="flex items-center justify-between">
+              <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
+              {onManageReusableTypes && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={onManageReusableTypes}
+                  className="h-auto px-2 py-1 text-xs text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  <Settings className="h-3 w-3 mr-1" /> Manage Types
+                </Button>
+              )}
+            </div>
             <Select
               value={field.refId || ""}
               onValueChange={handleRefChange}
@@ -535,6 +549,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                         isDraggable={isDraggable}
                         isFirst={index === 0}
                         isLast={index === (field.children?.length || 0) - 1}
+                        onManageReusableTypes={onManageReusableTypes} // Pass the function here
                       />
                     ))}
                   </div>
