@@ -19,17 +19,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { XCircle, Pencil } from "lucide-react"; // Import Pencil icon
+import { XCircle, Pencil } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { SchemaField } from "./FieldEditor";
+import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
 
 interface SchemaSaveLoadDialogsProps {
   isSaveDialogOpen: boolean;
@@ -40,15 +34,15 @@ interface SchemaSaveLoadDialogsProps {
   setIsLoadConfirmOpen: (open: boolean) => void;
   saveSchemaName: string;
   setSaveSchemaName: (name: string) => void;
-  selectedLoadSchemaName: string;
-  setSelectedLoadSchemaName: (name: string) => void;
+  selectedLoadSchemaName: string; // Still used for internal tracking if needed, but not for Select component
+  setSelectedLoadSchemaName: (name: string) => void; // Still used for internal tracking if needed
   savedSchemaNames: string[];
   setSavedSchemaNames: (names: string[]) => void;
   schemaFields: SchemaField[];
   reusableTypes: SchemaField[];
   setSchemaFields: (fields: SchemaField[]) => void;
   setReusableTypes: (types: SchemaField[]) => void;
-  hasUnsavedChanges: boolean; // New prop to indicate if there are unsaved changes
+  hasUnsavedChanges: boolean;
 }
 
 const LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY = "jsonSchemaBuilderSavedSchemasIndex";
@@ -62,8 +56,8 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
   setIsLoadConfirmOpen,
   saveSchemaName,
   setSaveSchemaName,
-  selectedLoadSchemaName,
-  setSelectedLoadSchemaName,
+  selectedLoadSchemaName, // Keep for potential future use or internal logic
+  setSelectedLoadSchemaName, // Keep for potential future use or internal logic
   savedSchemaNames,
   setSavedSchemaNames,
   schemaFields,
@@ -101,15 +95,10 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
     }
   };
 
-  const handleLoadSchemaByName = () => {
-    if (!selectedLoadSchemaName) {
-      showError("Please select a schema to load.");
-      return;
-    }
-
+  const handleLoadSchemaByName = (schemaName: string) => {
     try {
-      const loadedFields = localStorage.getItem(`dyad_schema_${selectedLoadSchemaName}_fields`);
-      const loadedReusableTypes = localStorage.getItem(`dyad_schema_${selectedLoadSchemaName}_reusableTypes`);
+      const loadedFields = localStorage.getItem(`dyad_schema_${schemaName}_fields`);
+      const loadedReusableTypes = localStorage.getItem(`dyad_schema_${schemaName}_reusableTypes`);
 
       if (loadedFields) {
         setSchemaFields(JSON.parse(loadedFields));
@@ -123,9 +112,9 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
         setReusableTypes([]);
       }
 
-      showSuccess(`Schema "${selectedLoadSchemaName}" loaded successfully!`);
+      showSuccess(`Schema "${schemaName}" loaded successfully!`);
       setIsLoadDialogOpen(false);
-      setSelectedLoadSchemaName("");
+      // setSelectedLoadSchemaName(""); // No longer needed for Select component
     } catch (error) {
       console.error("Failed to load schema by name:", error);
       showError("Failed to load schema. It might be corrupted.");
@@ -259,89 +248,92 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
 
       {/* Actual Load Schema Dialog */}
       <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[425px] max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Load Saved Schema</DialogTitle>
             <DialogDescription>
               Select a schema to load. This will replace your current schema.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <Label htmlFor="load-schema-select">Select Schema</Label>
-            <Select
-              value={selectedLoadSchemaName}
-              onValueChange={setSelectedLoadSchemaName}
-            >
-              <SelectTrigger id="load-schema-select">
-                <SelectValue placeholder="Choose a saved schema" />
-              </SelectTrigger>
-              <SelectContent>
-                {savedSchemaNames.length === 0 ? (
-                  <SelectItem value="no-schemas" disabled>
-                    No schemas saved yet.
-                  </SelectItem>
-                ) : (
-                  savedSchemaNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      <div className="flex items-center justify-between w-full">
-                        <span>{name}</span>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 text-gray-500 hover:text-blue-600"
-                            onClick={(e) => {
-                              e.stopPropagation(); // Prevent select from closing
-                              e.preventDefault(); // Prevent default behavior
-                              setSchemaToRename(name);
-                              setNewSchemaName(name);
-                              setIsRenameDialogOpen(true);
-                            }}
-                            aria-label={`Rename ${name}`}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 text-red-500 hover:text-red-600"
-                                onClick={(e) => {
-                                  e.stopPropagation(); // Prevent select from closing
-                                  e.preventDefault(); // Prevent default behavior
-                                }}
-                                aria-label={`Delete ${name}`}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete the saved schema "{name}".
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDeleteSavedSchema(name)}>
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
+          <div className="grid gap-4 py-4 flex-1 overflow-hidden">
+            <Label>Saved Schemas</Label>
+            {savedSchemaNames.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">
+                No schemas saved yet.
+              </p>
+            ) : (
+              <ScrollArea className="h-full max-h-[calc(80vh-180px)] rounded-md border">
+                <div className="p-2">
+                  {savedSchemaNames.map((name) => (
+                    <div
+                      key={name}
+                      className="flex items-center justify-between p-2 mb-2 border rounded-md bg-background hover:bg-accent hover:text-accent-foreground transition-colors"
+                    >
+                      <span className="font-medium truncate flex-1 mr-2">{name}</span>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleLoadSchemaByName(name)}
+                          aria-label={`Load ${name}`}
+                        >
+                          Load
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-gray-500 hover:text-blue-600"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setSchemaToRename(name);
+                            setNewSchemaName(name);
+                            setIsRenameDialogOpen(true);
+                          }}
+                          aria-label={`Rename ${name}`}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500 hover:text-red-600"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                              }}
+                              aria-label={`Delete ${name}`}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the saved schema "{name}".
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteSavedSchema(name)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
-                    </SelectItem>
+                    </div>
                   ))
                 )}
-              </SelectContent>
-            </Select>
+                </div>
+              </ScrollArea>
+            )}
           </div>
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsLoadDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleLoadSchemaByName} disabled={!selectedLoadSchemaName}>Load</Button>
+          <div className="flex justify-end gap-2 mt-auto">
+            <Button variant="outline" onClick={() => setIsLoadDialogOpen(false)}>Close</Button>
           </div>
         </DialogContent>
       </Dialog>
