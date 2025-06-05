@@ -3,7 +3,7 @@ import { SchemaField, SchemaFieldType } from "./FieldEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
-import { toast } from "@/utils/toast"; // Using the existing toast utility
+import { showSuccess, showError } from "@/utils/toast"; // Corrected import
 
 interface SchemaDisplayProps {
   schemaFields: SchemaField[];
@@ -97,11 +97,11 @@ const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ schemaFields }) => {
   const handleCopy = () => {
     navigator.clipboard.writeText(jsonString)
       .then(() => {
-        toast.success("JSON schema copied to clipboard!");
+        showSuccess("JSON schema copied to clipboard!"); // Using showSuccess
       })
       .catch((err) => {
         console.error("Failed to copy JSON: ", err);
-        toast.error("Failed to copy JSON schema.");
+        showError("Failed to copy JSON schema."); // Using showError
       });
   };
 
