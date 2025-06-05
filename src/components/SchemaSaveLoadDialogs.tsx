@@ -201,7 +201,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
     setIsLoadDialogOpen(true);
   };
 
-  const dialogsContent = (
+  return (
     <div>
       {/* Save Schema Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
@@ -254,7 +254,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
             <DialogDescription>
               Select a schema to load. This will replace your current schema.
             </DialogDescription>
-          </DialogHeader>
+          </DialogDescription>
           <div className="grid gap-4 py-4 flex-1 overflow-hidden">
             <Label>Saved Schemas</Label>
             {savedSchemaNames.length === 0 ? (
@@ -364,8 +364,6 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
       </Dialog>
     </div>
   );
-
-  return dialogsContent;
 };
 
 export default SchemaSaveLoadDialogs;
