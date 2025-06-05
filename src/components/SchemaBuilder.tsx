@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Eye, Upload, Download, Settings } from "lucide-react";
+import { PlusCircle, Trash2, Eye, Upload, Download, Settings, Save, FolderOpen, XCircle } from "lucide-react";
 import { SchemaField } from "./FieldEditor";
-import SortableFieldEditor from "./SortableFieldEditor"; // Import the new SortableFieldEditor
+import SortableFieldEditor from "./SortableFieldEditor";
 import SchemaDisplay from "./SchemaDisplay";
 import SchemaFormPreview from "./SchemaFormPreview";
 import ManageReusableTypes from "./ManageReusableTypes";
@@ -28,6 +28,14 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input"; // Import Input for save dialog
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"; // Import Select for load dialog
 import { showSuccess, showError } from "@/utils/toast";
 import { jsonSchemaToSchemaFields } from "@/utils/schemaConverter";
 import {
@@ -48,6 +56,10 @@ import { arrayMove } from "@dnd-kit/sortable";
 
 interface SchemaBuilderProps {}
 
+const LOCAL_STORAGE_FIELDS_KEY = "jsonSchemaBuilderFields";
+const LOCAL_STORAGE_REUSABLE_TYPES_KEY = "jsonSchemaBuilderReusableTypes";
+const LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY = "jsonSchemaBuilderSavedSchemasIndex";
+
 const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [reusableTypes, setReusableTypes] = useState<SchemaField[]>([]);
@@ -58,6 +70,13 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [isManageTypesOpen, setIsManageTypesOpen] = useState(false);
   const [importJsonInput, setImportJsonInput] = useState("");
 
+  // State for Save/Load functionality
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [isLoadDialogOpen, setIsLoadDialogOpen] = useState(false);
+  const [saveSchemaName, setSaveSchemaName] = useState("");
+  const [selectedLoadSchemaName, setSelectedLoadSchemaName] = useState("");
+  const [savedSchemaNames, setSavedSchemaNames] = useState<string[]>([]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -67,7 +86,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
   // Load schema and reusable types from local storage on initial mount
   useEffect(() => {
-    const savedSchema = localStorage.getItem("jsonSchemaBuilderFields");
+    const savedSchema = localStorage.getItem(LOCAL_STORAGE_FIELDS_KEY);
     if (savedSchema) {
       try {
         setSchemaFields(JSON.parse(savedSchema));
@@ -76,7 +95,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         showError("Failed to load saved schema. It might be corrupted.");
       }
     }
-    const savedReusableTypes = localStorage.getItem("jsonSchemaBuilderReusableTypes");
+    const savedReusableTypes = localStorage.getItem(LOCAL_STORAGE_REUSABLE_TYPES_KEY);
     if (savedReusableTypes) {
       try {
         setReusableTypes(JSON.parse(savedReusableTypes));
@@ -85,16 +104,31 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         showError("Failed to load saved reusable types. It might be corrupted.");
       }
     }
+
+    const savedNames = localStorage.getItem(LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY);
+    if (savedNames) {
+      try {
+        setSavedSchemaNames(JSON.parse(savedNames));
+      } catch (e) {
+        console.error("Failed to parse saved schema names from local storage:", e);
+        showError("Failed to load saved schema names. It might be corrupted.");
+      }
+    }
   }, []);
 
-  // Save schema and reusable types to local storage whenever they change
+  // Save current schema and reusable types to local storage whenever they change (autosave for current session)
   useEffect(() => {
-    localStorage.setItem("jsonSchemaBuilderFields", JSON.stringify(schemaFields));
+    localStorage.setItem(LOCAL_STORAGE_FIELDS_KEY, JSON.stringify(schemaFields));
   }, [schemaFields]);
 
   useEffect(() => {
-    localStorage.setItem("jsonSchemaBuilderReusableTypes", JSON.stringify(reusableTypes));
+    localStorage.setItem(LOCAL_STORAGE_REUSABLE_TYPES_KEY, JSON.stringify(reusableTypes));
   }, [reusableTypes]);
+
+  // Save the index of saved schema names
+  useEffect(() => {
+    localStorage.setItem(LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY, JSON.stringify(savedSchemaNames));
+  }, [savedSchemaNames]);
 
   const addField = (parentId?: string) => {
     const newField: SchemaField = {
@@ -179,6 +213,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
   const handleClearSchema = () => {
     setSchemaFields([]);
+    setReusableTypes([]); // Also clear reusable types
     showSuccess("Schema cleared successfully!");
     setIsClearConfirmOpen(false);
   };
@@ -188,6 +223,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       const parsedJson = JSON.parse(importJsonInput);
       const convertedFields = jsonSchemaToSchemaFields(parsedJson);
       setSchemaFields(convertedFields);
+      setReusableTypes([]); // Clear reusable types on import, as they are not part of standard JSON Schema
       showSuccess("JSON schema imported successfully!");
       setIsImportDialogOpen(false);
       setImportJsonInput("");
@@ -285,6 +321,72 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     });
   };
 
+  const handleSaveSchemaByName = () => {
+    if (!saveSchemaName.trim()) {
+      showError("Please enter a name for your schema.");
+      return;
+    }
+    if (savedSchemaNames.includes(saveSchemaName.trim())) {
+      showError(`A schema with the name "${saveSchemaName.trim()}" already exists. Please choose a different name.`);
+      return;
+    }
+
+    try {
+      localStorage.setItem(`dyad_schema_${saveSchemaName.trim()}_fields`, JSON.stringify(schemaFields));
+      localStorage.setItem(`dyad_schema_${saveSchemaName.trim()}_reusableTypes`, JSON.stringify(reusableTypes));
+      setSavedSchemaNames((prevNames) => [...prevNames, saveSchemaName.trim()]);
+      showSuccess(`Schema "${saveSchemaName.trim()}" saved successfully!`);
+      setIsSaveDialogOpen(false);
+      setSaveSchemaName("");
+    } catch (error) {
+      console.error("Failed to save schema by name:", error);
+      showError("Failed to save schema. Please try again.");
+    }
+  };
+
+  const handleLoadSchemaByName = () => {
+    if (!selectedLoadSchemaName) {
+      showError("Please select a schema to load.");
+      return;
+    }
+
+    try {
+      const loadedFields = localStorage.getItem(`dyad_schema_${selectedLoadSchemaName}_fields`);
+      const loadedReusableTypes = localStorage.getItem(`dyad_schema_${selectedLoadSchemaName}_reusableTypes`);
+
+      if (loadedFields) {
+        setSchemaFields(JSON.parse(loadedFields));
+      } else {
+        setSchemaFields([]);
+      }
+
+      if (loadedReusableTypes) {
+        setReusableTypes(JSON.parse(loadedReusableTypes));
+      } else {
+        setReusableTypes([]);
+      }
+
+      showSuccess(`Schema "${selectedLoadSchemaName}" loaded successfully!`);
+      setIsLoadDialogOpen(false);
+      setSelectedLoadSchemaName("");
+    } catch (error) {
+      console.error("Failed to load schema by name:", error);
+      showError("Failed to load schema. It might be corrupted.");
+    }
+  };
+
+  const handleDeleteSavedSchema = (nameToDelete: string) => {
+    try {
+      localStorage.removeItem(`dyad_schema_${nameToDelete}_fields`);
+      localStorage.removeItem(`dyad_schema_${nameToDelete}_reusableTypes`);
+      setSavedSchemaNames((prevNames) => prevNames.filter((name) => name !== nameToDelete));
+      showSuccess(`Schema "${nameToDelete}" deleted successfully!`);
+    } catch (error) {
+      console.error("Failed to delete saved schema:", error);
+      showError("Failed to delete schema. Please try again.");
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <h1 className="text-4xl font-bold text-center mb-8">
@@ -293,9 +395,98 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
       <div className="grid grid-cols-1 gap-8">
         <div className="space-y-6">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {/* Save Schema Button and Dialog */}
+              <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Save className="h-4 w-4 mr-2" /> Save Schema
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Save Current Schema</DialogTitle>
+                    <DialogDescription>
+                      Enter a name to save your current schema and reusable types.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Label htmlFor="save-schema-name">Schema Name</Label>
+                    <Input
+                      id="save-schema-name"
+                      value={saveSchemaName}
+                      onChange={(e) => setSaveSchemaName(e.target.value)}
+                      placeholder="e.g., MyProductSchema"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleSaveSchemaByName}>Save</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
+              {/* Load Schema Button and Dialog */}
+              <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <FolderOpen className="h-4 w-4 mr-2" /> Load Schema
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Load Saved Schema</DialogTitle>
+                    <DialogDescription>
+                      Select a schema to load. This will replace your current schema.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Label htmlFor="load-schema-select">Select Schema</Label>
+                    <Select
+                      value={selectedLoadSchemaName}
+                      onValueChange={setSelectedLoadSchemaName}
+                    >
+                      <SelectTrigger id="load-schema-select">
+                        <SelectValue placeholder="Choose a saved schema" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {savedSchemaNames.length === 0 ? (
+                          <SelectItem value="no-schemas" disabled>
+                            No schemas saved yet.
+                          </SelectItem>
+                        ) : (
+                          savedSchemaNames.map((name) => (
+                            <SelectItem key={name} value={name}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{name}</span>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-red-500 hover:text-red-600"
+                                  onClick={(e) => {
+                                    e.stopPropagation(); // Prevent select from closing
+                                    handleDeleteSavedSchema(name);
+                                  }}
+                                  aria-label={`Delete ${name}`}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsLoadDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleLoadSchemaByName} disabled={!selectedLoadSchemaName}>Load</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
@@ -362,7 +553,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      This action cannot be undone. This will permanently delete all your defined schema fields.
+                      This action cannot be undone. This will permanently delete all your defined schema fields and reusable types.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -398,11 +589,11 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                       onFieldChange={handleFieldChange}
                       onAddField={addField}
                       onRemoveField={removeField}
-                      onMoveField={moveField} // Pass moveField down
+                      onMoveField={moveField}
                       reusableTypes={reusableTypes}
                       isFirst={index === 0}
                       isLast={index === schemaFields.length - 1}
-                      onManageReusableTypes={() => setIsManageTypesOpen(true)} // Pass the function here
+                      onManageReusableTypes={() => setIsManageTypesOpen(true)}
                     />
                   ))}
                 </div>
@@ -413,7 +604,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             <PlusCircle className="h-4 w-4 mr-2" /> Add New Field
           </Button>
 
-          {/* New Manage Reusable Types Button and Modal */}
+          {/* Manage Reusable Types Button and Modal */}
           <Dialog open={isManageTypesOpen} onOpenChange={setIsManageTypesOpen}>
             <DialogTrigger asChild>
               <Button className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white">
