@@ -74,6 +74,15 @@ const ManageReusableTypes: React.FC<ManageReusableTypesProps> = ({
     setReusableTypes((prevReusableTypes) =>
       prevReusableTypes.map((rt) => {
         if (rt.id === reusableTypeId) {
+          // If the parentId is the reusable type itself, add the new field directly to its children
+          if (rt.id === parentId) {
+            return {
+              ...rt,
+              children: rt.children ? [...rt.children, newField] : [newField],
+            };
+          }
+
+          // Otherwise, find the nested parent and add the field
           const addNested = (fields: SchemaField[]): SchemaField[] => {
             return fields.map((field) => {
               if (field.id === parentId) {
@@ -176,6 +185,7 @@ const ManageReusableTypes: React.FC<ManageReusableTypesProps> = ({
                 activeAdvancedFieldId={activeAdvancedFieldId}
                 setActiveAdvancedFieldId={setActiveAdvancedFieldId}
                 reusableTypes={reusableTypes} // Pass reusable types for nested refs
+                hideRefTypeOption={true} // Hide 'ref' type option for fields within reusable types
               />
             </div>
           ))}
