@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings } from "lucide-react";
+import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings, Link } from "lucide-react"; // Import Link icon
 import { cn, toTitleCase } from "@/lib/utils";
 import {
   Collapsible,
@@ -292,20 +292,13 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         </DropdownMenu>
 
         <div className="flex-1 grid gap-2">
-          <Label htmlFor={`field-name-${field.id}`}>Field Name</Label>
-          <div className="flex items-center gap-2"> {/* Wrap input and button */}
-            <Input
-              id={`field-name-${field.id}`}
-              value={field.name}
-              onChange={handleNameChange}
-              placeholder="e.g., productName"
-              className="flex-1" // Make input take available space
-            />
+          <div className="flex items-center gap-2"> {/* Container for Label and Convert button */}
+            <Label htmlFor={`field-name-${field.id}`}>Field Name</Label>
             {onConvertToReusableType && field.type !== "ref" && !isRoot && !hideRefTypeOption && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="outline" size="sm" className="shrink-0 text-xs">
-                    Convert to reusable type
+                  <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-blue-600" aria-label="Convert to reusable type">
+                    <Link className="h-4 w-4" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -325,6 +318,13 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               </AlertDialog>
             )}
           </div>
+          <Input
+            id={`field-name-${field.id}`}
+            value={field.name}
+            onChange={handleNameChange}
+            placeholder="e.g., productName"
+            className="flex-1"
+          />
         </div>
 
         {field.type === "ref" && (
