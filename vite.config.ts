@@ -6,7 +6,7 @@ export default defineConfig(() => ({
   server: {
     host: true, // Changed to true to allow connections from any host
     port: 8080,
-    allowedHosts: ["*"],
+    allowedHosts: ["01ea-185-195-65-166.ngrok-free.app"],
   },
   plugins: [react()],
   resolve: {

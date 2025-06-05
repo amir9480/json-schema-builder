@@ -1,7 +1,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Eye, Upload, Download, Settings, Save, FolderOpen } from "lucide-react";
-// Removed DialogTrigger and AlertDialogTrigger imports
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"; // Import Tooltip components
 
 interface SchemaBuilderToolbarProps {
   onAddField: () => void;
@@ -27,36 +31,85 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
   hasSchemaFields,
 }) => {
   return (
-    <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+    <div className="flex flex-col gap-4">
       <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
-      <div className="flex gap-2 flex-wrap">
-        <Button variant="outline" onClick={onSaveSchemaTrigger}>
-          <Save className="h-4 w-4 mr-2" /> Save Schema
-        </Button>
+      <div className="flex flex-wrap gap-2 justify-end"> {/* Consolidated into one row */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="icon" onClick={onSaveSchemaTrigger}>
+              <Save className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Save Schema</p>
+          </TooltipContent>
+        </Tooltip>
 
-        <Button variant="outline" onClick={onLoadSchemaTrigger}>
-          <FolderOpen className="h-4 w-4 mr-2" /> Load Schema
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="icon" onClick={onLoadSchemaTrigger}>
+              <FolderOpen className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Load Schema</p>
+          </TooltipContent>
+        </Tooltip>
 
-        <Button variant="outline" onClick={onImportSchemaTrigger}>
-          <Upload className="h-4 w-4 mr-2" /> Import JSON
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="icon" onClick={onImportSchemaTrigger}>
+              <Upload className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Import JSON</p>
+          </TooltipContent>
+        </Tooltip>
 
-        <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={onPreviewSchemaTrigger}>
-          <Eye className="h-4 w-4 mr-2" /> Preview Fields
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="default" size="icon" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={onPreviewSchemaTrigger}>
+              <Eye className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Preview Fields</p>
+          </TooltipContent>
+        </Tooltip>
 
-        <Button variant="outline" className="text-red-500 hover:text-red-600" onClick={onClearSchemaTrigger}>
-          <Trash2 className="h-4 w-4 mr-2" /> Clear All Fields
-        </Button>
-      </div>
-      <div className="w-full flex justify-end gap-2 mt-4">
-        <Button className="bg-purple-600 hover:bg-purple-700 text-white" onClick={onManageTypesTrigger}>
-          <Settings className="h-4 w-4 mr-2" /> Manage Reusable Types
-        </Button>
-        <Button className="bg-green-600 hover:bg-green-700 text-white" onClick={onExportSchemaTrigger}>
-          <Download className="h-4 w-4 mr-2" /> Export Generated JSON Schema
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="icon" className="text-red-500 hover:text-red-600" onClick={onClearSchemaTrigger}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Clear All Fields</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button className="bg-purple-600 hover:bg-purple-700 text-white" size="icon" onClick={onManageTypesTrigger}>
+              <Settings className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Manage Reusable Types</p>
+          </TooltipContent>
+        </Tooltip>
+        
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button className="bg-green-600 hover:bg-green-700 text-white" size="icon" onClick={onExportSchemaTrigger}>
+              <Download className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Export Generated JSON Schema</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
     </div>
   );
