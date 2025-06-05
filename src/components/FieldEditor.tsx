@@ -17,6 +17,17 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"; // Import AlertDialog components
 
 export type SchemaFieldType =
   | "string"
@@ -46,8 +57,8 @@ interface FieldEditorProps {
   onRemoveField?: (fieldId: string) => void;
   isRoot?: boolean;
   level?: number;
-  activeAdvancedFieldId: string | null; // New prop
-  setActiveAdvancedFieldId: (id: string | null) => void; // New prop
+  activeAdvancedFieldId: string | null;
+  setActiveAdvancedFieldId: (id: string | null) => void;
 }
 
 const FieldEditor: React.FC<FieldEditorProps> = ({
@@ -60,7 +71,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   activeAdvancedFieldId,
   setActiveAdvancedFieldId,
 }) => {
-  // isAdvancedOpen is now derived from the central state
   const isAdvancedOpen = field.id === activeAdvancedFieldId;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,14 +166,31 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         </div>
 
         {!isRoot && onRemoveField && (
-          <Button
-            variant="destructive"
-            size="icon"
-            onClick={() => onRemoveField(field.id)}
-            className="mt-auto"
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="icon"
+                className="mt-auto"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action cannot be undone. This will permanently delete the field "{field.name || "Unnamed Field"}" and any nested properties.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onRemoveField(field.id)} className="bg-red-500 hover:bg-red-600 text-white">
+                  Delete Field
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
 
@@ -171,9 +198,9 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         open={isAdvancedOpen}
         onOpenChange={(open) => {
           if (open) {
-            setActiveAdvancedFieldId(field.id); // Set this field as the active one
+            setActiveAdvancedFieldId(field.id);
           } else if (activeAdvancedFieldId === field.id) {
-            setActiveAdvancedFieldId(null); // Only close if it's the currently active one
+            setActiveAdvancedFieldId(null);
           }
         }}
         className="w-full space-y-2"
@@ -188,7 +215,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             Advanced options
           </Button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4">
+        <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
@@ -233,8 +260,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 onAddField={onAddField}
                 onRemoveField={onRemoveField}
                 level={level + 1}
-                activeAdvancedFieldId={activeAdvancedFieldId} // Pass down to children
-                setActiveAdvancedFieldId={setActiveAdvancedFieldId} // Pass down to children
+                activeAdvancedFieldId={activeAdvancedFieldId}
+                setActiveAdvancedFieldId={setActiveAdvancedFieldId}
               />
             ))
           ) : (
