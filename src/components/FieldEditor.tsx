@@ -405,36 +405,40 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </div>
         )}
 
-        <div className="flex items-center space-x-2 mt-auto pb-2">
+        <div className="mt-auto pb-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Switch
-                id={`multiple-switch-${field.id}`}
-                checked={field.isMultiple}
-                onCheckedChange={handleMultipleChange}
-              />
+              <div className="flex items-center space-x-2 cursor-pointer">
+                <Switch
+                  id={`multiple-switch-${field.id}`}
+                  checked={field.isMultiple}
+                  onCheckedChange={handleMultipleChange}
+                />
+                <Label htmlFor={`multiple-switch-${field.id}`}>Multiple</Label>
+              </div>
             </TooltipTrigger>
             <TooltipContent>
               <p>If enabled, this field will be an array (list) of values.</p>
             </TooltipContent>
           </Tooltip>
-          <Label htmlFor={`multiple-switch-${field.id}`}>Multiple</Label>
         </div>
 
-        <div className="flex items-center space-x-2 mt-auto pb-2">
+        <div className="mt-auto pb-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Switch
-                id={`required-switch-${field.id}`}
-                checked={field.isRequired}
-                onCheckedChange={handleRequiredChange}
-              />
+              <div className="flex items-center space-x-2 cursor-pointer">
+                <Switch
+                  id={`required-switch-${field.id}`}
+                  checked={field.isRequired}
+                  onCheckedChange={handleRequiredChange}
+                />
+                <Label htmlFor={`required-switch-${field.id}`}>Required</Label>
+              </div>
             </TooltipTrigger>
             <TooltipContent>
               <p>If enabled, this field must be present in the data.</p>
             </TooltipContent>
           </Tooltip>
-          <Label htmlFor={`required-switch-${field.id}`}>Required</Label>
         </div>
 
         {!isRoot && onRemoveField && (
