@@ -27,7 +27,9 @@ export interface SchemaField {
   name: string;
   type: SchemaFieldType;
   isMultiple: boolean;
-  isRequired: boolean; // Added isRequired property
+  isRequired: boolean;
+  title?: string; // Added title property
+  description?: string; // Added description property
   children?: SchemaField[]; // For 'object' types
 }
 
@@ -66,6 +68,14 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const handleRequiredChange = (checked: boolean) => {
     onFieldChange({ ...field, isRequired: checked });
+  };
+
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFieldChange({ ...field, title: e.target.value });
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFieldChange({ ...field, description: e.target.value });
   };
 
   const paddingLeft = level * 20; // Adjust indentation based on level
@@ -138,6 +148,27 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             <Trash2 className="h-4 w-4" />
           </Button>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid gap-2">
+          <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
+          <Input
+            id={`field-title-${field.id}`}
+            value={field.title || ""}
+            onChange={handleTitleChange}
+            placeholder="e.g., Product Name"
+          />
+        </div>
+        <div className="grid gap-2">
+          <Label htmlFor={`field-description-${field.id}`}>Description (Optional)</Label>
+          <Input
+            id={`field-description-${field.id}`}
+            value={field.description || ""}
+            onChange={handleDescriptionChange}
+            placeholder="e.g., Name of the product"
+          />
+        </div>
       </div>
 
       {field.type === "object" && (

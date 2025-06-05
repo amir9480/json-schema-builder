@@ -1,7 +1,9 @@
 import React from "react";
 import { SchemaField, SchemaFieldType } from "./FieldEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Copy } from "lucide-react";
+import { toast } from "@/utils/toast"; // Using the existing toast utility
 
 interface SchemaDisplayProps {
   schemaFields: SchemaField[];
@@ -45,6 +47,12 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
     if (format) {
       fieldSchema.format = format;
     }
+    if (field.title) {
+      fieldSchema.title = field.title;
+    }
+    if (field.description) {
+      fieldSchema.description = field.description;
+    }
 
     if (field.type === "object" && field.children) {
       const nestedSchema = buildJsonSchema(field.children);
@@ -84,15 +92,30 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
 
 const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ schemaFields }) => {
   const jsonSchema = buildJsonSchema(schemaFields);
+  const jsonString = JSON.stringify(jsonSchema, null, 2);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(jsonString)
+      .then(() => {
+        toast.success("JSON schema copied to clipboard!");
+      })
+      .catch((err) => {
+        console.error("Failed to copy JSON: ", err);
+        toast.error("Failed to copy JSON schema.");
+      });
+  };
 
   return (
     <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Generated JSON Schema</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-2xl font-semibold">Generated JSON Schema</CardTitle>
+        <Button variant="outline" size="sm" onClick={handleCopy}>
+          <Copy className="h-4 w-4 mr-2" /> Copy JSON
+        </Button>
       </CardHeader>
       <CardContent>
         <pre className="bg-gray-800 text-white p-4 rounded-md overflow-auto text-left text-sm">
-          <code>{JSON.stringify(jsonSchema, null, 2)}</code>
+          <code>{jsonString}</code>
         </pre>
       </CardContent>
     </Card>
