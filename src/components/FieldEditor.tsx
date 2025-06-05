@@ -297,7 +297,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       )}
       style={{ paddingLeft: `${paddingLeft + 16}px` }}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-end gap-4"> {/* Changed to items-end for better vertical alignment */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="shrink-0">
@@ -325,50 +325,49 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         </DropdownMenu>
 
         {field.type !== "ref" ? (
-          <div className="flex-1 grid gap-2">
-            <div className="flex items-center gap-2">
-              <Label htmlFor={`field-name-${field.id}`}>Field Name</Label>
-              {onConvertToReusableType && !isRoot && !hideRefTypeOption && (
-                <AlertDialog>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground hover:text-blue-600" aria-label="Convert to reusable type">
-                          <Link className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p>Convert to Reusable Type</p>
-                    </TooltipContent>
-                  </Tooltip>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Convert to Reusable Type?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This will convert "{field.name || "Unnamed Field"}" into a new reusable type. The original field will become a reference to this new type. Are you sure you want to proceed?
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onConvertToReusableType(field.id)}>
-                        Convert
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
+          <div className="flex-1 flex items-end gap-2"> {/* Container for Input and Convert button */}
+            <div className="grid gap-2 flex-1"> {/* Input container */}
+              {/* Removed Label for Field Name */}
+              <Input
+                id={`field-name-${field.id}`}
+                value={field.name}
+                onChange={handleNameChange}
+                placeholder="e.g., productName"
+              />
             </div>
-            <Input
-              id={`field-name-${field.id}`}
-              value={field.name}
-              onChange={handleNameChange}
-              placeholder="e.g., productName"
-              className="flex-1"
-            />
+            {onConvertToReusableType && !isRoot && !hideRefTypeOption && (
+              <AlertDialog>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600 shrink-0" aria-label="Convert to reusable type">
+                        <Link className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Convert to Reusable Type</p>
+                  </TooltipContent>
+                </Tooltip>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Convert to Reusable Type?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will convert "{field.name || "Unnamed Field"}" into a new reusable type. The original field will become a reference to this new type. Are you sure you want to proceed?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onConvertToReusableType(field.id)}>
+                      Convert
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
           </div>
         ) : (
-          <div className="flex-1 grid gap-2">
+          <div className="flex-1 grid gap-2"> {/* Reference Select container */}
             <div className="flex items-center justify-between">
               <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
               {onManageReusableTypes && (
@@ -405,7 +404,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </div>
         )}
 
-        <div>
+        <div> {/* Removed mt-auto pb-2 */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center space-x-2 cursor-pointer">
@@ -423,7 +422,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </Tooltip>
         </div>
 
-        <div>
+        <div> {/* Removed mt-auto pb-2 */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center space-x-2 cursor-pointer">
@@ -447,6 +446,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               <Button
                 variant="destructive"
                 size="icon"
+                // Removed mt-auto
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
