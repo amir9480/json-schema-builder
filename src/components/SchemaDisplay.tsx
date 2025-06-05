@@ -54,6 +54,13 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
       fieldSchema.description = field.description;
     }
 
+    // Add pattern for date and datetime types
+    if (field.type === "date") {
+      fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}$"; // YYYY-MM-DD
+    } else if (field.type === "datetime") {
+      fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // ISO 8601
+    }
+
     if (field.type === "object" && field.children) {
       const nestedSchema = buildJsonSchema(field.children);
       fieldSchema.properties = nestedSchema.properties;
