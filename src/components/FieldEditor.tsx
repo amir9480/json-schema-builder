@@ -121,13 +121,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value;
-    let updatedField = { ...field, name: newName };
-
-    // If title is empty, generate it from the new name
-    if (!field.title) {
-      updatedField.title = toTitleCase(newName);
-    }
-    onFieldChange(updatedField);
+    onFieldChange({ ...field, name: newName });
   };
 
   const handleTypeChange = (value: SchemaFieldType) => {
@@ -152,6 +146,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // If the user clears the input, set title to an empty string to indicate it's been "touched"
+    // and should no longer auto-generate from name.
     onFieldChange({ ...field, title: e.target.value });
   };
 
@@ -321,7 +317,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                   id={`field-title-${field.id}`}
                   value={field.title || ""}
                   onChange={handleTitleChange}
-                  placeholder="e.g., Product Name"
+                  placeholder={field.name ? toTitleCase(field.name) : "e.g., Product Name"}
                 />
               </div>
               <div className="grid gap-2">
