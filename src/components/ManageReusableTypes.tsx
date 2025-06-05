@@ -15,6 +15,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast";
+import { arrayMove } from "@dnd-kit/sortable"; // Import arrayMove
 
 interface ManageReusableTypesProps {
   reusableTypes: SchemaField[];
@@ -129,6 +130,64 @@ const ManageReusableTypes: React.FC<ManageReusableTypesProps> = ({
     );
   };
 
+  // New function to handle moving fields within a reusable type's children
+  const handleMoveFieldInReusableType = (
+    reusableTypeId: string,
+    fieldId: string,
+    direction: "up" | "down",
+    parentId?: string,
+  ) => {
+    setReusableTypes((prevReusableTypes) =>
+      prevReusableTypes.map((rt) => {
+        if (rt.id === reusableTypeId) {
+          const updateChildren = (fields: SchemaField[]): SchemaField[] => {
+            const index = fields.findIndex((f) => f.id === fieldId);
+            if (index === -1) {
+              // Field not found at this level, check children of objects
+              return fields.map((f) => {
+                if (f.type === "object" && f.children) {
+                  return { ...f, children: updateChildren(f.children) };
+                }
+                return f;
+              });
+            }
+
+            let newIndex = index;
+            if (direction === "up") {
+              newIndex = Math.max(0, index - 1);
+            } else {
+              newIndex = Math.min(fields.length - 1, index + 1);
+            }
+
+            if (newIndex === index) return fields; // No change
+
+            return arrayMove(fields, index, newIndex);
+          };
+
+          // If parentId is the reusable type itself, or undefined (meaning it's a direct child of the reusable type object)
+          // then update its direct children. Otherwise, find the nested parent.
+          if (!parentId || rt.id === parentId) {
+            return { ...rt, children: updateChildren(rt.children || []) };
+          } else {
+            // Find the nested parent and update its children
+            const findAndMoveInNested = (currentFields: SchemaField[]): SchemaField[] => {
+              return currentFields.map((field) => {
+                if (field.id === parentId && field.type === "object" && field.children) {
+                  return { ...field, children: updateChildren(field.children) };
+                } else if (field.type === "object" && field.children) {
+                  return { ...field, children: findAndMoveInNested(field.children) };
+                }
+                return field;
+              });
+            };
+            return { ...rt, children: findAndMoveInNested(rt.children || []) };
+          }
+        }
+        return rt;
+      })
+    );
+  };
+
   const removeReusableType = (typeId: string) => {
     setReusableTypes((prev) => prev.filter((type) => type.id !== typeId));
     showSuccess("Reusable type removed!");
@@ -180,6 +239,7 @@ const ManageReusableTypes: React.FC<ManageReusableTypesProps> = ({
                 onFieldChange={handleReusableTypeChange}
                 onAddField={(parentId) => addFieldToReusableType(type.id, parentId)}
                 onRemoveField={(fieldId) => removeFieldFromReusableType(type.id, fieldId)}
+                onMoveField={(fieldId, direction, parentId) => handleMoveFieldInReusableType(type.id, fieldId, direction, parentId)} // Pass the new move handler
                 isRoot={true} // Treat reusable types as root for their own editing context
                 level={0}
                 activeAdvancedFieldId={activeAdvancedFieldId}
