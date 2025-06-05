@@ -436,7 +436,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       {/* Reference Select - Only if field type is 'ref' */}
       {field.type === "ref" && (
         <div className="grid gap-2 mt-2">
-          <div className="flex justify-end"> {/* Removed Label, kept Manage Types button */}
+          <div className="flex items-center justify-between">
+            <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label> {/* Re-added Label */}
             {onManageReusableTypes && (
               <Button
                 variant="ghost"
