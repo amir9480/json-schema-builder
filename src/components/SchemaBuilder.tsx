@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Eye, Upload } from "lucide-react"; // Added Upload icon
+import { PlusCircle, Trash2, Eye, Upload } from "lucide-react";
 import FieldEditor, { SchemaField, SchemaFieldType } from "./FieldEditor";
 import SchemaDisplay from "./SchemaDisplay";
 import SchemaFormPreview from "./SchemaFormPreview";
@@ -23,9 +23,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea"; // Import Textarea
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label"; // <--- Added this import
 import { showSuccess, showError } from "@/utils/toast";
-import { jsonSchemaToSchemaFields } from "@/utils/schemaConverter"; // Import the converter utility
+import { jsonSchemaToSchemaFields } from "@/utils/schemaConverter";
 
 interface SchemaBuilderProps {}
 
@@ -33,8 +34,8 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false); // New state for import dialog
-  const [importJsonInput, setImportJsonInput] = useState(""); // State for JSON input
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [importJsonInput, setImportJsonInput] = useState("");
   const [activeAdvancedFieldId, setActiveAdvancedFieldId] = useState<string | null>(null);
 
   // Load schema from local storage on initial mount
