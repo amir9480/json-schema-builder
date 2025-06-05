@@ -35,6 +35,22 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import FieldTypeIcon from "./FieldTypeIcon";
+import SortableFieldEditor from "./SortableFieldEditor"; // Import SortableFieldEditor for nested fields
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
 
 export type SchemaFieldType =
   | "string"
@@ -62,6 +78,7 @@ export interface SchemaField {
   minItems?: number; // Minimum items for array types
   maxItems?: number; // Maximum items for array types
   currency?: string; // Currency code for 'currency' type
+  parentId?: string; // New: Parent ID for nested fields
 }
 
 interface FieldEditorProps {
@@ -69,10 +86,12 @@ interface FieldEditorProps {
   onFieldChange: (field: SchemaField) => void;
   onAddField?: (parentId: string) => void;
   onRemoveField?: (fieldId: string) => void;
+  onMoveField?: (fieldId: string, direction: "up" | "down", parentId?: string) => void; // New prop
   isRoot?: boolean;
   level?: number;
   reusableTypes?: SchemaField[];
   hideRefTypeOption?: boolean;
+  isDraggable?: boolean; // Prop to control drag handle visibility
 }
 
 const CURRENCY_OPTIONS = [
@@ -93,13 +112,22 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   onFieldChange,
   onAddField,
   onRemoveField,
+  onMoveField, // Destructure new prop
   isRoot = false,
   level = 0,
   reusableTypes = [],
   hideRefTypeOption = false,
+  isDraggable = true,
 }) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
   const [isObjectPropertiesOpen, setIsObjectPropertiesOpen] = React.useState(true);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
 
   const borderColors = [
     "border-blue-400",
@@ -191,6 +219,20 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const handleCurrencyChange = (value: string) => {
     onFieldChange({ ...field, currency: value });
+  };
+
+  const handleNestedDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id && field.children) {
+      const oldIndex = field.children.findIndex((f) => f.id === active.id);
+      const newIndex = field.children.findIndex((f) => f.id === over?.id);
+
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const newChildren = arrayMove(field.children, oldIndex, newIndex);
+        onFieldChange({ ...field, children: newChildren });
+      }
+    }
   };
 
   const paddingLeft = level * 20;
@@ -469,18 +511,35 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
             {field.children && field.children.length > 0 ? (
-              field.children.map((childField) => (
-                <FieldEditor
-                  key={childField.id}
-                  field={childField}
-                  onFieldChange={onFieldChange}
-                  onAddField={onAddField}
-                  onRemoveField={onRemoveField}
-                  level={level + 1}
-                  reusableTypes={reusableTypes}
-                  hideRefTypeOption={hideRefTypeOption}
-                />
-              ))
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleNestedDragEnd}
+              >
+                <SortableContext
+                  items={field.children.map((child) => child.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-4">
+                    {field.children.map((childField, index) => (
+                      <SortableFieldEditor
+                        key={childField.id}
+                        field={childField}
+                        onFieldChange={onFieldChange}
+                        onAddField={onAddField}
+                        onRemoveField={onRemoveField}
+                        onMoveField={onMoveField} // Pass down for nested sorting
+                        level={level + 1}
+                        reusableTypes={reusableTypes}
+                        hideRefTypeOption={hideRefTypeOption}
+                        isDraggable={isDraggable}
+                        isFirst={index === 0}
+                        isLast={index === (field.children?.length || 0) - 1}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             ) : (
               <p className="text-sm text-muted-foreground">
                 No properties defined for this object.
