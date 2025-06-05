@@ -69,7 +69,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="default" size="icon" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={onPreviewSchemaTrigger}>
+            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onPreviewSchemaTrigger}>
               <Eye className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -80,7 +80,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" className="text-red-500 hover:text-red-600" onClick={onClearSchemaTrigger}>
+            <Button variant="outline" size="icon" className="text-destructive hover:text-destructive/90" onClick={onClearSchemaTrigger}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -91,7 +91,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button className="bg-purple-600 hover:bg-purple-700 text-white" size="icon" onClick={onManageTypesTrigger}>
+            <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground" size="icon" onClick={onManageTypesTrigger}>
               <Settings className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -102,7 +102,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
         
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button className="bg-green-600 hover:bg-green-700 text-white" size="icon" onClick={onExportSchemaTrigger}>
+            <Button className="bg-success hover:bg-success/90 text-success-foreground" size="icon" onClick={onExportSchemaTrigger}>
               <Download className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
