@@ -31,9 +31,9 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
   hasSchemaFields,
 }) => {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex items-center justify-between gap-4"> {/* Changed to flex-row, items-center, justify-between */}
       <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
-      <div className="flex flex-wrap gap-2 justify-end"> {/* Consolidated into one row */}
+      <div className="flex flex-wrap gap-2"> {/* Removed justify-end as parent handles it */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="outline" size="icon" onClick={onSaveSchemaTrigger}>
