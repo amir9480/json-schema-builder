@@ -3,7 +3,7 @@ import { SchemaField, SchemaFieldType } from "./FieldEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
-import { showSuccess, showError } from "@/utils/toast"; // Corrected import
+import { showSuccess, showError } from "@/utils/toast";
 
 interface SchemaDisplayProps {
   schemaFields: SchemaField[];
@@ -60,9 +60,10 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
       if (nestedSchema.required.length > 0) {
         fieldSchema.required = nestedSchema.required;
       }
+      fieldSchema.additionalProperties = false; // Add additionalProperties: false for nested objects
     }
 
-    // Handle isRequired logic
+    // Handle isRequired logic: if not required, allow null type
     if (!field.isRequired) {
       fieldSchema.type = Array.isArray(fieldSchema.type)
         ? [...fieldSchema.type, "null"]
@@ -78,7 +79,8 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
       properties[field.name] = fieldSchema;
     }
 
-    if (field.name && field.isRequired) { // Only add to required if name is not empty AND isRequired
+    // Always add to required if name is not empty, regardless of isRequired flag
+    if (field.name) {
       required.push(field.name);
     }
   });
@@ -87,6 +89,7 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
     type: "object",
     properties,
     required,
+    additionalProperties: false, // Add additionalProperties: false for the root object
   };
 };
 
@@ -97,11 +100,11 @@ const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ schemaFields }) => {
   const handleCopy = () => {
     navigator.clipboard.writeText(jsonString)
       .then(() => {
-        showSuccess("JSON schema copied to clipboard!"); // Using showSuccess
+        showSuccess("JSON schema copied to clipboard!");
       })
       .catch((err) => {
         console.error("Failed to copy JSON: ", err);
-        showError("Failed to copy JSON schema."); // Using showError
+        showError("Failed to copy JSON schema.");
       });
   };
 
