@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Eye } from "lucide-react";
+import { PlusCircle, Trash2, Eye, Upload } from "lucide-react"; // Added Upload icon
 import FieldEditor, { SchemaField, SchemaFieldType } from "./FieldEditor";
 import SchemaDisplay from "./SchemaDisplay";
 import SchemaFormPreview from "./SchemaFormPreview";
@@ -23,7 +23,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { showSuccess } from "@/utils/toast";
+import { Textarea } from "@/components/ui/textarea"; // Import Textarea
+import { showSuccess, showError } from "@/utils/toast";
+import { jsonSchemaToSchemaFields } from "@/utils/schemaConverter"; // Import the converter utility
 
 interface SchemaBuilderProps {}
 
@@ -31,7 +33,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [activeAdvancedFieldId, setActiveAdvancedFieldId] = useState<string | null>(null); // New state for active advanced options
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false); // New state for import dialog
+  const [importJsonInput, setImportJsonInput] = useState(""); // State for JSON input
+  const [activeAdvancedFieldId, setActiveAdvancedFieldId] = useState<string | null>(null);
 
   // Load schema from local storage on initial mount
   useEffect(() => {
@@ -41,7 +45,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         setSchemaFields(JSON.parse(savedSchema));
       } catch (e) {
         console.error("Failed to parse saved schema from local storage:", e);
-        // Optionally clear invalid data or show an error toast
+        showError("Failed to load saved schema. It might be corrupted.");
       }
     }
   }, []);
@@ -137,6 +141,20 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     setIsClearConfirmOpen(false); // Close the dialog after clearing
   };
 
+  const handleImportSchema = () => {
+    try {
+      const parsedJson = JSON.parse(importJsonInput);
+      const convertedFields = jsonSchemaToSchemaFields(parsedJson);
+      setSchemaFields(convertedFields);
+      showSuccess("JSON schema imported successfully!");
+      setIsImportDialogOpen(false); // Close dialog on success
+      setImportJsonInput(""); // Clear input
+    } catch (error) {
+      console.error("Failed to import JSON schema:", error);
+      showError("Failed to import JSON schema. Please ensure it's valid JSON.");
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <h1 className="text-4xl font-bold text-center mb-8">
@@ -148,6 +166,34 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
             <div className="flex gap-2">
+              <Dialog open={isImportDialogOpen} onOpenChange={setIsImportDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Upload className="h-4 w-4 mr-2" /> Import JSON
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[600px]">
+                  <DialogHeader>
+                    <DialogTitle>Import JSON Schema</DialogTitle>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <Label htmlFor="json-input">Paste your JSON Schema here:</Label>
+                    <Textarea
+                      id="json-input"
+                      value={importJsonInput}
+                      onChange={(e) => setImportJsonInput(e.target.value)}
+                      placeholder='{ "type": "object", "properties": { "name": { "type": "string" } } }'
+                      rows={10}
+                      className="font-mono"
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => setIsImportDialogOpen(false)}>Cancel</Button>
+                    <Button onClick={handleImportSchema}>Import</Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+
               <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
                 <DialogTrigger asChild>
                   <Button variant="default" className="bg-blue-600 hover:bg-blue-700 text-white">
@@ -207,8 +253,8 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                   onFieldChange={handleFieldChange}
                   onAddField={addField}
                   onRemoveField={removeField}
-                  activeAdvancedFieldId={activeAdvancedFieldId} // Pass down active state
-                  setActiveAdvancedFieldId={setActiveAdvancedFieldId} // Pass down setter
+                  activeAdvancedFieldId={activeAdvancedFieldId}
+                  setActiveAdvancedFieldId={setActiveAdvancedFieldId}
                 />
               ))}
             </div>
