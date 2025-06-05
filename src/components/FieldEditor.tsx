@@ -10,8 +10,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2 } from "lucide-react";
+import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react"; // Added Chevron icons
 import { cn } from "@/lib/utils";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"; // Added Collapsible imports
 
 export type SchemaFieldType =
   | "string"
@@ -50,6 +55,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   isRoot = false,
   level = 0,
 }) => {
+  const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false); // State for collapsible
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFieldChange({ ...field, name: e.target.value });
   };
@@ -150,26 +157,44 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
-          <Input
-            id={`field-title-${field.id}`}
-            value={field.title || ""}
-            onChange={handleTitleChange}
-            placeholder="e.g., Product Name"
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor={`field-description-${field.id}`}>Description (Optional)</Label>
-          <Input
-            id={`field-description-${field.id}`}
-            value={field.description || ""}
-            onChange={handleDescriptionChange}
-            placeholder="e.g., Name of the product"
-          />
-        </div>
-      </div>
+      <Collapsible
+        open={isAdvancedOpen}
+        onOpenChange={setIsAdvancedOpen}
+        className="w-full space-y-2"
+      >
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="w-full justify-start px-0">
+            {isAdvancedOpen ? (
+              <ChevronUp className="h-4 w-4 mr-2" />
+            ) : (
+              <ChevronDown className="h-4 w-4 mr-2" />
+            )}
+            Advanced options
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
+              <Input
+                id={`field-title-${field.id}`}
+                value={field.title || ""}
+                onChange={handleTitleChange}
+                placeholder="e.g., Product Name"
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor={`field-description-${field.id}`}>Description (Optional)</Label>
+              <Input
+                id={`field-description-${field.id}`}
+                value={field.description || ""}
+                onChange={handleDescriptionChange}
+                placeholder="e.g., Name of the product"
+              />
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
 
       {field.type === "object" && (
         <div className="flex flex-col gap-4 mt-4 border-t pt-4">
