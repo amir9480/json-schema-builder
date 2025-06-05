@@ -218,7 +218,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               <FieldEditor
                 key={childField.id}
                 field={childField}
-                onFieldChange={handleFieldChange} // Use handleFieldChange from parent
+                onFieldChange={onFieldChange} // Corrected: Pass the prop down
                 onAddField={onAddField}
                 onRemoveField={onRemoveField}
                 level={level + 1}
