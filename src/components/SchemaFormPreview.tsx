@@ -59,7 +59,7 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
                 style={{ paddingLeft: `${paddingLeft + 12}px` }}
               >
                 <Label className="text-sm font-medium text-red-600">
-                  {field.name} <span className="text-xs italic">(Invalid Reference)</span>
+                  {field.title || field.name} <span className="text-xs italic">(Invalid Reference)</span>
                 </Label>
                 <Input
                   type="text"
@@ -83,7 +83,7 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
             style={{ paddingLeft: `${paddingLeft + 12}px` }}
           >
             <Label className="text-sm font-medium">
-              {field.name}
+              {field.title || field.name} {/* Use field.title, fallback to field.name */}
               {field.isRequired && <span className="text-red-500 ml-1">*</span>}
               {field.isMultiple && <span className="text-muted-foreground ml-1">(Multiple)</span>}
               {isReference && <span className="text-blue-600 ml-1">(Ref: {reusableTypes.find(rt => rt.id === field.refId)?.name || 'Unknown'})</span>}
