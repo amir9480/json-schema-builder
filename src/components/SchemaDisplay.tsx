@@ -15,11 +15,11 @@ const mapTypeToJsonSchemaType = (type: SchemaFieldType): string => {
   switch (type) {
     case "int":
     case "float":
-    case "currency":
       return "number";
     case "date":
     case "datetime":
-      return "string"; // Dates/datetimes are typically strings in JSON schema with format
+    case "currency": // Currency is now a string type
+      return "string";
     default:
       return type;
   }
@@ -84,7 +84,7 @@ const buildPropertiesAndRequired = (
       if (field.example !== undefined) {
         // Attempt to parse example based on type for better JSON representation
         try {
-          if (field.type === "int" || field.type === "float" || field.type === "currency") {
+          if (field.type === "int" || field.type === "float") { // Only int and float are numbers now
             fieldSchema.example = parseFloat(field.example);
             if (isNaN(fieldSchema.example)) delete fieldSchema.example; // Remove if not a valid number
           } else {
@@ -100,21 +100,19 @@ const buildPropertiesAndRequired = (
         fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}$"; // YYYY-MM-DD
       } else if (field.type === "datetime") {
         fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // ISO 8601
+      } else if (field.type === "currency" && field.currency) {
+        // Use the selected currency as the pattern for the string type
+        fieldSchema.pattern = `^${field.currency}$`;
       }
 
-      // Add min/max values for number types
-      if (field.minValue !== undefined) {
-        fieldSchema.minimum = field.minValue;
-      }
-      if (field.maxValue !== undefined) {
-        fieldSchema.maximum = field.maxValue;
-      }
-
-      // Add currency to description for currency type
-      if (field.type === "currency" && field.currency) {
-        fieldSchema.description = fieldSchema.description
-          ? `${fieldSchema.description} (Currency: ${field.currency})`
-          : `Currency: ${field.currency}`;
+      // Add min/max values for number types (int and float only)
+      if (field.type === "int" || field.type === "float") {
+        if (field.minValue !== undefined) {
+          fieldSchema.minimum = field.minValue;
+        }
+        if (field.maxValue !== undefined) {
+          fieldSchema.maximum = field.maxValue;
+        }
       }
 
       if (field.type === "object" && field.children) {
