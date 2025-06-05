@@ -28,6 +28,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import FieldTypeIcon from "./FieldTypeIcon"; // Import the new component
 
 export type SchemaFieldType =
   | "string"
@@ -149,6 +155,35 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       style={{ paddingLeft: `${paddingLeft + 16}px` }}
     >
       <div className="flex items-center gap-4">
+        {/* Field Type Icon and Popover for selection */}
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" className="shrink-0">
+              <FieldTypeIcon type={field.type} />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0">
+            <Select
+              value={field.type}
+              onValueChange={(value: SchemaFieldType) => handleTypeChange(value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select a type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="string">String</SelectItem>
+                <SelectItem value="int">Integer</SelectItem>
+                <SelectItem value="float">Float</SelectItem>
+                <SelectItem value="currency">Currency</SelectItem>
+                <SelectItem value="date">Date</SelectItem>
+                <SelectItem value="datetime">DateTime</SelectItem>
+                <SelectItem value="object">Object</SelectItem>
+                {!hideRefTypeOption && <SelectItem value="ref">Reference ($ref)</SelectItem>}
+              </SelectContent>
+            </Select>
+          </PopoverContent>
+        </Popover>
+
         <div className="flex-1 grid gap-2">
           <Label htmlFor={`field-name-${field.id}`}>Field Name</Label>
           <Input
@@ -157,28 +192,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             onChange={handleNameChange}
             placeholder="e.g., productName"
           />
-        </div>
-
-        <div className="flex-1 grid gap-2">
-          <Label htmlFor={`field-type-${field.id}`}>Type</Label>
-          <Select
-            value={field.type}
-            onValueChange={(value: SchemaFieldType) => handleTypeChange(value)}
-          >
-            <SelectTrigger id={`field-type-${field.id}`}>
-              <SelectValue placeholder="Select a type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="string">String</SelectItem>
-              <SelectItem value="int">Integer</SelectItem>
-              <SelectItem value="float">Float</SelectItem>
-              <SelectItem value="currency">Currency</SelectItem>
-              <SelectItem value="date">Date</SelectItem>
-              <SelectItem value="datetime">DateTime</SelectItem>
-              <SelectItem value="object">Object</SelectItem>
-              {!hideRefTypeOption && <SelectItem value="ref">Reference ($ref)</SelectItem>}
-            </SelectContent>
-          </Select>
         </div>
 
         {field.type === "ref" && (
