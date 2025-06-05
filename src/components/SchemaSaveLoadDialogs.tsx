@@ -290,8 +290,8 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
                           size="icon"
                           className="h-8 w-8 text-gray-500 hover:text-blue-600"
                           onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
+                            // e.stopPropagation(); // Removed
+                            // e.preventDefault(); // Removed
                             setSchemaToRename(name);
                             setNewSchemaName(name);
                             setIsRenameDialogOpen(true);
@@ -306,10 +306,10 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-red-500 hover:text-red-600"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                              }}
+                              // onClick={(e) => { // Removed onClick from here
+                              //   e.stopPropagation();
+                              //   e.preventDefault();
+                              // }}
                               aria-label={`Delete ${name}`}
                             >
                               <XCircle className="h-4 w-4" />
