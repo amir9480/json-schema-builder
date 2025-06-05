@@ -122,12 +122,18 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
   };
 
   const handleDeleteSavedSchema = (nameToDelete: string) => {
+    console.log("Attempting to delete schema:", nameToDelete);
     try {
       localStorage.removeItem(`dyad_schema_${nameToDelete}_fields`);
+      console.log(`Removed fields for: dyad_schema_${nameToDelete}_fields`);
       localStorage.removeItem(`dyad_schema_${nameToDelete}_reusableTypes`);
+      console.log(`Removed reusable types for: dyad_schema_${nameToDelete}_reusableTypes`);
+
       const updatedNames = savedSchemaNames.filter((name) => name !== nameToDelete);
       setSavedSchemaNames(updatedNames);
       localStorage.setItem(LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY, JSON.stringify(updatedNames));
+      console.log("Updated saved schema names in localStorage:", updatedNames);
+      
       showSuccess(`Schema "${nameToDelete}" deleted successfully!`);
       if (selectedLoadSchemaName === nameToDelete) {
         setSelectedLoadSchemaName(""); // Clear selection if deleted
@@ -302,6 +308,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
                                 size="icon"
                                 className="h-8 w-8 text-red-500 hover:text-red-600"
                                 onClick={(e) => {
+                                  console.log("Delete button clicked for:", name); // Log here
                                   e.stopPropagation();
                                   e.preventDefault();
                                 }}
