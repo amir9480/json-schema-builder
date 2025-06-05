@@ -201,7 +201,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
     setIsLoadDialogOpen(true);
   };
 
-  return (
+  const dialogsContent = (
     <div>
       {/* Save Schema Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
@@ -364,6 +364,8 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
       </Dialog>
     </div>
   );
+
+  return dialogsContent;
 };
 
 export default SchemaSaveLoadDialogs;
