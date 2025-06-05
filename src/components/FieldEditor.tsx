@@ -75,6 +75,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 }) => {
   // Manage the open state of advanced options locally within each FieldEditor
   const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
+  // Manage the open state of object properties locally within each FieldEditor
+  const [isObjectPropertiesOpen, setIsObjectPropertiesOpen] = React.useState(true); // Default to open
 
   // Define a set of colors to cycle through for nested objects
   const borderColors = [
@@ -303,40 +305,55 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       )}
 
       {field.type === "object" && (
-        <div className="flex flex-col gap-4 mt-4 border-t pt-4">
-          <h3 className="text-md font-semibold">Object Properties:</h3>
-          {field.children && field.children.length > 0 ? (
-            field.children.map((childField) => (
-              <FieldEditor
-                key={childField.id}
-                field={childField}
-                onFieldChange={onFieldChange}
-                onAddField={onAddField}
-                onRemoveField={onRemoveField}
-                level={level + 1}
-                reusableTypes={reusableTypes} // Pass reusable types to children
-                hideRefTypeOption={hideRefTypeOption} // Pass down the prop
-              />
-            ))
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No properties defined for this object.
-            </p>
-          )}
-          {onAddField && (
-            <Button
-              variant="outline"
-              onClick={() => onAddField(field.id)}
-              className={cn(
-                "w-full",
-                level > 0 && borderColors[level % borderColors.length], // Match border color for nested levels
-                "text-foreground hover:bg-accent hover:text-accent-foreground" // General styling for button
+        <Collapsible
+          open={isObjectPropertiesOpen}
+          onOpenChange={setIsObjectPropertiesOpen}
+          className="flex flex-col gap-4 mt-4 border-t pt-4"
+        >
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" className="w-full justify-start px-0 -mt-4">
+              {isObjectPropertiesOpen ? (
+                <ChevronUp className="h-4 w-4 mr-2" />
+              ) : (
+                <ChevronDown className="h-4 w-4 mr-2" />
               )}
-            >
-              <PlusCircle className="h-4 w-4 mr-2" /> Add Property to {field.name || "Unnamed Object"}
+              <h3 className="text-md font-semibold">Properties for {field.name || "Unnamed Object"}:</h3>
             </Button>
-          )}
-        </div>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+            {field.children && field.children.length > 0 ? (
+              field.children.map((childField) => (
+                <FieldEditor
+                  key={childField.id}
+                  field={childField}
+                  onFieldChange={onFieldChange}
+                  onAddField={onAddField}
+                  onRemoveField={onRemoveField}
+                  level={level + 1}
+                  reusableTypes={reusableTypes} // Pass reusable types to children
+                  hideRefTypeOption={hideRefTypeOption} // Pass down the prop
+                />
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No properties defined for this object.
+              </p>
+            )}
+            {onAddField && (
+              <Button
+                variant="outline"
+                onClick={() => onAddField(field.id)}
+                className={cn(
+                  "w-full",
+                  level > 0 && borderColors[level % borderColors.length], // Match border color for nested levels
+                  "text-foreground hover:bg-accent hover:text-accent-foreground" // General styling for button
+                )}
+              >
+                <PlusCircle className="h-4 w-4 mr-2" /> Add Property to {field.name || "Unnamed Object"}
+              </Button>
+            )}
+          </CollapsibleContent>
+        </Collapsible>
       )}
     </div>
   );
