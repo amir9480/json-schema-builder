@@ -333,7 +333,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
                       </div>
                     </div>
                   ))
-                )}
+                }
                 </div>
               </ScrollArea>
             )}
