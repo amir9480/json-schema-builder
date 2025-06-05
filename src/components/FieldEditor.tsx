@@ -11,7 +11,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, toTitleCase } from "@/lib/utils"; // Import toTitleCase
 import {
   Collapsible,
   CollapsibleContent,
@@ -107,18 +107,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const currentBorderColor = borderColors[(level - 1) % borderColors.length];
 
-  // Helper function to convert camelCase, snake_case, kebab-case to Title Case
-  const toTitleCase = (str: string): string => {
-    if (!str) return "";
-    return str
-      .replace(/([A-Z])/g, " $1") // Add space before capital letters
-      .replace(/[-_]/g, " ") // Replace hyphens and underscores with spaces
-      .split(" ")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalize first letter of each word
-      .join(" ")
-      .trim();
-  };
-
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value;
     onFieldChange({ ...field, name: newName });
@@ -146,8 +134,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   };
 
   const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // If the user clears the input, set title to an empty string to indicate it's been "touched"
-    // and should no longer auto-generate from name.
+    // Set title to the input value. If empty, it will be undefined/empty string.
     onFieldChange({ ...field, title: e.target.value });
   };
 
@@ -315,9 +302,9 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
                 <Input
                   id={`field-title-${field.id}`}
-                  value={field.title || ""}
+                  value={field.title || ""} // Controlled input
                   onChange={handleTitleChange}
-                  placeholder={field.name ? toTitleCase(field.name) : "e.g., Product Name"}
+                  placeholder={field.name ? toTitleCase(field.name) : "e.g., Product Name"} // Dynamic placeholder
                 />
               </div>
               <div className="grid gap-2">
