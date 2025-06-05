@@ -1,14 +1,45 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Trash2 } from "lucide-react";
 import FieldEditor, { SchemaField, SchemaFieldType } from "./FieldEditor";
 import SchemaDisplay from "./SchemaDisplay";
 import { v4 as uuidv4 } from "uuid";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { showSuccess } from "@/utils/toast";
 
 interface SchemaBuilderProps {}
 
 const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+
+  // Load schema from local storage on initial mount
+  useEffect(() => {
+    const savedSchema = localStorage.getItem("jsonSchemaBuilderFields");
+    if (savedSchema) {
+      try {
+        setSchemaFields(JSON.parse(savedSchema));
+      } catch (e) {
+        console.error("Failed to parse saved schema from local storage:", e);
+        // Optionally clear invalid data or show an error toast
+      }
+    }
+  }, []);
+
+  // Save schema to local storage whenever schemaFields changes
+  useEffect(() => {
+    localStorage.setItem("jsonSchemaBuilderFields", JSON.stringify(schemaFields));
+  }, [schemaFields]);
 
   const addField = (parentId?: string) => {
     const newField: SchemaField = {
@@ -90,6 +121,12 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     setSchemaFields(filterFields(schemaFields));
   };
 
+  const handleClearSchema = () => {
+    setSchemaFields([]);
+    showSuccess("Schema cleared successfully!");
+    setIsClearConfirmOpen(false); // Close the dialog after clearing
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <h1 className="text-4xl font-bold text-center mb-8">
@@ -98,7 +135,31 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="space-y-6">
-          <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
+          <div className="flex justify-between items-center">
+            <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
+            <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="text-red-500 hover:text-red-600">
+                  <Trash2 className="h-4 w-4 mr-2" /> Clear All Fields
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete all your defined schema fields.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearSchema} className="bg-red-500 hover:bg-red-600 text-white">
+                    Clear Schema
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+
           {schemaFields.length === 0 ? (
             <p className="text-muted-foreground">
               Start by adding your first field.
