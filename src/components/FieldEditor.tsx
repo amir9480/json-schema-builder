@@ -93,6 +93,7 @@ interface FieldEditorProps {
   hideRefTypeOption?: boolean;
   isDraggable?: boolean; // Prop to control drag handle visibility
   onManageReusableTypes?: () => void; // New prop
+  onConvertToReusableType?: (fieldId: string) => void; // New prop
 }
 
 const CURRENCY_OPTIONS = [
@@ -120,6 +121,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   hideRefTypeOption = false,
   isDraggable = true,
   onManageReusableTypes, // Destructure new prop
+  onConvertToReusableType, // Destructure new prop
 }) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
   const [isObjectPropertiesOpen, setIsObjectPropertiesOpen] = React.useState(true);
@@ -291,12 +293,38 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
         <div className="flex-1 grid gap-2">
           <Label htmlFor={`field-name-${field.id}`}>Field Name</Label>
-          <Input
-            id={`field-name-${field.id}`}
-            value={field.name}
-            onChange={handleNameChange}
-            placeholder="e.g., productName"
-          />
+          <div className="flex items-center gap-2"> {/* Wrap input and button */}
+            <Input
+              id={`field-name-${field.id}`}
+              value={field.name}
+              onChange={handleNameChange}
+              placeholder="e.g., productName"
+              className="flex-1" // Make input take available space
+            />
+            {onConvertToReusableType && field.type !== "ref" && !isRoot && !hideRefTypeOption && (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="shrink-0 text-xs">
+                    Convert to reusable type
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Convert to Reusable Type?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will convert "{field.name || "Unnamed Field"}" into a new reusable type. The original field will become a reference to this new type. Are you sure you want to proceed?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onConvertToReusableType(field.id)}>
+                      Convert
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            )}
+          </div>
         </div>
 
         {field.type === "ref" && (
@@ -550,6 +578,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                         isFirst={index === 0}
                         isLast={index === (field.children?.length || 0) - 1}
                         onManageReusableTypes={onManageReusableTypes} // Pass the function here
+                        onConvertToReusableType={onConvertToReusableType} // Pass the function here
                       />
                     ))}
                   </div>
