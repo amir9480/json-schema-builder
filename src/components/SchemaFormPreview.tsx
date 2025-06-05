@@ -10,7 +10,25 @@ interface SchemaFormPreviewProps {
   reusableTypes: SchemaField[];
 }
 
-const getPlaceholderValue = (type: SchemaFieldType): string => {
+const currencySymbolMap: Record<string, string> = {
+  "USD": "$",
+  "EUR": "€",
+  "GBP": "£",
+  "JPY": "¥",
+  "CAD": "C$",
+  "AUD": "A$",
+  "CHF": "CHF", // Often used as code
+  "CNY": "¥",
+  "INR": "₹",
+  "BRL": "R$",
+};
+
+const getCurrencySymbol = (code: string | undefined): string => {
+  if (!code) return "";
+  return currencySymbolMap[code] || code; // Fallback to code if symbol not found
+};
+
+const getPlaceholderValue = (type: SchemaFieldType, currencyCode?: string): string => {
   switch (type) {
     case "string":
       return "Lorem ipsum string";
@@ -19,7 +37,7 @@ const getPlaceholderValue = (type: SchemaFieldType): string => {
     case "float":
       return "123.45";
     case "currency":
-      return "USD"; // Placeholder for currency code
+      return `${getCurrencySymbol(currencyCode || 'USD')} 123.45`; // Placeholder for currency value
     case "date":
       return "2023-01-01";
     case "datetime":
@@ -71,7 +89,7 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
           }
         }
 
-        const isNumberType = displayField.type === "int" || displayField.type === "float"; // Only int and float are number types now
+        const isNumberType = displayField.type === "int" || displayField.type === "float" || displayField.type === "currency";
 
         return (
           <div
@@ -102,7 +120,7 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
               <>
                 <Input
                   type="text"
-                  value={field.example || getPlaceholderValue(displayField.type)}
+                  value={field.example || getPlaceholderValue(displayField.type, field.currency)}
                   readOnly
                   className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
                 />

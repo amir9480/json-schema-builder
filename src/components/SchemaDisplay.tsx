@@ -11,6 +11,24 @@ interface SchemaDisplayProps {
   reusableTypes: SchemaField[]; // New prop for reusable types
 }
 
+const currencySymbolMap: Record<string, string> = {
+  "USD": "$",
+  "EUR": "€",
+  "GBP": "£",
+  "JPY": "¥",
+  "CAD": "C$",
+  "AUD": "A$",
+  "CHF": "CHF", // Often used as code
+  "CNY": "¥",
+  "INR": "₹",
+  "BRL": "R$",
+};
+
+const getCurrencySymbol = (code: string | undefined): string => {
+  if (!code) return "";
+  return currencySymbolMap[code] || code; // Fallback to code if symbol not found
+};
+
 const mapTypeToJsonSchemaType = (type: SchemaFieldType): string => {
   switch (type) {
     case "int":
@@ -84,9 +102,11 @@ const buildPropertiesAndRequired = (
       if (field.example !== undefined) {
         // Attempt to parse example based on type for better JSON representation
         try {
-          if (field.type === "int" || field.type === "float") { // Only int and float are numbers now
+          if (field.type === "int" || field.type === "float") {
             fieldSchema.example = parseFloat(field.example);
             if (isNaN(fieldSchema.example)) delete fieldSchema.example; // Remove if not a valid number
+          } else if (field.type === "currency") { // Keep currency example as string
+            fieldSchema.example = field.example;
           } else {
             fieldSchema.example = field.example;
           }
@@ -101,8 +121,13 @@ const buildPropertiesAndRequired = (
       } else if (field.type === "datetime") {
         fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // ISO 8601
       } else if (field.type === "currency" && field.currency) {
-        // Use the selected currency as the pattern for the string type
-        fieldSchema.pattern = `^${field.currency}$`;
+        const symbol = getCurrencySymbol(field.currency);
+        // Regex: ^[Symbol]\s?\d+(\.\d{1,2})?$
+        // Matches: $100, $100.50, €5, €5.99, etc.
+        // \s? allows optional space between symbol and number
+        // \d+ matches one or more digits
+        // (?:\.\d{1,2})? matches an optional decimal point followed by 1 or 2 digits
+        fieldSchema.pattern = `^${symbol.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s?\\d+(?:\\.\\d{1,2})?$`;
       }
 
       // Add min/max values for number types (int and float only)
