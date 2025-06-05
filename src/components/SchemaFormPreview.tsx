@@ -2,12 +2,12 @@ import React from "react";
 import { SchemaField, SchemaFieldType } from "./FieldEditor";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { cn, toTitleCase } from "@/lib/utils"; // Import toTitleCase
+import { cn, toTitleCase } from "@/lib/utils";
 
 interface SchemaFormPreviewProps {
   fields: SchemaField[];
   level?: number;
-  reusableTypes: SchemaField[]; // New prop to resolve references
+  reusableTypes: SchemaField[];
 }
 
 const getPlaceholderValue = (type: SchemaFieldType): string => {
@@ -19,14 +19,14 @@ const getPlaceholderValue = (type: SchemaFieldType): string => {
     case "float":
       return "123.45";
     case "currency":
-      return "123.45 USD";
+      return "123.45"; // Placeholder for currency value
     case "date":
       return "2023-01-01";
     case "datetime":
       return "2023-01-01T12:00:00Z";
     case "object":
-      return ""; // Objects will render their children
-    case "ref": // Should not be called directly for ref, but as a fallback
+      return "";
+    case "ref":
       return "Referenced Value";
     default:
       return "N/A";
@@ -48,7 +48,6 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
             displayField = { ...field, type: referencedType.type, children: referencedType.children };
             isReference = true;
           } else {
-            // Handle invalid reference
             return (
               <div
                 key={field.id}
@@ -72,18 +71,20 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
           }
         }
 
+        const isNumberType = displayField.type === "int" || displayField.type === "float" || displayField.type === "currency";
+
         return (
           <div
             key={field.id}
             className={cn(
               "flex flex-col gap-2 p-3 rounded-md",
               level > 0 ? "bg-muted/30 border border-dashed" : "bg-background",
-              isReference && "border-blue-300 bg-blue-50/20" // Highlight references
+              isReference && "border-blue-300 bg-blue-50/20"
             )}
             style={{ paddingLeft: `${paddingLeft + 12}px` }}
           >
             <Label className="text-sm font-medium">
-              {field.title || toTitleCase(field.name)} {/* Use field.title, fallback to toTitleCase(field.name) */}
+              {field.title || toTitleCase(field.name)}
               {field.isRequired && <span className="text-red-500 ml-1">*</span>}
               {field.isMultiple && <span className="text-muted-foreground ml-1">(Multiple)</span>}
               {isReference && <span className="text-blue-600 ml-1">(Ref: {reusableTypes.find(rt => rt.id === field.refId)?.name || 'Unknown'})</span>}
@@ -98,12 +99,31 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
                 )}
               </div>
             ) : (
-              <Input
-                type="text" // Using text for simplicity in preview
-                value={field.example || getPlaceholderValue(displayField.type)}
-                readOnly
-                className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
-              />
+              <>
+                <Input
+                  type="text"
+                  value={field.example || getPlaceholderValue(displayField.type)}
+                  readOnly
+                  className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                />
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
+                  {isNumberType && (
+                    <>
+                      {field.minValue !== undefined && <span>Min: {field.minValue}</span>}
+                      {field.maxValue !== undefined && <span>Max: {field.maxValue}</span>}
+                    </>
+                  )}
+                  {field.isMultiple && (
+                    <>
+                      {field.minItems !== undefined && <span>Min Items: {field.minItems}</span>}
+                      {field.maxItems !== undefined && <span>Max Items: {field.maxItems}</span>}
+                    </>
+                  )}
+                  {field.type === "currency" && field.currency && (
+                    <span>Currency: {field.currency}</span>
+                  )}
+                </div>
+              </>
             )}
           </div>
         );

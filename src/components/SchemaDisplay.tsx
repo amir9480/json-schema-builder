@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { toTitleCase } from "@/lib/utils"; // Import toTitleCase
+import { toTitleCase } from "@/lib/utils";
 
 interface SchemaDisplayProps {
   schemaFields: SchemaField[];
@@ -102,6 +102,21 @@ const buildPropertiesAndRequired = (
         fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // ISO 8601
       }
 
+      // Add min/max values for number types
+      if (field.minValue !== undefined) {
+        fieldSchema.minimum = field.minValue;
+      }
+      if (field.maxValue !== undefined) {
+        fieldSchema.maximum = field.maxValue;
+      }
+
+      // Add currency to description for currency type
+      if (field.type === "currency" && field.currency) {
+        fieldSchema.description = fieldSchema.description
+          ? `${fieldSchema.description} (Currency: ${field.currency})`
+          : `Currency: ${field.currency}`;
+      }
+
       if (field.type === "object" && field.children) {
         // Recursive call for nested objects, passing definitions for nested refs
         const nestedSchema = buildPropertiesAndRequired(field.children, reusableTypes, definitions);
@@ -121,10 +136,17 @@ const buildPropertiesAndRequired = (
     }
 
     if (field.isMultiple) {
-      properties[field.name] = {
+      const arraySchema: any = {
         type: "array",
         items: fieldSchema,
       };
+      if (field.minItems !== undefined) {
+        arraySchema.minItems = field.minItems;
+      }
+      if (field.maxItems !== undefined) {
+        arraySchema.maxItems = field.maxItems;
+      }
+      properties[field.name] = arraySchema;
     } else {
       properties[field.name] = fieldSchema;
     }
