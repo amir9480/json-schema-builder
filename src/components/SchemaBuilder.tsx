@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogTrigger, // Added DialogTrigger here
 } from "@/components/ui/dialog";
 import { showSuccess, showError } from "@/utils/toast";
 import { jsonSchemaToSchemaFields } from "@/utils/schemaConverter";
