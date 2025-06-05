@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Eye, Upload, Download } from "lucide-react";
+import { PlusCircle, Trash2, Eye, Upload, Download, Settings } from "lucide-react"; // Added Settings icon
 import FieldEditor, { SchemaField, SchemaFieldType } from "./FieldEditor";
 import SchemaDisplay from "./SchemaDisplay";
 import SchemaFormPreview from "./SchemaFormPreview";
+import ManageReusableTypes from "./ManageReusableTypes"; // Import the new component
 import { v4 as uuidv4 } from "uuid";
 import {
   AlertDialog,
@@ -32,14 +33,16 @@ interface SchemaBuilderProps {}
 
 const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
+  const [reusableTypes, setReusableTypes] = useState<SchemaField[]>([]); // New state for reusable types
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
-  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false); // New state for export modal
+  const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
+  const [isManageTypesOpen, setIsManageTypesOpen] = useState(false); // New state for manage types modal
   const [importJsonInput, setImportJsonInput] = useState("");
   const [activeAdvancedFieldId, setActiveAdvancedFieldId] = useState<string | null>(null);
 
-  // Load schema from local storage on initial mount
+  // Load schema and reusable types from local storage on initial mount
   useEffect(() => {
     const savedSchema = localStorage.getItem("jsonSchemaBuilderFields");
     if (savedSchema) {
@@ -50,12 +53,25 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         showError("Failed to load saved schema. It might be corrupted.");
       }
     }
+    const savedReusableTypes = localStorage.getItem("jsonSchemaBuilderReusableTypes");
+    if (savedReusableTypes) {
+      try {
+        setReusableTypes(JSON.parse(savedReusableTypes));
+      } catch (e) {
+        console.error("Failed to parse saved reusable types from local storage:", e);
+        showError("Failed to load saved reusable types. It might be corrupted.");
+      }
+    }
   }, []);
 
-  // Save schema to local storage whenever schemaFields changes
+  // Save schema and reusable types to local storage whenever they change
   useEffect(() => {
     localStorage.setItem("jsonSchemaBuilderFields", JSON.stringify(schemaFields));
   }, [schemaFields]);
+
+  useEffect(() => {
+    localStorage.setItem("jsonSchemaBuilderReusableTypes", JSON.stringify(reusableTypes));
+  }, [reusableTypes]);
 
   const addField = (parentId?: string) => {
     const newField: SchemaField = {
@@ -163,7 +179,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         JSON Schema Builder
       </h1>
 
-      <div className="grid grid-cols-1 gap-8"> {/* Removed lg:grid-cols-2 */}
+      <div className="grid grid-cols-1 gap-8">
         <div className="space-y-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
@@ -257,6 +273,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                   onRemoveField={removeField}
                   activeAdvancedFieldId={activeAdvancedFieldId}
                   setActiveAdvancedFieldId={setActiveAdvancedFieldId}
+                  reusableTypes={reusableTypes} // Pass reusable types to FieldEditor
                 />
               ))}
             </div>
@@ -265,7 +282,23 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             <PlusCircle className="h-4 w-4 mr-2" /> Add New Field
           </Button>
 
-          {/* New Export JSON Schema Button and Modal */}
+          {/* New Manage Reusable Types Button and Modal */}
+          <Dialog open={isManageTypesOpen} onOpenChange={setIsManageTypesOpen}>
+            <DialogTrigger asChild>
+              <Button className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white">
+                <Settings className="h-4 w-4 mr-2" /> Manage Reusable Types
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+              <ManageReusableTypes
+                reusableTypes={reusableTypes}
+                setReusableTypes={setReusableTypes}
+                onClose={() => setIsManageTypesOpen(false)}
+              />
+            </DialogContent>
+          </Dialog>
+
+          {/* Export JSON Schema Button and Modal */}
           <Dialog open={isExportDialogOpen} onOpenChange={setIsExportDialogOpen}>
             <DialogTrigger asChild>
               <Button className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white">
@@ -277,17 +310,11 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                 <DialogTitle>Generated JSON Schema</DialogTitle>
               </DialogHeader>
               <div className="py-4">
-                <SchemaDisplay schemaFields={schemaFields} />
+                <SchemaDisplay schemaFields={schemaFields} reusableTypes={reusableTypes} /> {/* Pass reusable types */}
               </div>
             </DialogContent>
           </Dialog>
         </div>
-
-        {/* Removed the direct Schema Output panel from here */}
-        {/* <div className="space-y-6">
-          <h2 className="text-2xl font-semibold">Schema Output</h2>
-          <SchemaDisplay schemaFields={schemaFields} />
-        </div> */}
       </div>
     </div>
   );

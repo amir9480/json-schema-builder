@@ -7,6 +7,7 @@ import { showSuccess, showError } from "@/utils/toast";
 
 interface SchemaDisplayProps {
   schemaFields: SchemaField[];
+  reusableTypes: SchemaField[]; // New prop for reusable types
 }
 
 const mapTypeToJsonSchemaType = (type: SchemaFieldType): string => {
@@ -34,47 +35,77 @@ const mapTypeToJsonSchemaFormat = (type: SchemaFieldType): string | undefined =>
   }
 };
 
-const buildJsonSchema = (fields: SchemaField[]): any => {
+const buildJsonSchema = (fields: SchemaField[], reusableTypes: SchemaField[]): any => {
   const properties: { [key: string]: any } = {};
   const required: string[] = [];
 
   fields.forEach((field) => {
-    const baseType = mapTypeToJsonSchemaType(field.type);
-    const format = mapTypeToJsonSchemaFormat(field.type);
-
-    let fieldSchema: any = { type: baseType };
-
-    if (format) {
-      fieldSchema.format = format;
-    }
-    if (field.title) {
-      fieldSchema.title = field.title;
-    }
-    if (field.description) {
-      fieldSchema.description = field.description;
+    if (field.name === "") {
+      // Skip fields with empty names, they are incomplete
+      return;
     }
 
-    // Add pattern for date and datetime types
-    if (field.type === "date") {
-      fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}$"; // YYYY-MM-DD
-    } else if (field.type === "datetime") {
-      fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // ISO 8601
-    }
+    let fieldSchema: any = {};
 
-    if (field.type === "object" && field.children) {
-      const nestedSchema = buildJsonSchema(field.children);
-      fieldSchema.properties = nestedSchema.properties;
-      if (nestedSchema.required.length > 0) {
-        fieldSchema.required = nestedSchema.required;
+    if (field.type === "ref") {
+      const referencedType = reusableTypes.find(rt => rt.id === field.refId);
+      if (referencedType && referencedType.name) {
+        fieldSchema = { "$ref": `#/definitions/${referencedType.name}` };
+      } else {
+        // Fallback if reference is invalid or not found
+        fieldSchema = { type: "object", description: "Invalid or undefined reference" };
       }
-      fieldSchema.additionalProperties = false; // Add additionalProperties: false for nested objects
-    }
+    } else {
+      const baseType = mapTypeToJsonSchemaType(field.type);
+      const format = mapTypeToJsonSchemaFormat(field.type);
 
-    // Handle isRequired logic: if not required, allow null type
-    if (!field.isRequired) {
-      fieldSchema.type = Array.isArray(fieldSchema.type)
-        ? [...fieldSchema.type, "null"]
-        : [fieldSchema.type, "null"];
+      fieldSchema.type = baseType;
+
+      if (format) {
+        fieldSchema.format = format;
+      }
+      if (field.title) {
+        fieldSchema.title = field.title;
+      }
+      if (field.description) {
+        fieldSchema.description = field.description;
+      }
+      if (field.example !== undefined) {
+        // Attempt to parse example based on type for better JSON representation
+        try {
+          if (field.type === "int" || field.type === "float" || field.type === "currency") {
+            fieldSchema.example = parseFloat(field.example);
+            if (isNaN(fieldSchema.example)) delete fieldSchema.example; // Remove if not a valid number
+          } else {
+            fieldSchema.example = field.example;
+          }
+        } catch (e) {
+          fieldSchema.example = field.example; // Fallback to string if parsing fails
+        }
+      }
+
+      // Add pattern for date and datetime types
+      if (field.type === "date") {
+        fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}$"; // YYYY-MM-DD
+      } else if (field.type === "datetime") {
+        fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // ISO 8601
+      }
+
+      if (field.type === "object" && field.children) {
+        const nestedSchema = buildJsonSchema(field.children, reusableTypes); // Pass reusableTypes recursively
+        fieldSchema.properties = nestedSchema.properties;
+        if (nestedSchema.required.length > 0) {
+          fieldSchema.required = nestedSchema.required;
+        }
+        fieldSchema.additionalProperties = false; // Add additionalProperties: false for nested objects
+      }
+
+      // Handle isRequired logic: if not required, allow null type
+      if (!field.isRequired) {
+        fieldSchema.type = Array.isArray(fieldSchema.type)
+          ? [...fieldSchema.type, "null"]
+          : [fieldSchema.type, "null"];
+      }
     }
 
     if (field.isMultiple) {
@@ -86,22 +117,40 @@ const buildJsonSchema = (fields: SchemaField[]): any => {
       properties[field.name] = fieldSchema;
     }
 
-    // Always add to required if name is not empty, regardless of isRequired flag
-    if (field.name) {
+    // Add to required if the field is explicitly marked as required
+    if (field.isRequired) {
       required.push(field.name);
     }
   });
 
-  return {
+  const definitions: { [key: string]: any } = {};
+  reusableTypes.forEach(rt => {
+    if (rt.name) {
+      definitions[rt.name] = {
+        type: "object",
+        properties: buildJsonSchema(rt.children || [], reusableTypes).properties,
+        required: buildJsonSchema(rt.children || [], reusableTypes).required,
+        additionalProperties: false,
+      };
+    }
+  });
+
+  const rootSchema: any = {
     type: "object",
     properties,
     required,
     additionalProperties: false, // Add additionalProperties: false for the root object
   };
+
+  if (Object.keys(definitions).length > 0) {
+    rootSchema.definitions = definitions; // Use 'definitions' for older JSON Schema drafts, or '$defs' for draft 2019-09 and later
+  }
+
+  return rootSchema;
 };
 
-const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ schemaFields }) => {
-  const jsonSchema = buildJsonSchema(schemaFields);
+const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ schemaFields, reusableTypes }) => {
+  const jsonSchema = buildJsonSchema(schemaFields, reusableTypes);
   const jsonString = JSON.stringify(jsonSchema, null, 2);
 
   const handleCopy = () => {
