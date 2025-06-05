@@ -35,7 +35,7 @@ export interface SchemaField {
   isRequired: boolean;
   title?: string;
   description?: string;
-  example?: string; // Added example property
+  example?: string;
   children?: SchemaField[];
 }
 
@@ -46,6 +46,8 @@ interface FieldEditorProps {
   onRemoveField?: (fieldId: string) => void;
   isRoot?: boolean;
   level?: number;
+  activeAdvancedFieldId: string | null; // New prop
+  setActiveAdvancedFieldId: (id: string | null) => void; // New prop
 }
 
 const FieldEditor: React.FC<FieldEditorProps> = ({
@@ -55,8 +57,11 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   onRemoveField,
   isRoot = false,
   level = 0,
+  activeAdvancedFieldId,
+  setActiveAdvancedFieldId,
 }) => {
-  const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
+  // isAdvancedOpen is now derived from the central state
+  const isAdvancedOpen = field.id === activeAdvancedFieldId;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onFieldChange({ ...field, name: e.target.value });
@@ -164,7 +169,13 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
       <Collapsible
         open={isAdvancedOpen}
-        onOpenChange={setIsAdvancedOpen}
+        onOpenChange={(open) => {
+          if (open) {
+            setActiveAdvancedFieldId(field.id); // Set this field as the active one
+          } else if (activeAdvancedFieldId === field.id) {
+            setActiveAdvancedFieldId(null); // Only close if it's the currently active one
+          }
+        }}
         className="w-full space-y-2"
       >
         <CollapsibleTrigger asChild>
@@ -218,10 +229,12 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
               <FieldEditor
                 key={childField.id}
                 field={childField}
-                onFieldChange={onFieldChange} // Corrected: Pass the prop down
+                onFieldChange={onFieldChange}
                 onAddField={onAddField}
                 onRemoveField={onRemoveField}
                 level={level + 1}
+                activeAdvancedFieldId={activeAdvancedFieldId} // Pass down to children
+                setActiveAdvancedFieldId={setActiveAdvancedFieldId} // Pass down to children
               />
             ))
           ) : (

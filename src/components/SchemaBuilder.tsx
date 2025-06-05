@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Eye } from "lucide-react"; // Added Eye icon
+import { PlusCircle, Trash2, Eye } from "lucide-react";
 import FieldEditor, { SchemaField, SchemaFieldType } from "./FieldEditor";
 import SchemaDisplay from "./SchemaDisplay";
-import SchemaFormPreview from "./SchemaFormPreview"; // Import the new preview component
+import SchemaFormPreview from "./SchemaFormPreview";
 import { v4 as uuidv4 } from "uuid";
 import {
   AlertDialog,
@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"; // Import Dialog components
+} from "@/components/ui/dialog";
 import { showSuccess } from "@/utils/toast";
 
 interface SchemaBuilderProps {}
@@ -30,7 +30,8 @@ interface SchemaBuilderProps {}
 const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false); // State for preview dialog
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [activeAdvancedFieldId, setActiveAdvancedFieldId] = useState<string | null>(null); // New state for active advanced options
 
   // Load schema from local storage on initial mount
   useEffect(() => {
@@ -206,6 +207,8 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                   onFieldChange={handleFieldChange}
                   onAddField={addField}
                   onRemoveField={removeField}
+                  activeAdvancedFieldId={activeAdvancedFieldId} // Pass down active state
+                  setActiveAdvancedFieldId={setActiveAdvancedFieldId} // Pass down setter
                 />
               ))}
             </div>
