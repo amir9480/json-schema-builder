@@ -518,7 +518,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
       <div className="grid grid-cols-1 gap-8">
         <div className="space-y-6">
-          <div className="sticky top-0 z-10 bg-background pb-4 border-b"> {/* Added sticky classes here */}
+          <div className="sticky top-0 z-10 bg-background py-4 px-6 border-b"> {/* Added px-6 and changed pb-4 to py-4 */}
             <SchemaBuilderToolbar
               onAddField={() => addField()}
               onClearSchemaTrigger={() => setIsClearConfirmOpen(true)}
