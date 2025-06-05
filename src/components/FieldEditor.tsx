@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings, Link } from "lucide-react";
+import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings, Link, List } from "lucide-react";
 import { cn, toTitleCase } from "@/lib/utils";
 import {
   Collapsible,
@@ -65,7 +65,8 @@ export type SchemaFieldType =
   | "float"
   | "currency"
   | "object"
-  | "ref";
+  | "ref"
+  | "dropdown"; // Added new type
 
 export interface SchemaField {
   id: string;
@@ -83,6 +84,7 @@ export interface SchemaField {
   minItems?: number; // Minimum items for array types
   maxItems?: number; // Maximum items for array types
   currency?: string; // Currency code for 'currency' type
+  options?: string[]; // New: Options for 'dropdown' type
   parentId?: string; // New: Parent ID for nested fields
 }
 
@@ -130,6 +132,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 }) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
   const [isObjectPropertiesOpen, setIsObjectPropertiesOpen] = React.useState(true);
+  const [newOption, setNewOption] = React.useState(""); // State for new dropdown option
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -173,6 +176,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       minValue: (value === "int" || value === "float" || value === "currency") ? field.minValue : undefined,
       maxValue: (value === "int" || value === "float" || value === "currency") ? field.maxValue : undefined,
       currency: value === "currency" ? field.currency : undefined, // Keep currency for 'currency' type
+      options: value === "dropdown" ? field.options || [] : undefined, // Initialize options for dropdown
     });
   };
 
@@ -230,6 +234,28 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     onFieldChange({ ...field, currency: value });
   };
 
+  const handleAddOption = () => {
+    if (newOption.trim() !== "") {
+      const updatedOptions = [...(field.options || []), newOption.trim()];
+      onFieldChange({ ...field, options: updatedOptions });
+      setNewOption("");
+    }
+  };
+
+  const handleRemoveOption = (optionToRemove: string) => {
+    const updatedOptions = (field.options || []).filter(
+      (option) => option !== optionToRemove
+    );
+    onFieldChange({ ...field, options: updatedOptions });
+  };
+
+  const handleEditOption = (oldOption: string, newText: string) => {
+    const updatedOptions = (field.options || []).map((option) =>
+      option === oldOption ? newText.trim() : option
+    );
+    onFieldChange({ ...field, options: updatedOptions });
+  };
+
   const handleNestedDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -254,6 +280,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     { value: "date", label: "Date" },
     { value: "datetime", label: "DateTime" },
     { value: "object", label: "Object" },
+    { value: "dropdown", label: "Dropdown" }, // Added new type
     { value: "ref", label: "Reference ($ref)" },
   ];
 
@@ -540,6 +567,51 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {field.type === "dropdown" && (
+                <div className="grid gap-2 col-span-full">
+                  <Label htmlFor={`field-options-${field.id}`}>Dropdown Options</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={`field-options-${field.id}`}
+                      value={newOption}
+                      onChange={(e) => setNewOption(e.target.value)}
+                      placeholder="Add new option"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleAddOption();
+                        }
+                      }}
+                    />
+                    <Button onClick={handleAddOption} variant="outline" size="icon">
+                      <PlusCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  {field.options && field.options.length > 0 ? (
+                    <div className="space-y-2 mt-2">
+                      {field.options.map((option, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                          <Input
+                            value={option}
+                            onChange={(e) => handleEditOption(option, e.target.value)}
+                            className="flex-1"
+                          />
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => handleRemoveOption(option)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground italic">No options added yet.</p>
+                  )}
                 </div>
               )}
             </div>
