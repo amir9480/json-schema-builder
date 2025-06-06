@@ -427,10 +427,10 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                     <CurlCommandGenerator jsonSchema={generatedJsonSchema} selectedProvider={selectedProvider} apiKey={apiKey} userPrompt={userPrompt} />
                   )}
                   {selectedDevExportType === "python-code" && (
-                    <PythonCodeGenerator jsonSchema={generatedJsonSchema} />
+                    <PythonCodeGenerator jsonSchema={generatedJsonSchema} selectedProvider={selectedProvider} apiKey={apiKey} />
                   )}
                   {selectedDevExportType === "javascript-code" && (
-                    <JavaScriptCodeGenerator jsonSchema={generatedJsonSchema} />
+                    <JavaScriptCodeGenerator jsonSchema={generatedJsonSchema} selectedProvider={selectedProvider} apiKey={apiKey} />
                   )}
                 </>
               ) : (
