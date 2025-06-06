@@ -15,8 +15,7 @@ import { convertFullJsonSchemaToSchemaFieldsAndReusableTypes } from "@/utils/sch
 // Import new components
 import SchemaBuilderToolbar from "./SchemaBuilderToolbar";
 import SchemaImportDialog from "./SchemaImportDialog";
-import SchemaPreviewDialog from "./SchemaPreviewDialog";
-import SchemaExportDialog from "./SchemaExportDialog";
+import SchemaExportDialog from "./SchemaExportDialog"; // Updated import
 import SchemaClearConfirmation from "./SchemaClearConfirmation";
 import SchemaSaveLoadDialogs from "./SchemaSaveLoadDialogs";
 import SchemaAIGenerateDialog from "./SchemaAIGenerateDialog";
@@ -34,7 +33,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [reusableTypes, setReusableTypes] = useState<SchemaField[]>([]);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  // const [isPreviewOpen, setIsPreviewOpen] = useState(false); // Removed
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isManageTypesOpen, setIsManageTypesOpen] = useState(false);
@@ -57,6 +56,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   // New states for Field Refinement
   const [isFieldRefineDialogOpen, setIsFieldRefineDialogOpen] = useState(false);
   const [fieldToRefine, setFieldToRefine] = useState<SchemaField | null>(null);
+
+  // State to control which tab opens in SchemaExportDialog
+  const [exportDialogInitialTab, setExportDialogInitialTab] = useState<string>("json-schema");
 
   // Track initial load to determine if there are "unsaved changes"
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -434,9 +436,15 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
               }}
               onClearSchemaTrigger={() => setIsClearConfirmOpen(true)}
               onImportSchemaTrigger={() => setIsImportDialogOpen(true)}
-              onPreviewSchemaTrigger={() => setIsPreviewOpen(true)}
+              onPreviewSchemaTrigger={() => { // Modified to open export dialog with preview tab
+                setExportDialogInitialTab("form-preview");
+                setIsExportDialogOpen(true);
+              }}
               onManageTypesTrigger={() => setIsManageTypesOpen(true)}
-              onExportSchemaTrigger={() => setIsExportDialogOpen(true)}
+              onExportSchemaTrigger={() => { // Modified to open export dialog with json-schema tab
+                setExportDialogInitialTab("json-schema");
+                setIsExportDialogOpen(true);
+              }}
               onSaveSchemaTrigger={() => setIsSaveDialogOpen(true)}
               onLoadSchemaTrigger={() => setIsLoadConfirmOpen(true)}
               onAIGenerateSchemaTrigger={() => setIsAIGenerateDialogOpen(true)} 
@@ -463,18 +471,14 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             onImportSchema={handleImportSchema}
           />
 
-          <SchemaPreviewDialog
-            isOpen={isPreviewOpen}
-            onOpenChange={setIsPreviewOpen}
-            schemaFields={schemaFields}
-            reusableTypes={reusableTypes}
-          />
+          {/* SchemaPreviewDialog is now removed */}
 
           <SchemaExportDialog
             isOpen={isExportDialogOpen}
             onOpenChange={setIsExportDialogOpen}
             schemaFields={schemaFields}
             reusableTypes={reusableTypes}
+            initialTab={exportDialogInitialTab} // Pass the initial tab
           />
 
           <SchemaClearConfirmation
