@@ -36,6 +36,7 @@ interface FieldObjectPropertiesProps {
   hideRefTypeOption: boolean;
   onManageReusableTypes?: () => void;
   onConvertToReusableType?: (fieldId: string) => void;
+  onRefineFieldWithAI?: (field: SchemaField) => void; // New prop for AI refinement
 }
 
 const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = React.memo(({
@@ -49,6 +50,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = React.memo((
   hideRefTypeOption,
   onManageReusableTypes,
   onConvertToReusableType,
+  onRefineFieldWithAI, // Destructure new prop
 }) => {
   const [isObjectPropertiesOpen, setIsObjectPropertiesOpen] = React.useState(true);
 
@@ -124,6 +126,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = React.memo((
                     isLast={index === (field.children?.length || 0) - 1}
                     onManageReusableTypes={onManageReusableTypes}
                     onConvertToReusableType={onConvertToReusableType}
+                    onRefineFieldWithAI={onRefineFieldWithAI} // Pass the new prop
                   />
                 ))}
               </div>

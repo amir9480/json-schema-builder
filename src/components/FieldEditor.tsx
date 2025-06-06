@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings, Link, List, GripVertical } from "lucide-react";
+import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings, Link, List, GripVertical, Sparkles } from "lucide-react";
 import { cn, toTitleCase } from "@/lib/utils";
 import {
   Collapsible,
@@ -94,6 +94,7 @@ interface FieldEditorProps {
   isLastItem?: boolean;
   onManageReusableTypes?: () => void;
   onConvertToReusableType?: (fieldId: string) => void;
+  onRefineFieldWithAI?: (field: SchemaField) => void; // New prop for AI refinement
 }
 
 const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
@@ -112,6 +113,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
   isLastItem = false,
   onManageReusableTypes,
   onConvertToReusableType,
+  onRefineFieldWithAI, // Destructure new prop
 }) => {
   const [nameError, setNameError] = React.useState<string | null>(null);
 
@@ -365,6 +367,25 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
               </TooltipContent>
             </Tooltip>
           </div>
+        )}
+
+        {onRefineFieldWithAI && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-purple-600 shrink-0"
+                onClick={() => onRefineFieldWithAI(field)}
+                aria-label="Refine field with AI"
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Refine field with AI</p>
+            </TooltipContent>
+          </Tooltip>
         )}
 
         {!isRoot && onRemoveField && (

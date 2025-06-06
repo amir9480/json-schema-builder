@@ -18,6 +18,7 @@ interface SortableFieldEditorProps {
   isLast?: boolean; // New prop to disable 'move down' for the last item
   onManageReusableTypes?: () => void;
   onConvertToReusableType?: (fieldId: string) => void;
+  onRefineFieldWithAI?: (field: SchemaField) => void; // New prop for AI refinement
 }
 
 const SortableFieldEditor: React.FC<SortableFieldEditorProps> = React.memo(({
@@ -34,6 +35,7 @@ const SortableFieldEditor: React.FC<SortableFieldEditorProps> = React.memo(({
   isLast = false,
   onManageReusableTypes,
   onConvertToReusableType,
+  onRefineFieldWithAI, // Destructure new prop
 }) => {
   const {
     attributes,
@@ -78,6 +80,7 @@ const SortableFieldEditor: React.FC<SortableFieldEditorProps> = React.memo(({
         isLastItem={isLast} // Pass isLast
         onManageReusableTypes={onManageReusableTypes}
         onConvertToReusableType={onConvertToReusableType}
+        onRefineFieldWithAI={onRefineFieldWithAI} // Pass the new prop
       />
     </div>
   );
