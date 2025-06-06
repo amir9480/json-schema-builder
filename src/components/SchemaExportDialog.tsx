@@ -15,6 +15,14 @@ import SchemaFormPreview from "./SchemaFormPreview";
 import SchemaDataGenerator from "./SchemaDataGenerator";
 import PythonCodeGenerator from "./PythonCodeGenerator";
 import JavaScriptCodeGenerator from "./JavaScriptCodeGenerator";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 
 interface SchemaExportDialogProps {
   isOpen: boolean;
@@ -25,7 +33,7 @@ interface SchemaExportDialogProps {
 }
 
 const LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY = "jsonSchemaBuilderSelectedExportTab";
-const LOCAL_STORAGE_SELECTED_DEV_TAB_KEY = "jsonSchemaBuilderSelectedDevTab"; // New key for nested dev tab
+const LOCAL_STORAGE_SELECTED_DEV_EXPORT_TYPE_KEY = "jsonSchemaBuilderSelectedDevExportType"; // Renamed key for dropdown
 
 const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   isOpen,
@@ -40,9 +48,9 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
     return initialTab;
   });
-  const [selectedDevTab, setSelectedDevTab] = React.useState<string>(() => {
+  const [selectedDevExportType, setSelectedDevExportType] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_SELECTED_DEV_TAB_KEY) || "curl-command";
+      return localStorage.getItem(LOCAL_STORAGE_SELECTED_DEV_EXPORT_TYPE_KEY) || "curl-command";
     }
     return "curl-command";
   });
@@ -69,9 +77,9 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_SELECTED_DEV_TAB_KEY, selectedDevTab);
+      localStorage.setItem(LOCAL_STORAGE_SELECTED_DEV_EXPORT_TYPE_KEY, selectedDevExportType);
     }
-  }, [selectedDevTab]);
+  }, [selectedDevExportType]);
 
   const handleDataGenerationComplete = () => {
     setSelectedTab("form-preview");
@@ -88,11 +96,11 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         </DialogHeader>
         <div className="py-4">
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4"> {/* Adjusted grid columns */}
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="json-schema">JSON Schema</TabsTrigger>
               <TabsTrigger value="form-preview">Form Preview</TabsTrigger>
               <TabsTrigger value="generate-data">Generate Data (AI)</TabsTrigger>
-              <TabsTrigger value="for-developers">For Developers</TabsTrigger> {/* New Tab Trigger */}
+              <TabsTrigger value="for-developers">For Developers</TabsTrigger>
             </TabsList>
             <TabsContent value="json-schema" className="mt-4">
               {generatedJsonSchema ? (
@@ -123,39 +131,40 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 </p>
               )}
             </TabsContent>
-            <TabsContent value="for-developers" className="mt-4"> {/* New Tab Content */}
-              <Tabs value={selectedDevTab} onValueChange={setSelectedDevTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="curl-command">cURL Command</TabsTrigger>
-                  <TabsTrigger value="python-code">Python Code</TabsTrigger>
-                  <TabsTrigger value="javascript-code">JavaScript Code</TabsTrigger>
-                </TabsList>
-                <TabsContent value="curl-command" className="mt-4">
-                  {generatedJsonSchema ? (
-                    <CurlCommandGenerator jsonSchema={generatedJsonSchema} />
-                  ) : (
-                    <p className="text-muted-foreground text-center">Generating cURL command...</p>
-                  )}
-                </TabsContent>
-                <TabsContent value="python-code" className="mt-4">
-                  {generatedJsonSchema ? (
-                    <PythonCodeGenerator jsonSchema={generatedJsonSchema} />
-                  ) : (
-                    <p className="text-muted-foreground text-center">
-                      Build your schema first to generate Python code.
-                    </p>
-                  )}
-                </TabsContent>
-                <TabsContent value="javascript-code" className="mt-4">
-                  {generatedJsonSchema ? (
-                    <JavaScriptCodeGenerator jsonSchema={generatedJsonSchema} />
-                  ) : (
-                    <p className="text-muted-foreground text-center">
-                      Build your schema first to generate JavaScript code.
-                    </p>
-                  )}
-                </TabsContent>
-              </Tabs>
+            <TabsContent value="for-developers" className="mt-4">
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="dev-export-type-select">Select Export Type</Label>
+                  <Select value={selectedDevExportType} onValueChange={setSelectedDevExportType}>
+                    <SelectTrigger id="dev-export-type-select">
+                      <SelectValue placeholder="Select a code type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="curl-command">cURL Command</SelectItem>
+                      <SelectItem value="python-code">Python Code</SelectItem>
+                      <SelectItem value="javascript-code">JavaScript Code</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {generatedJsonSchema ? (
+                  <>
+                    {selectedDevExportType === "curl-command" && (
+                      <CurlCommandGenerator jsonSchema={generatedJsonSchema} />
+                    )}
+                    {selectedDevExportType === "python-code" && (
+                      <PythonCodeGenerator jsonSchema={generatedJsonSchema} />
+                    )}
+                    {selectedDevExportType === "javascript-code" && (
+                      <JavaScriptCodeGenerator jsonSchema={generatedJsonSchema} />
+                    )}
+                  </>
+                ) : (
+                  <p className="text-muted-foreground text-center">
+                    Build your schema first to generate code.
+                  </p>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
