@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { SchemaField } from "./FieldEditor";
@@ -145,7 +145,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     JSON.stringify(reusableTypes) !== initialReusableTypes
   );
 
-  const addField = (parentId?: string) => {
+  const addField = useCallback((parentId?: string) => {
     const newField: SchemaField = {
       id: uuidv4(),
       name: "",
@@ -171,9 +171,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     } else {
       setSchemaFields((prevFields) => [...prevFields, newField]);
     }
-  };
+  }, []);
 
-  const addNestedField = (
+  const addNestedField = useCallback((
     fields: SchemaField[],
     parentId: string,
     newField: SchemaField,
@@ -192,9 +192,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       }
       return field;
     });
-  };
+  }, []);
 
-  const handleFieldChange = (updatedField: SchemaField) => {
+  const handleFieldChange = useCallback((updatedField: SchemaField) => {
     const updateFields = (fields: SchemaField[]): SchemaField[] => {
       return fields.map((field) => {
         if (field.id === updatedField.id) {
@@ -209,9 +209,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       });
     };
     setSchemaFields(updateFields(schemaFields));
-  };
+  }, [schemaFields]);
 
-  const removeField = (fieldId: string) => {
+  const removeField = useCallback((fieldId: string) => {
     const filterFields = (fields: SchemaField[]): SchemaField[] => {
       return fields.filter((field) => {
         if (field.id === fieldId) {
@@ -224,18 +224,18 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       });
     };
     setSchemaFields(filterFields(schemaFields));
-  };
+  }, [schemaFields]);
 
-  const handleClearSchema = () => {
+  const handleClearSchema = useCallback(() => {
     setSchemaFields([]);
     setReusableTypes([]); // Also clear reusable types
     setInitialSchemaFields(JSON.stringify([])); // Reset initial state
     setInitialReusableTypes(JSON.stringify([])); // Reset initial state
     showSuccess("Schema cleared successfully!");
     setIsClearConfirmOpen(false);
-  };
+  }, []);
 
-  const handleImportSchema = () => {
+  const handleImportSchema = useCallback(() => {
     try {
       const parsedJson = JSON.parse(importJsonInput);
       const { mainFields, reusableTypes: importedReusableTypes } = convertFullJsonSchemaToSchemaFieldsAndReusableTypes(parsedJson);
@@ -257,9 +257,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       console.error("Failed to import JSON schema:", error);
       showError("Failed to import JSON schema. Please ensure it's valid JSON.");
     }
-  };
+  }, [importJsonInput, schemaFields, reusableTypes]);
 
-  const findParentAndReorder = (
+  const findParentAndReorder = useCallback((
     fields: SchemaField[],
     activeId: string,
     overId: string,
@@ -288,9 +288,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       }
     }
     return fields; // No change if not found or reordered
-  };
+  }, []);
 
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
@@ -299,9 +299,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         return updatedFields;
       });
     }
-  };
+  }, [findParentAndReorder]);
 
-  const moveField = (fieldId: string, direction: "up" | "down", parentId?: string) => {
+  const moveField = useCallback((fieldId: string, direction: "up" | "down", parentId?: string) => {
     const updateFields = (fields: SchemaField[]): SchemaField[] => {
       const index = fields.findIndex(f => f.id === fieldId);
       if (index === -1) {
@@ -345,9 +345,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         return updateFields(prevFields);
       }
     });
-  };
+  }, []);
 
-  const handleSaveSchemaByName = () => {
+  const handleSaveSchemaByName = useCallback(() => {
     if (!saveSchemaName.trim()) {
       showError("Please enter a name for your schema.");
       return;
@@ -375,9 +375,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       console.error("Failed to save schema by name:", error);
       showError("Failed to save schema. Please try again.");
     }
-  };
+  }, [saveSchemaName, savedSchemaNames, schemaFields, reusableTypes]);
 
-  const handleLoadSchemaByName = () => {
+  const handleLoadSchemaByName = useCallback(() => {
     if (!selectedLoadSchemaName) {
       showError("Please select a schema to load.");
       return;
@@ -415,9 +415,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       console.error("Failed to load schema by name:", error);
       showError("Failed to load schema. It might be corrupted.");
     }
-  };
+  }, [selectedLoadSchemaName]);
 
-  const handleDeleteSavedSchema = (nameToDelete: string) => {
+  const handleDeleteSavedSchema = useCallback((nameToDelete: string) => {
     try {
       localStorage.removeItem(`dyad_schema_${nameToDelete}_fields`);
       localStorage.removeItem(`dyad_schema_${nameToDelete}_reusableTypes`);
@@ -429,10 +429,10 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       console.error("Failed to delete saved schema:", error);
       showError("Failed to delete schema. Please try again.");
     }
-  };
+  }, [savedSchemaNames]);
 
   // Helper function to deep copy a SchemaField, generating new IDs for all children
-  const deepCopyField = (field: SchemaField): SchemaField => {
+  const deepCopyField = useCallback((field: SchemaField): SchemaField => {
     const newField: SchemaField = {
       ...field,
       id: uuidv4(), // Generate a new ID for the copied field
@@ -442,9 +442,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       newField.children = newField.children.map(deepCopyField); // Recursively copy children
     }
     return newField;
-  };
+  }, []);
 
-  const handleConvertToReusableType = (fieldId: string) => {
+  const handleConvertToReusableType = useCallback((fieldId: string) => {
     let foundField: SchemaField | undefined;
     let parentField: SchemaField | undefined;
 
@@ -523,9 +523,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     } else {
       showError("Could not find the field to convert.");
     }
-  };
+  }, [schemaFields, deepCopyField]);
 
-  const handleAIGeneratedSchema = (mainFields: SchemaField[], newReusableTypes: SchemaField[]) => {
+  const handleAIGeneratedSchema = useCallback((mainFields: SchemaField[], newReusableTypes: SchemaField[]) => {
     if (schemaFields.length > 0 || reusableTypes.length > 0) {
       setPendingGeneratedFields(mainFields);
       setPendingGeneratedReusableTypes(newReusableTypes);
@@ -537,9 +537,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       setInitialReusableTypes(JSON.stringify(newReusableTypes));
       showSuccess("Schema generated and applied!");
     }
-  };
+  }, [schemaFields, reusableTypes]);
 
-  const handleReplaceSchema = () => {
+  const handleReplaceSchema = useCallback(() => {
     setSchemaFields(pendingGeneratedFields);
     setReusableTypes(pendingGeneratedReusableTypes);
     setInitialSchemaFields(JSON.stringify(pendingGeneratedFields));
@@ -548,9 +548,9 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     setIsMergeReplaceConfirmOpen(false);
     setPendingGeneratedFields([]);
     setPendingGeneratedReusableTypes([]);
-  };
+  }, [pendingGeneratedFields, pendingGeneratedReusableTypes]);
 
-  const handleMergeSchema = () => {
+  const handleMergeSchema = useCallback(() => {
     // Merge main fields
     const mergedFields = [...schemaFields, ...pendingGeneratedFields];
     // Merge reusable types, ensuring uniqueness by name (or ID if names can be duplicated)
@@ -570,7 +570,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     setIsMergeReplaceConfirmOpen(false);
     setPendingGeneratedFields([]);
     setPendingGeneratedReusableTypes([]);
-  };
+  }, [schemaFields, reusableTypes, pendingGeneratedFields, pendingGeneratedReusableTypes]);
 
   return (
     <div className="container mx-auto p-6 space-y-8">
