@@ -7,7 +7,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent";
-import { PlusCircle, Trash2, ChevronDown, ChevronUp, ListPlus } from "lucide-react";
+import { PlusCircle, Trash2, ChevronDown, ChevronUp, ListPlus, XCircle } from "lucide-react";
 import { SchemaField } from "./FieldEditor";
 import {
   DropdownMenu,
@@ -15,9 +15,20 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { showSuccess } from "@/utils/toast";
-import { COUNTRIES_EN, PRIORITY_OPTIONS } from "@/utils/predefinedOptions"; // Import predefined options
-import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { showSuccess, showError } from "@/utils/toast"; // Ensure showError is imported if used
+import { COUNTRIES_EN, PRIORITY_OPTIONS } from "@/utils/predefinedOptions";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface FieldDropdownOptionsProps {
   field: SchemaField;
@@ -30,6 +41,7 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
 }) => {
   const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = React.useState(true);
   const [newOption, setNewOption] = React.useState("");
+  const [isClearConfirmOpen, setIsClearConfirmOpen] = React.useState(false); // New state for confirmation dialog
 
   const handleAddOption = () => {
     if (newOption.trim() !== "") {
@@ -56,6 +68,12 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
   const handlePopulateOptions = (options: string[], collectionName: string) => {
     onFieldChange({ ...field, options: options });
     showSuccess(`Dropdown options populated with ${collectionName}!`);
+  };
+
+  const handleClearAllOptions = () => {
+    onFieldChange({ ...field, options: [] });
+    showSuccess("All dropdown options cleared!");
+    setIsClearConfirmOpen(false);
   };
 
   return (
@@ -108,9 +126,30 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <AlertDialog open={isClearConfirmOpen} onOpenChange={setIsClearConfirmOpen}>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="icon" aria-label="Clear all options">
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete all options for this dropdown field.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleClearAllOptions} className="bg-red-500 hover:bg-red-600 text-white">
+                    Clear All
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           {field.options && field.options.length > 0 ? (
-            <ScrollArea className="h-48 rounded-md border p-2 mt-2"> {/* Added ScrollArea */}
+            <ScrollArea className="h-48 rounded-md border p-2 mt-2">
               <div className="space-y-2">
                 {field.options.map((option, index) => (
                   <div key={index} className="flex items-center gap-2">
