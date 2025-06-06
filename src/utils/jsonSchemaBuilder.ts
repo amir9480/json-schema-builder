@@ -230,3 +230,154 @@ export const buildFullJsonSchema = (schemaFields: SchemaField[], reusableTypes: 
 
   return rootSchema;
 };
+
+/**
+ * Builds the JSON Schema for a single SchemaField.
+ * This is used when sending a specific field's schema to an LLM for refinement.
+ * It will include relevant definitions if the field or its children reference reusable types.
+ */
+export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: SchemaField[]): any => {
+  const definitions: { [key: string]: any } = {};
+  const buildingDefinitions = new Set<string>();
+
+  // Helper to recursively collect all referenced reusable types
+  const collectReferencedTypes = (fields: SchemaField[]) => {
+    fields.forEach(f => {
+      if (f.type === "ref" && f.refId) {
+        const referencedType = reusableTypes.find(rt => rt.id === f.refId);
+        if (referencedType && referencedType.name && !definitions[referencedType.name] && !buildingDefinitions.has(referencedType.id)) {
+          buildingDefinitions.add(referencedType.id);
+          const nestedSchema = buildPropertiesAndRequired(referencedType.children || [], reusableTypes, definitions);
+          definitions[referencedType.name] = {
+            type: "object",
+            properties: nestedSchema.properties,
+            required: nestedSchema.required,
+            additionalProperties: false,
+          };
+          buildingDefinitions.delete(referencedType.id);
+          // Also collect types referenced by this reusable type's children
+          collectReferencedTypes(referencedType.children || []);
+        }
+      } else if (f.type === "object" && f.children) {
+        collectReferencedTypes(f.children);
+      } else if (f.isMultiple && f.type === "ref" && f.refId) { // Handle arrays of refs
+        const referencedType = reusableTypes.find(rt => rt.id === f.refId);
+        if (referencedType && referencedType.name && !definitions[referencedType.name] && !buildingDefinitions.has(referencedType.id)) {
+          buildingDefinitions.add(referencedType.id);
+          const nestedSchema = buildPropertiesAndRequired(referencedType.children || [], reusableTypes, definitions);
+          definitions[referencedType.name] = {
+            type: "object",
+            properties: nestedSchema.properties,
+            required: nestedSchema.required,
+            additionalProperties: false,
+          };
+          buildingDefinitions.delete(referencedType.id);
+          collectReferencedTypes(referencedType.children || []);
+        }
+      }
+    });
+  };
+
+  // Collect definitions for the field itself and any nested/referenced types
+  collectReferencedTypes([field]);
+
+  // Build the schema for the single field
+  let fieldSchema: any = {};
+
+  if (field.type === "ref") {
+    const referencedType = reusableTypes.find(rt => rt.id === field.refId);
+    if (referencedType && referencedType.name && definitions[referencedType.name]) {
+      fieldSchema = { "$ref": `#/definitions/${referencedType.name}` };
+    } else {
+      fieldSchema = { type: "object", description: "Invalid or undefined reference" };
+    }
+  } else {
+    const baseType = mapTypeToJsonSchemaType(field.type);
+    const format = mapTypeToJsonSchemaFormat(field.type);
+
+    fieldSchema.type = baseType;
+    if (format) {
+      fieldSchema.format = format;
+    }
+    fieldSchema.title = field.title || toTitleCase(field.name);
+    if (field.description) {
+      fieldSchema.description = field.description;
+    }
+    if (field.example !== undefined) {
+      try {
+        if (field.type === "int" || field.type === "float") {
+          fieldSchema.example = parseFloat(field.example);
+          if (isNaN(fieldSchema.example)) delete fieldSchema.example;
+        } else if (field.type === "currency") {
+          fieldSchema.example = field.example;
+        } else {
+          fieldSchema.example = field.example;
+        }
+      } catch (e) {
+        fieldSchema.example = field.example;
+      }
+    }
+
+    if (field.type === "date") {
+      fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}$";
+    } else if (field.type === "datetime") {
+      fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$";
+    } else if (field.type === "currency" && field.currency) {
+      const symbol = getCurrencySymbol(field.currency);
+      fieldSchema.pattern = `^${symbol.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s?\\d+(?:\\.\\d{1,2})?$`;
+    } else if (field.type === "dropdown" && field.options && field.options.length > 0) {
+      fieldSchema.enum = field.options;
+    }
+
+    if (field.type === "int" || field.type === "float") {
+      if (field.minValue !== undefined) {
+        fieldSchema.minimum = field.minValue;
+      }
+      if (field.maxValue !== undefined) {
+        fieldSchema.maximum = field.maxValue;
+      }
+    }
+
+    if (field.type === "object" && field.children) {
+      const nestedSchema = buildPropertiesAndRequired(field.children, reusableTypes, definitions);
+      fieldSchema.properties = nestedSchema.properties;
+      if (nestedSchema.required.length > 0) {
+        fieldSchema.required = nestedSchema.required;
+      }
+      fieldSchema.additionalProperties = false;
+    }
+
+    if (!field.isRequired && field.type !== "ref") {
+      fieldSchema.type = Array.isArray(fieldSchema.type)
+        ? [...fieldSchema.type, "null"]
+        : [fieldSchema.type, "null"];
+    }
+  }
+
+  if (field.isMultiple) {
+    const arraySchema: any = {
+      type: "array",
+      items: fieldSchema,
+    };
+    if (field.minItems !== undefined) {
+      arraySchema.minItems = field.minItems;
+    }
+    if (field.maxItems !== undefined) {
+      arraySchema.maxItems = field.maxItems;
+    }
+    fieldSchema = arraySchema;
+  }
+
+  const finalSchema: any = {
+    $schema: "http://json-schema.org/draft-07/schema#",
+    title: field.title || toTitleCase(field.name),
+    description: field.description || `Schema for field: ${field.name}`,
+    ...fieldSchema, // Spread the generated field schema directly
+  };
+
+  if (Object.keys(definitions).length > 0) {
+    finalSchema.definitions = definitions;
+  }
+
+  return finalSchema;
+};
