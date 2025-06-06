@@ -9,7 +9,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
+import LoadingSpinner from "./LoadingSpinner";
+import ReactJson from 'react-json-view';
+import { useTheme } from "next-themes";
 
 interface ApiResponseDisplayProps {
   isOpen: boolean;
@@ -17,7 +19,7 @@ interface ApiResponseDisplayProps {
   title: string;
   description: string;
   jsonContent: string;
-  isLoading?: boolean; // New prop for loading state
+  isLoading?: boolean;
 }
 
 const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
@@ -26,8 +28,27 @@ const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
   title,
   description,
   jsonContent,
-  isLoading = false, // Default to false
+  isLoading = false,
 }) => {
+  const { resolvedTheme } = useTheme();
+  const [parsedJson, setParsedJson] = React.useState<any>(null);
+  const [isJsonValid, setIsJsonValid] = React.useState(true);
+
+  React.useEffect(() => {
+    if (jsonContent) {
+      try {
+        setParsedJson(JSON.parse(jsonContent));
+        setIsJsonValid(true);
+      } catch (e) {
+        setParsedJson(null);
+        setIsJsonValid(false);
+      }
+    } else {
+      setParsedJson(null);
+      setIsJsonValid(true); // Treat empty as valid for initial state
+    }
+  }, [jsonContent]);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(jsonContent)
       .then(() => {
@@ -47,15 +68,29 @@ const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden py-4">
-          <div className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white overflow-auto flex"> {/* Removed items-center and justify-center */}
+          <div className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white overflow-auto flex">
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center w-full h-full text-white"> {/* Centering for spinner */}
+              <div className="flex flex-col items-center justify-center w-full h-full text-white">
                 <LoadingSpinner size={48} className="text-blue-400" />
                 <p className="text-lg">Loading response...</p>
               </div>
+            ) : isJsonValid && parsedJson !== null ? (
+              <div className="p-4 text-left text-sm block w-full whitespace-pre">
+                <ReactJson
+                  src={parsedJson}
+                  theme={resolvedTheme === 'dark' ? 'codeschool' : 'rjv-default'}
+                  name={false}
+                  collapsed={false}
+                  enableClipboard={false}
+                  displayObjectSize={false}
+                  displayDataTypes={false}
+                  indentWidth={2}
+                  style={{ backgroundColor: 'transparent' }}
+                />
+              </div>
             ) : (
-              <pre className="p-4 text-left text-sm block w-full whitespace-pre"> {/* Added w-full */}
-                <code>{jsonContent}</code>
+              <pre className="p-4 text-left text-sm block w-full whitespace-pre">
+                <code>{jsonContent || "No content to display or invalid JSON."}</code>
               </pre>
             )}
           </div>

@@ -3,7 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-// Removed buildFullJsonSchema import as it's no longer needed here
+import ReactJson from 'react-json-view';
+import { useTheme } from "next-themes";
 
 interface SchemaDisplayProps {
   jsonSchema: any; // Now directly receives the full JSON schema
@@ -11,6 +12,7 @@ interface SchemaDisplayProps {
 
 const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ jsonSchema }) => {
   const jsonString = JSON.stringify(jsonSchema, null, 2);
+  const { resolvedTheme } = useTheme();
 
   const handleCopy = () => {
     navigator.clipboard.writeText(jsonString)
@@ -32,9 +34,19 @@ const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ jsonSchema }) => {
         </Button>
       </CardHeader>
       <CardContent>
-        <pre className="bg-gray-800 text-white p-4 rounded-md overflow-auto text-left text-sm">
-          <code>{jsonString}</code>
-        </pre>
+        <div className="bg-gray-800 text-white p-4 rounded-md overflow-auto text-left text-sm">
+          <ReactJson
+            src={jsonSchema}
+            theme={resolvedTheme === 'dark' ? 'codeschool' : 'rjv-default'}
+            name={false}
+            collapsed={false}
+            enableClipboard={false}
+            displayObjectSize={false}
+            displayDataTypes={false}
+            indentWidth={2}
+            style={{ backgroundColor: 'transparent' }} // Ensure background is handled by parent div
+          />
+        </div>
       </CardContent>
     </Card>
   );
