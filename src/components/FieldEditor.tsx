@@ -75,6 +75,7 @@ export interface SchemaField {
   currency?: string;
   options?: string[];
   parentId?: string;
+  isValidName?: boolean; // New property for name validation
 }
 
 interface FieldEditorProps {
@@ -112,6 +113,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   onManageReusableTypes,
   onConvertToReusableType,
 }) => {
+  const [nameError, setNameError] = React.useState<string | null>(null);
+
   const borderColors = [
     "border-blue-400",
     "border-green-400",
@@ -132,10 +135,28 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
 
   const currentBorderColor = borderColors[(level - 1) % borderColors.length];
 
+  const validateName = (name: string): boolean => {
+    // Allow alphanumeric, underscore, and hyphen. Must not be empty.
+    const isValid = /^[a-zA-Z0-9_-]*$/.test(name) && name.trim() !== "";
+    if (!isValid) {
+      setNameError("Name must be alphanumeric, hyphens, or underscores (no spaces).");
+    } else {
+      setNameError(null);
+    }
+    return isValid;
+  };
+
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newName = e.target.value;
-    onFieldChange({ ...field, name: newName });
+    const isValid = validateName(newName);
+    onFieldChange({ ...field, name: newName, isValidName: isValid });
   };
+
+  // Validate initial name on mount
+  React.useEffect(() => {
+    validateName(field.name);
+  }, [field.name]);
+
 
   const handleTypeChange = (value: SchemaFieldType) => {
     onFieldChange({
@@ -202,7 +223,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       <div className="flex items-center gap-4">
         {/* Drag and Move Buttons */}
         {!isRoot && (
-          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 shrink-0"> {/* Removed ml-[-1.5rem] */}
+          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -262,46 +283,51 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex-1 flex items-center gap-2">
+        <div className="flex-1 flex flex-col gap-2"> {/* Changed to flex-col to stack input and error */}
           <div className="grid gap-2 flex-1">
             <Input
               id={`field-name-${field.id}`}
               value={field.name}
               onChange={handleNameChange}
               placeholder="e.g., productName"
+              className={cn(nameError && "border-red-500 focus-visible:ring-red-500")}
             />
           </div>
-          {onConvertToReusableType && !isRoot && !hideRefTypeOption && field.type !== "ref" && (
-            <AlertDialog>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600 shrink-0" aria-label="Convert to reusable type">
-                      <Link className="h-4 w-4" />
-                    </Button>
-                  </AlertDialogTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Convert to Reusable Type</p>
-                </TooltipContent>
-              </Tooltip>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Convert to Reusable Type?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    This will convert "{field.name || "Unnamed Field"}" into a new reusable type. The original field will become a reference to this new type. Are you sure you want to proceed?
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onConvertToReusableType(field.id)}>
-                    Convert
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+          {nameError && (
+            <p className="text-red-500 text-xs mt-1">{nameError}</p>
           )}
         </div>
+
+        {onConvertToReusableType && !isRoot && !hideRefTypeOption && field.type !== "ref" && (
+          <AlertDialog>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialogTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600 shrink-0" aria-label="Convert to reusable type">
+                    <Link className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Convert to Reusable Type</p>
+              </TooltipContent>
+            </Tooltip>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Convert to Reusable Type?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will convert "{field.name || "Unnamed Field"}" into a new reusable type. The original field will become a reference to this new type. Are you sure you want to proceed?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => onConvertToReusableType(field.id)}>
+                  Convert
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
 
         <div>
           <Tooltip>
