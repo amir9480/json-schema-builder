@@ -1,80 +1,22 @@
 import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Play } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import ApiResponseDisplay from "./ApiResponseDisplay"; // Import the new component
-import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
+import { Textarea } from "@/components/ui/textarea";
 
 interface CurlCommandGeneratorProps {
   jsonSchema: any;
+  selectedProvider: "openai" | "gemini" | "mistral" | "openrouter";
+  apiKey: string;
+  userPrompt: string;
 }
 
-type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
-
-const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
-const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
-const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt"; // New shared key for user prompt
-
-const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema }) => {
-  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
-    if (typeof window !== "undefined") {
-      const savedProvider = localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY);
-      return (savedProvider as LLMProvider) || "openai";
-    }
-    return "openai";
-  });
-
-  const [apiKey, setApiKey] = React.useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_API_KEY) || "";
-    }
-    return "";
-  });
-
-  const [userPrompt, setUserPrompt] = React.useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY) || "Generate a JSON object based on the schema.";
-    }
-    return "Generate a JSON object based on the schema.";
-  });
-
-  const [responseJson, setResponseJson] = React.useState<string>("");
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false); // State to control modal
-
-  // Persist selectedProvider, apiKey, and userPrompt to localStorage
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
-    }
-  }, [selectedProvider]);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
-    }
-  }, [apiKey]);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY, userPrompt);
-    }
-  }, [userPrompt]);
-
+const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema, selectedProvider, apiKey, userPrompt }) => {
   const jsonString = JSON.stringify(jsonSchema, null, 2);
 
   // Refactored to return request details as an object
-  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string) => {
+  const getRequestDetails = (provider: "openai" | "gemini" | "mistral" | "openrouter", currentApiKey: string, prompt: string) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
@@ -94,9 +36,9 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
           response_format: {
             type: "json_schema",
             json_schema: {
-              name: "generated_schema", // A default name for the schema
+              name: "generated_schema",
               strict: true,
-              schema: jsonSchema, // The actual JSON schema
+              schema: jsonSchema,
             },
           },
         };
@@ -133,7 +75,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
         headers["HTTP-Referer"] = "YOUR_APP_URL";
         requestBody = {
-          model: "openai/o4-mini", // Updated model here
+          model: "openai/o4-mini",
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -168,7 +110,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     };
   };
 
-  const { endpoint, headers, requestBody, curlCommand } = getRequestDetails(selectedProvider, apiKey, userPrompt);
+  const { curlCommand } = React.useMemo(() => getRequestDetails(selectedProvider, apiKey, userPrompt), [selectedProvider, apiKey, userPrompt, jsonSchema]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(curlCommand)
@@ -181,161 +123,23 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
       });
   };
 
-  const handleTryIt = async () => {
-    if (!apiKey) {
-      showError("Please enter your API Key before trying the request.");
-      return;
-    }
-    if (!endpoint) {
-      showError("Please select an LLM provider.");
-      return;
-    }
-
-    setIsLoading(true);
-    setResponseJson("Loading..."); // Set initial loading text
-    setIsResponseModalOpen(true); // Open the modal when starting the request
-
-    try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: headers,
-        body: JSON.stringify(requestBody),
-      });
-
-      let data;
-      const contentType = response.headers.get("content-type");
-
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        data = await response.text();
-      }
-
-      if (!response.ok) {
-        console.error("API Error:", data);
-        setResponseJson(JSON.stringify({
-          status: response.status,
-          statusText: response.statusText,
-          error: data
-        }, null, 2));
-        showError(`API Error: ${response.status} ${response.statusText}`);
-      } else {
-        // Extract the actual generated content for LLM responses
-        let generatedContent = data;
-        if (selectedProvider === "openai" || selectedProvider === "mistral" || selectedProvider === "openrouter") {
-          generatedContent = data?.choices?.[0]?.message?.content || data;
-        } else if (selectedProvider === "gemini") {
-          generatedContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || data;
-        }
-        
-        try {
-          // Attempt to parse the content if it's a string that looks like JSON
-          const parsedContent = JSON.parse(generatedContent);
-          setResponseJson(JSON.stringify(parsedContent, null, 2));
-        } catch (parseError) {
-          // If it's not valid JSON, just display it as is
-          setResponseJson(typeof generatedContent === 'string' ? generatedContent : JSON.stringify(generatedContent, null, 2));
-        }
-        showSuccess("Request successful!");
-      }
-    } catch (error) {
-      console.error("Network or Fetch Error:", error);
-      setResponseJson(JSON.stringify({
-        error: "Network or Fetch Error",
-        message: (error as Error).message,
-        details: "Check your API key, network connection, or browser's CORS policy. For production, consider using a backend proxy."
-      }, null, 2));
-      showError("Failed to send request. Check console for details.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className="space-y-4">
-      <div className="grid gap-2">
-        <Label htmlFor="llm-provider-select">Select LLM Provider</Label>
-        <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as LLMProvider)}>
-          <SelectTrigger id="llm-provider-select">
-            <SelectValue placeholder="Select a provider" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="openai">OpenAI (ChatGPT)</SelectItem>
-            <SelectItem value="gemini">Google (Gemini)</SelectItem>
-            <SelectItem value="mistral">Mistral AI</SelectItem>
-            <SelectItem value="openrouter">OpenRouter</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="api-key-input">API Key</Label>
-        <Input
-          id="api-key-input"
-          type="password"
-          value={apiKey}
-          onChange={(e) => setApiKey(e.target.value)}
-          placeholder={`Enter your ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key`}
-        />
-        <p className="text-sm text-muted-foreground">
-          Your API key is stored locally in your browser for convenience and is not sent to any server.
-        </p>
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="user-prompt-input">User Prompt</Label>
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardTitle className="text-2xl font-semibold">Generated cURL Command</CardTitle>
+        <Button variant="outline" size="sm" onClick={handleCopy}>
+          <Copy className="h-4 w-4 mr-2" /> Copy Command
+        </Button>
+      </CardHeader>
+      <CardContent>
         <Textarea
-          id="user-prompt-input"
-          value={userPrompt}
-          onChange={(e) => setUserPrompt(e.target.value)}
-          placeholder="e.g., Extract the product details from the following text."
-          rows={4}
-        />
-        <p className="text-sm text-muted-foreground">
-          This prompt will be sent to the LLM along with your schema.
-        </p>
-      </div>
-
-      <div className="grid gap-2">
-        <Label htmlFor="curl-command-output">Generated cURL Command</Label>
-        <Textarea
-          id="curl-command-output"
           value={curlCommand}
           readOnly
           rows={15}
           className="font-mono bg-gray-800 text-white"
         />
-      </div>
-      <div className="flex gap-2">
-        <Button onClick={handleCopy} className="flex-1">
-          <Copy className="h-4 w-4 mr-2" /> Copy cURL Command
-        </Button>
-        <Button onClick={handleTryIt} disabled={isLoading} className="flex-1">
-          {isLoading ? (
-            <>
-              <LoadingSpinner className="mr-2" /> Sending Request...
-            </>
-          ) : (
-            <>
-              <Play className="h-4 w-4 mr-2" /> Try it
-            </>
-          )}
-        </Button>
-      </div>
-      <p className="text-sm text-muted-foreground">
-        Remember to replace `YOUR_APP_URL` if you are using OpenRouter.
-      </p>
-
-      {/* Pass isLoading prop to ApiResponseDisplay */}
-      <ApiResponseDisplay
-        isOpen={isResponseModalOpen}
-        onOpenChange={setIsResponseModalOpen}
-        title="API Response"
-        description="The response from the LLM API call."
-        jsonContent={responseJson}
-        isLoading={isLoading}
-      />
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 
