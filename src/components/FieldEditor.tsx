@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings, Link, List } from "lucide-react";
+import { PlusCircle, Trash2, ChevronDown, ChevronUp, Settings, Link, List, GripVertical } from "lucide-react";
 import { cn, toTitleCase } from "@/lib/utils";
 import {
   Collapsible,
@@ -93,14 +93,17 @@ interface FieldEditorProps {
   onFieldChange: (field: SchemaField) => void;
   onAddField?: (parentId: string) => void;
   onRemoveField?: (fieldId: string) => void;
-  onMoveField?: (fieldId: string, direction: "up" | "down", parentId?: string) => void; // New prop
+  onMoveField?: (fieldId: string, direction: "up" | "down", parentId?: string) => void;
   isRoot?: boolean;
   level?: number;
   reusableTypes?: SchemaField[];
   hideRefTypeOption?: boolean;
-  isDraggable?: boolean; // Prop to control drag handle visibility
-  onManageReusableTypes?: () => void; // New prop
-  onConvertToReusableType?: (fieldId: string) => void; // New prop
+  dragHandleAttributes?: React.HTMLAttributes<HTMLButtonElement>; // New prop for drag attributes
+  dragHandleListeners?: React.HTMLAttributes<HTMLButtonElement>; // New prop for drag listeners
+  isFirstItem?: boolean; // New prop to disable 'move up' for the first item
+  isLastItem?: boolean; // New prop to disable 'move down' for the last item
+  onManageReusableTypes?: () => void;
+  onConvertToReusableType?: (fieldId: string) => void;
 }
 
 const CURRENCY_OPTIONS = [
@@ -121,19 +124,22 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   onFieldChange,
   onAddField,
   onRemoveField,
-  onMoveField, // Destructure new prop
+  onMoveField,
   isRoot = false,
   level = 0,
   reusableTypes = [],
   hideRefTypeOption = false,
-  isDraggable = true,
-  onManageReusableTypes, // Destructure new prop
-  onConvertToReusableType, // Destructure new prop
+  dragHandleAttributes,
+  dragHandleListeners,
+  isFirstItem = false,
+  isLastItem = false,
+  onManageReusableTypes,
+  onConvertToReusableType,
 }) => {
   const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
   const [isObjectPropertiesOpen, setIsObjectPropertiesOpen] = React.useState(true);
-  const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = React.useState(true); // New state for dropdown options
-  const [newOption, setNewOption] = React.useState(""); // State for new dropdown option
+  const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = React.useState(true);
+  const [newOption, setNewOption] = React.useState("");
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -173,11 +179,10 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       type: value,
       children: value === "object" ? field.children || [] : undefined,
       refId: value === "ref" ? field.refId : undefined,
-      // Clear number specific properties if type changes and is no longer a number-like type
       minValue: (value === "int" || value === "float" || value === "currency") ? field.minValue : undefined,
       maxValue: (value === "int" || value === "float" || value === "currency") ? field.maxValue : undefined,
-      currency: value === "currency" ? field.currency : undefined, // Keep currency for 'currency' type
-      options: value === "dropdown" ? field.options || [] : undefined, // Initialize options for dropdown
+      currency: value === "currency" ? field.currency : undefined,
+      options: value === "dropdown" ? field.options || [] : undefined,
     });
   };
 
@@ -189,7 +194,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     onFieldChange({
       ...field,
       isMultiple: checked,
-      // Clear min/max items if not multiple
       minItems: checked ? field.minItems : undefined,
       maxItems: checked ? field.maxItems : undefined,
     });
@@ -271,6 +275,18 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     }
   };
 
+  const handleMoveUp = () => {
+    if (onMoveField) {
+      onMoveField(field.id, "up", field.parentId);
+    }
+  };
+
+  const handleMoveDown = () => {
+    if (onMoveField) {
+      onMoveField(field.id, "down", field.parentId);
+    }
+  };
+
   const paddingLeft = level * 20;
 
   const typeOptions: { value: SchemaFieldType; label: string }[] = [
@@ -281,11 +297,10 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     { value: "date", label: "Date" },
     { value: "datetime", label: "DateTime" },
     { value: "object", label: "Object" },
-    { value: "dropdown", label: "Dropdown" }, // Added new type
+    { value: "dropdown", label: "Dropdown" },
     { value: "ref", label: "Reference ($ref)" },
   ];
 
-  // Number-like types that can have min/max values
   const isNumberLikeType = field.type === "int" || field.type === "float" || field.type === "currency";
 
   return (
@@ -298,6 +313,42 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       style={{ paddingLeft: `${paddingLeft + 16}px` }}
     >
       <div className="flex items-center gap-4">
+        {/* Drag and Move Buttons */}
+        {!isRoot && ( // Only show for non-root fields
+          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 -ml-4 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              onClick={handleMoveUp}
+              disabled={isFirstItem}
+              aria-label="Move field up"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-grab"
+              {...dragHandleListeners}
+              {...dragHandleAttributes}
+              aria-label="Drag to reorder"
+            >
+              <GripVertical className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              onClick={handleMoveDown}
+              disabled={isLastItem}
+              aria-label="Move field down"
+            >
+              <ChevronDown className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="icon" className="shrink-0">
@@ -324,7 +375,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Field Name Input - Always visible */}
         <div className="flex-1 flex items-center gap-2">
           <div className="grid gap-2 flex-1">
             <Input
@@ -384,7 +434,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
           </Tooltip>
         </div>
 
-        {/* Conditionally render the Required toggle */}
         {!isRoot && (
           <div>
             <Tooltip>
@@ -433,11 +482,10 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         )}
       </div>
 
-      {/* Reference Select - Only if field type is 'ref' */}
       {field.type === "ref" && (
         <div className="grid gap-2 mt-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label> {/* Re-added Label */}
+            <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
             {onManageReusableTypes && (
               <Button
                 variant="ghost"
@@ -472,7 +520,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         </div>
       )}
 
-      {/* Advanced Options Collapsible */}
       {field.type !== "ref" && (
         <Collapsible
           open={isAdvancedOpen}
@@ -596,7 +643,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         </Collapsible>
       )}
 
-      {/* Dropdown Options Collapsible */}
       {field.type === "dropdown" && (
         <Collapsible
           open={isDropdownOptionsOpen}
@@ -660,7 +706,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         </Collapsible>
       )}
 
-      {/* Object Properties Collapsible */}
       {field.type === "object" && (
         <Collapsible
           open={isObjectPropertiesOpen}
@@ -696,15 +741,14 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                         onFieldChange={onFieldChange}
                         onAddField={onAddField}
                         onRemoveField={onRemoveField}
-                        onMoveField={onMoveField} // Pass down for nested sorting
+                        onMoveField={onMoveField}
                         level={level + 1}
                         reusableTypes={reusableTypes}
                         hideRefTypeOption={hideRefTypeOption}
-                        isDraggable={isDraggable}
                         isFirst={index === 0}
                         isLast={index === (field.children?.length || 0) - 1}
-                        onManageReusableTypes={onManageReusableTypes} // Pass the function here
-                        onConvertToReusableType={onConvertToReusableType} // Pass the function here
+                        onManageReusableTypes={onManageReusableTypes}
+                        onConvertToReusableType={onConvertToReusableType}
                       />
                     ))}
                   </div>
