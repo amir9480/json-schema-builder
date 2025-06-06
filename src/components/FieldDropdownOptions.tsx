@@ -6,9 +6,17 @@ import {
   Collapsible,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent"; // Import CustomCollapsibleContent
-import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent";
+import { PlusCircle, Trash2, ChevronDown, ChevronUp, ListPlus } from "lucide-react";
 import { SchemaField } from "./FieldEditor";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { showSuccess } from "@/utils/toast";
+import { COUNTRIES_EN, PRIORITY_OPTIONS } from "@/utils/predefinedOptions"; // Import predefined options
 
 interface FieldDropdownOptionsProps {
   field: SchemaField;
@@ -44,6 +52,11 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
     onFieldChange({ ...field, options: updatedOptions });
   };
 
+  const handlePopulateOptions = (options: string[], collectionName: string) => {
+    onFieldChange({ ...field, options: options });
+    showSuccess(`Dropdown options populated with ${collectionName}!`);
+  };
+
   return (
     <Collapsible
       open={isDropdownOptionsOpen}
@@ -60,7 +73,7 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
           <h3 className="text-md font-semibold">Options for {field.name || "Unnamed Dropdown"}:</h3>
         </Button>
       </CollapsibleTrigger>
-      <CustomCollapsibleContent className="space-y-4"> {/* Use CustomCollapsibleContent */}
+      <CustomCollapsibleContent className="space-y-4">
         <div className="grid gap-2 col-span-full px-6">
           <Label htmlFor={`field-options-${field.id}`}>Dropdown Options</Label>
           <div className="flex gap-2">
@@ -79,6 +92,21 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
             <Button onClick={handleAddOption} variant="outline" size="icon">
               <PlusCircle className="h-4 w-4" />
             </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" aria-label="Populate options from collection">
+                  <ListPlus className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => handlePopulateOptions(COUNTRIES_EN, "Countries")}>
+                  Populate with Countries
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handlePopulateOptions(PRIORITY_OPTIONS, "Priority Levels")}>
+                  Populate with Priority Levels
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           {field.options && field.options.length > 0 ? (
             <div className="space-y-2 mt-2">
