@@ -30,11 +30,20 @@ interface SchemaAIGenerateDialogProps {
 }
 
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
+type CaseType = "snake_case" | "camelCase" | "PascalCase" | "CONSTANT_CASE" | "kebab-case";
 
-// Updated to use the same keys as CurlCommandGenerator
 const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
 const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
 const LOCAL_STORAGE_USER_PROMPT_KEY = "llmSchemaBuilderUserPrompt"; // This prompt is specific to schema generation
+const LOCAL_STORAGE_CASE_TYPE_KEY = "llmSchemaBuilderCaseType"; // New key for case type
+
+const caseTypeOptions: { value: CaseType; label: string }[] = [
+  { value: "snake_case", label: "snake_case (e.g., product_name)" },
+  { value: "camelCase", label: "camelCase (e.g., productName)" },
+  { value: "PascalCase", label: "PascalCase (e.g., ProductName)" },
+  { value: "CONSTANT_CASE", label: "CONSTANT_CASE (e.g., PRODUCT_NAME)" },
+  { value: "kebab-case", label: "kebab-case (e.g., product-name)" },
+];
 
 const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
   isOpen,
@@ -63,9 +72,17 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
     return "Generate a JSON schema for a 'Product' object with fields like name (string), price (float), description (string, optional), and categories (array of strings).";
   });
 
+  const [selectedCaseType, setSelectedCaseType] = React.useState<CaseType>(() => {
+    if (typeof window !== "undefined") {
+      const savedCaseType = localStorage.getItem(LOCAL_STORAGE_CASE_TYPE_KEY);
+      return (savedCaseType as CaseType) || "snake_case";
+    }
+    return "snake_case";
+  });
+
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Persist selectedProvider, apiKey, and userPrompt to localStorage
+  // Persist selectedProvider, apiKey, userPrompt, and selectedCaseType to localStorage
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
@@ -84,12 +101,18 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
     }
   }, [userPrompt]);
 
-  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string) => {
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_CASE_TYPE_KEY, selectedCaseType);
+    }
+  }, [selectedCaseType]);
+
+  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string, caseType: CaseType) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
 
-    const systemMessage = "You are a helpful assistant designed to output JSON Schema data strictly according to the user's request. Ensure the output is a valid JSON Schema object, including $schema, type: 'object', properties, and required fields. Do not include any additional text or markdown outside the JSON object.";
+    const systemMessage = `You are a helpful assistant designed to output JSON Schema data strictly according to the user's request. Ensure the output is a valid JSON Schema object, including $schema, type: 'object', properties, and required fields. All property names in the generated schema MUST use ${caseType} format. Do not include any additional text or markdown outside the JSON object.`;
     const messages = [
       { role: "system", content: systemMessage },
       { role: "user", content: prompt },
@@ -153,7 +176,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
 
     setIsLoading(true);
 
-    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt);
+    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, selectedCaseType);
 
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
@@ -247,6 +270,25 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
             />
             <p className="text-sm text-muted-foreground">
               Your API key is stored locally in your browser for convenience and is not sent to any server.
+            </p>
+          </div>
+
+          <div className="grid gap-2">
+            <Label htmlFor="case-type-select">Field Name Case Type</Label>
+            <Select value={selectedCaseType} onValueChange={(value) => setSelectedCaseType(value as CaseType)}>
+              <SelectTrigger id="case-type-select">
+                <SelectValue placeholder="Select case type" />
+              </SelectTrigger>
+              <SelectContent>
+                {caseTypeOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              This will instruct the AI to format all generated field names (property keys) in the chosen case.
             </p>
           </div>
 
