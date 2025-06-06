@@ -23,7 +23,6 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
   const jsonString = JSON.stringify(jsonSchema, null, 2);
 
   const generateCurlCommand = (provider: LLMProvider): string => {
-    let curlCommand = "";
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
@@ -80,13 +79,18 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     }
 
     const bodyString = JSON.stringify(requestBody, null, 2);
-    const headerString = Object.entries(headers)
-      .map(([key, value]) => `-H "${key}: ${value}"`)
-      .join(" \\\n  ");
+    
+    const commandParts: string[] = [];
+    commandParts.push(`curl -X POST ${endpoint}`);
 
-    curlCommand = `curl -X POST ${endpoint} \\\n  ${headerString} \\\n  -d '${bodyString}'`;
+    Object.entries(headers).forEach(([key, value]) => {
+      commandParts.push(`-H "${key}: ${value}"`);
+    });
 
-    return curlCommand;
+    commandParts.push(`-d '${bodyString}'`);
+
+    // Join all parts with ' \\\n  ' except the last one
+    return commandParts.join(" \\\n  ");
   };
 
   const currentCurlCommand = generateCurlCommand(selectedProvider);
