@@ -15,9 +15,15 @@ const Index = () => {
       // If not, show the toast and set the flag
       toast.info("We use Clarity analytics to improve user experience.", {
         description: "This helps us understand how the app is used and make it better for you.",
-        duration: 8000, // Show for 8 seconds
+        action: {
+          label: "Dismiss",
+          onClick: () => {
+            localStorage.setItem(LOCAL_STORAGE_VISITED_KEY, "true");
+            toast.dismiss(); // Dismiss all toasts, or you can pass a specific toast ID if you store it
+          },
+        },
+        // Do not set a duration, so it stays until dismissed by action
       });
-      localStorage.setItem(LOCAL_STORAGE_VISITED_KEY, "true");
     }
   }, []); // Empty dependency array ensures this runs only once on mount
 
