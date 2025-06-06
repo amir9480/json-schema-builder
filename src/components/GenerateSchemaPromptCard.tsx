@@ -13,7 +13,7 @@ const GenerateSchemaPromptCard: React.FC<GenerateSchemaPromptCardProps> = ({
   return (
     <Card className="w-full max-w-2xl mx-auto text-center py-12 px-6">
       <CardHeader>
-        <CardTitle className="text-3xl font-bold">Generate Your First Schema</CardTitle>
+        <CardTitle className="text-3xl font-bold">Generate Your Schema</CardTitle>
         <CardDescription className="text-lg text-muted-foreground mt-2">
           Start building your JSON schema by generating it with AI or adding fields manually.
         </CardDescription>
