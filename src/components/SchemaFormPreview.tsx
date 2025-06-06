@@ -8,13 +8,14 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"; // Import Select components
+} from "@/components/ui/select";
 import { cn, toTitleCase } from "@/lib/utils";
 
 interface SchemaFormPreviewProps {
   fields: SchemaField[];
   level?: number;
   reusableTypes: SchemaField[];
+  formData?: Record<string, any>; // New prop for AI-generated form data
 }
 
 const currencySymbolMap: Record<string, string> = {
@@ -60,7 +61,7 @@ const getPlaceholderValue = (type: SchemaFieldType, currencyCode?: string, optio
   }
 };
 
-const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0, reusableTypes }) => {
+const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0, reusableTypes, formData }) => {
   const paddingLeft = level * 20;
 
   return (
@@ -68,6 +69,7 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
       {fields.map((field) => {
         let displayField = field;
         let isReference = false;
+        const fieldValue = formData ? formData[field.name] : undefined;
 
         if (field.type === "ref" && field.refId) {
           const referencedType = reusableTypes.find(rt => rt.id === field.refId);
@@ -120,13 +122,13 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
               <div className="ml-4 mt-2 space-y-2">
                 <p className="text-sm text-muted-foreground">Object Properties:</p>
                 {displayField.children && displayField.children.length > 0 ? (
-                  <SchemaFormPreview fields={displayField.children} level={level + 1} reusableTypes={reusableTypes} />
+                  <SchemaFormPreview fields={displayField.children} level={level + 1} reusableTypes={reusableTypes} formData={fieldValue} />
                 ) : (
                   <p className="text-xs text-muted-foreground italic">No properties defined.</p>
                 )}
               </div>
             ) : displayField.type === "dropdown" ? (
-              <Select value={displayField.example || (displayField.options && displayField.options.length > 0 ? displayField.options[0] : "")}>
+              <Select value={fieldValue !== undefined ? String(fieldValue) : (displayField.example || (displayField.options && displayField.options.length > 0 ? displayField.options[0] : ""))}>
                 <SelectTrigger className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700">
                   <SelectValue placeholder={getPlaceholderValue(displayField.type, undefined, displayField.options)} />
                 </SelectTrigger>
@@ -144,12 +146,33 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
               </Select>
             ) : (
               <>
-                <Input
-                  type="text"
-                  value={field.example || getPlaceholderValue(displayField.type, field.currency)}
-                  readOnly
-                  className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
-                />
+                {displayField.isMultiple && Array.isArray(fieldValue) ? (
+                  fieldValue.length > 0 ? (
+                    fieldValue.map((item, idx) => (
+                      <Input
+                        key={idx}
+                        type="text"
+                        value={typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item)}
+                        readOnly
+                        className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 mb-1"
+                      />
+                    ))
+                  ) : (
+                    <Input
+                      type="text"
+                      value="No items generated"
+                      readOnly
+                      className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                    />
+                  )
+                ) : (
+                  <Input
+                    type="text"
+                    value={fieldValue !== undefined ? String(fieldValue) : (field.example || getPlaceholderValue(displayField.type, field.currency))}
+                    readOnly
+                    className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                  />
+                )}
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
                   {isNumberType && (
                     <>
