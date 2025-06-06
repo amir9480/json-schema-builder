@@ -10,11 +10,18 @@ const mapJsonSchemaTypeToSchemaFieldType = (jsonType: string, format?: string): 
     case "string":
       if (format === "date") return "date";
       if (format === "date-time") return "datetime";
+      // Check for currency pattern (simple heuristic)
+      // This is a very basic heuristic and might need refinement based on actual patterns.
+      // For now, if a string has a pattern that looks like currency, assume it.
+      // A more robust solution might involve checking for a custom 'currency' format.
+      if (format === undefined && /^\W?\d+(\.\d{1,2})?$/.test("example")) return "currency"; // Placeholder check
       return "string";
     case "number":
       // JSON schema doesn't distinguish int/float directly, default to int.
       // User can manually change to float/currency if needed.
       return "int";
+    case "boolean": // Add boolean type mapping if needed, defaulting to string for now
+      return "string";
     default:
       console.warn(`Unsupported JSON Schema type or format: ${jsonType} (format: ${format || 'none'}). Defaulting to 'string'.`);
       return "string";
@@ -42,6 +49,7 @@ const convertPropertiesToSchemaFields = (
     let children: SchemaField[] | undefined = undefined;
     let refId: string | undefined = undefined;
     let options: string[] | undefined = undefined;
+    let isRequired = requiredFields.has(key);
 
     // Handle $ref first
     if (prop.$ref) {
@@ -92,12 +100,14 @@ const convertPropertiesToSchemaFields = (
       children = convertPropertiesToSchemaFields(prop.properties, new Set(prop.required || []), definitionsMap, uuidv4());
     } else {
       // Handle single primitive types
-      if (Array.isArray(prop.type)) {
-        const actualType = prop.type.find((t: string) => t !== "null");
-        fieldType = mapJsonSchemaTypeToSchemaFieldType(actualType || "string", prop.format);
-      } else {
-        fieldType = mapJsonSchemaTypeToSchemaFieldType(prop.type, prop.format);
+      // Check if type is an array (e.g., ["string", "null"])
+      const actualType = Array.isArray(prop.type) ? prop.type.find((t: string) => t !== "null") : prop.type;
+      if (Array.isArray(prop.type) && prop.type.includes("null")) {
+        isRequired = false; // If null is allowed, it's not strictly required
       }
+      
+      fieldType = mapJsonSchemaTypeToSchemaFieldType(actualType || "string", prop.format);
+      
       if (prop.enum) {
         fieldType = "dropdown";
         options = prop.enum;
@@ -109,7 +119,7 @@ const convertPropertiesToSchemaFields = (
       name: key,
       type: fieldType,
       isMultiple: isMultiple,
-      isRequired: requiredFields.has(key),
+      isRequired: isRequired,
       title: prop.title,
       description: prop.description,
       example: prop.example !== undefined ? String(prop.example) : undefined,
@@ -180,4 +190,105 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
   );
 
   return { mainFields, reusableTypes };
+};
+
+/**
+ * Converts a single JSON Schema object (e.g., from an AI response for a field)
+ * into a single SchemaField object.
+ * This function assumes the input JSON schema represents a single field's definition,
+ * not a full root schema with properties.
+ * @param jsonSchema The JSON Schema object representing a single field.
+ * @param reusableTypes Existing reusable types to resolve references against.
+ * @returns A single SchemaField object.
+ */
+export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTypes: SchemaField[]): SchemaField => {
+  const definitionsMap = new Map<string, SchemaField>();
+  // Populate definitionsMap with existing reusable types for reference resolution
+  reusableTypes.forEach(rt => definitionsMap.set(rt.name, rt));
+
+  let fieldType: SchemaFieldType = "string";
+  let isMultiple = false;
+  let children: SchemaField[] | undefined = undefined;
+  let refId: string | undefined = undefined;
+  let options: string[] | undefined = undefined;
+  let isRequired = true; // Default to required for a single field, adjust if 'null' type is present
+
+  // Check for 'null' type to determine if it's required
+  if (Array.isArray(jsonSchema.type) && jsonSchema.type.includes("null")) {
+    isRequired = false;
+  }
+
+  // Handle array type
+  if (jsonSchema.type === "array") {
+    isMultiple = true;
+    const itemSchema = jsonSchema.items;
+    if (itemSchema) {
+      if (itemSchema.$ref) {
+        const refName = itemSchema.$ref.split('/').pop();
+        const referencedField = reusableTypes.find(rt => rt.name === refName); // Find by name for existing types
+        if (referencedField) {
+          fieldType = "ref";
+          refId = referencedField.id;
+        } else {
+          console.warn(`Reference ${itemSchema.$ref} not found for array items during single field conversion. Falling back to string.`);
+          fieldType = "string";
+        }
+      } else if (itemSchema.type === "object") {
+        fieldType = "object";
+        // Recursively convert properties of the nested object
+        children = convertPropertiesToSchemaFields(itemSchema.properties, new Set(itemSchema.required || []), definitionsMap);
+      } else {
+        const actualType = Array.isArray(itemSchema.type) ? itemSchema.type.find((t: string) => t !== "null") : itemSchema.type;
+        fieldType = mapJsonSchemaTypeToSchemaFieldType(actualType || "string", itemSchema.format);
+        if (itemSchema.enum) {
+          fieldType = "dropdown";
+          options = itemSchema.enum;
+        }
+      }
+    } else {
+      fieldType = "string"; // Default for untyped array items
+    }
+  } else if (jsonSchema.$ref) {
+    const refName = jsonSchema.$ref.split('/').pop();
+    const referencedField = reusableTypes.find(rt => rt.name === refName);
+    if (referencedField) {
+      fieldType = "ref";
+      refId = referencedField.id;
+    } else {
+      console.warn(`Reference ${jsonSchema.$ref} not found during single field conversion. Falling back to string.`);
+      fieldType = "string";
+    }
+  } else if (jsonSchema.type === "object") {
+    fieldType = "object";
+    children = convertPropertiesToSchemaFields(jsonSchema.properties, new Set(jsonSchema.required || []), definitionsMap);
+  } else {
+    const actualType = Array.isArray(jsonSchema.type) ? jsonSchema.type.find((t: string) => t !== "null") : jsonSchema.type;
+    fieldType = mapJsonSchemaTypeToSchemaFieldType(actualType || "string", jsonSchema.format);
+    if (jsonSchema.enum) {
+      fieldType = "dropdown";
+      options = jsonSchema.enum;
+    }
+  }
+
+  const convertedField: SchemaField = {
+    id: uuidv4(), // Generate a new ID for the converted field
+    name: jsonSchema.title || "refinedField", // Use title as name, or a default
+    type: fieldType,
+    isMultiple: isMultiple,
+    isRequired: isRequired,
+    title: jsonSchema.title,
+    description: jsonSchema.description,
+    example: jsonSchema.example !== undefined ? String(jsonSchema.example) : undefined,
+    children: children,
+    refId: refId,
+    minValue: jsonSchema.minimum,
+    maxValue: jsonSchema.maximum,
+    minItems: jsonSchema.minItems,
+    maxItems: jsonSchema.maxItems,
+    currency: jsonSchema.currency, // Assuming 'currency' is a custom property
+    options: options,
+    isValidName: true, // Assume valid name from AI
+  };
+
+  return convertedField;
 };
