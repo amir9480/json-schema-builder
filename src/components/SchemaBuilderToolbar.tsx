@@ -77,18 +77,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
             <p>Preview Fields</p>
           </TooltipContent>
         </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" className="text-destructive hover:text-destructive/90" onClick={onClearSchemaTrigger}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Clear All Fields</p>
-          </TooltipContent>
-        </Tooltip>
-
+        
         <Tooltip>
           <TooltipTrigger asChild>
             <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground" size="icon" onClick={onManageTypesTrigger}>
@@ -108,6 +97,17 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
           </TooltipTrigger>
           <TooltipContent>
             <p>Export Generated JSON Schema</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="icon" className="text-destructive hover:text-destructive/90" onClick={onClearSchemaTrigger}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Clear All Fields</p>
           </TooltipContent>
         </Tooltip>
       </div>
