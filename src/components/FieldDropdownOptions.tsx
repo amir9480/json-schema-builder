@@ -48,10 +48,10 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
     <Collapsible
       open={isDropdownOptionsOpen}
       onOpenChange={setIsDropdownOptionsOpen}
-      className="flex flex-col gap-4 mt-4 border-t pt-4" // Removed px-6
+      className="flex flex-col gap-4 mt-4 border-t pt-4"
     >
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-start px-0 -mt-4">
+        <Button variant="ghost" className="w-full justify-start px-6 -mt-4"> {/* Re-added px-6 */}
           {isDropdownOptionsOpen ? (
             <ChevronUp className="h-4 w-4 mr-2" />
           ) : (
@@ -61,7 +61,7 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-        <div className="grid gap-2 col-span-full">
+        <div className="grid gap-2 col-span-full px-6"> {/* Re-added px-6 */}
           <Label htmlFor={`field-options-${field.id}`}>Dropdown Options</Label>
           <div className="flex gap-2">
             <Input

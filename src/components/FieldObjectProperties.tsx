@@ -85,10 +85,10 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
     <Collapsible
       open={isObjectPropertiesOpen}
       onOpenChange={setIsObjectPropertiesOpen}
-      className="flex flex-col gap-4 mt-4 border-t pt-4" // Removed px-6
+      className="flex flex-col gap-4 mt-4 border-t pt-4"
     >
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-start px-0 -mt-4">
+        <Button variant="ghost" className="w-full justify-start px-6 -mt-4"> {/* Re-added px-6 */}
           {isObjectPropertiesOpen ? (
             <ChevronUp className="h-4 w-4 mr-2" />
           ) : (
@@ -130,7 +130,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
             </SortableContext>
           </DndContext>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground px-6"> {/* Re-added px-6 */}
             No properties defined for this object.
           </p>
         )}
@@ -139,7 +139,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
             variant="outline"
             onClick={() => onAddField(field.id)}
             className={cn(
-              "w-full",
+              "w-full px-6", // Re-added px-6
               level > 0 && borderColors[level % borderColors.length],
               "text-foreground hover:bg-accent hover:text-accent-foreground"
             )}

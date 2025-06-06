@@ -49,11 +49,19 @@ const SortableFieldEditor: React.FC<SortableFieldEditorProps> = ({
     transition,
     zIndex: isDragging ? 10 : 0, // Bring dragged item to front
     opacity: isDragging ? 0.8 : 1,
-    paddingLeft: `${level * 24}px`, // Apply indentation here
-  };
+    // Define a CSS variable for dynamic padding
+    '--indent-level': `${level * 24}px`,
+  } as React.CSSProperties; // Cast to React.CSSProperties to allow custom properties
 
   return (
-    <div ref={setNodeRef} style={style} className={cn(isDragging && "ring-2 ring-blue-500 rounded-md")}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        isDragging && "ring-2 ring-blue-500 rounded-md",
+        "pl-[var(--indent-level)]" // Apply padding using the CSS variable
+      )}
+    >
       <FieldEditor
         field={field}
         onFieldChange={onFieldChange}
