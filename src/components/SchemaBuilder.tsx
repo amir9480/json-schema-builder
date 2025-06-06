@@ -606,7 +606,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                 <Settings className="h-4 w-4 mr-2" /> Manage Reusable Types
               </Button> */}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto"> {/* Increased width */}
               <DialogHeader>
                 <DialogTitle>Manage Reusable Types</DialogTitle>
                 <DialogDescription>

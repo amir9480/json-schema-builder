@@ -44,7 +44,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto"> {/* Increased width */}
         <DialogHeader>
           <DialogTitle>Export Schema</DialogTitle>
           <DialogDescription>
