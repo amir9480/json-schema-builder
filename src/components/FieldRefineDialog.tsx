@@ -95,7 +95,8 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
 
-    const systemMessage = `You are a helpful assistant designed to output JSON Schema data strictly according to the user's request. The user will provide an existing JSON Schema for a single field, and a prompt for how to refine it. Your output MUST be a valid JSON Schema object for that single field, reflecting the refinements. Do not include any additional text or markdown outside the JSON object.`;
+    // Updated system message to explicitly preserve properties for object types
+    const systemMessage = `You are a helpful assistant designed to output JSON Schema data strictly according to the user's request. The user will provide an existing JSON Schema for a single field, and a prompt for how to refine it. Your output MUST be a valid JSON Schema object for that single field, reflecting the refinements. When refining an object type, ensure all existing properties are preserved unless explicitly instructed to remove them. Do not include any additional text or markdown outside the JSON object.`;
     const messages = [
       { role: "system", content: systemMessage },
       { role: "user", content: `Here is the current JSON Schema for the field:\n\n${JSON.stringify(currentFieldSchema, null, 2)}\n\nRefine this field based on the following instructions: ${prompt}` },
@@ -166,6 +167,8 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
     setIsResponseModalOpen(true);
 
     const currentFieldSchema = buildSingleFieldJsonSchema(fieldToRefine, reusableTypes);
+    console.log("JSON Schema sent to LLM for refinement:", JSON.stringify(currentFieldSchema, null, 2)); // Debug log
+    
     const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, currentFieldSchema);
 
     if (!endpoint) {
@@ -209,10 +212,12 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
         let parsedSchema: any;
         try {
           parsedSchema = typeof generatedContent === 'string' ? JSON.parse(generatedContent) : generatedContent;
-          setGeneratedJson(JSON.stringify(parsedSchema, null, 2));
+          setGeneratedJson(JSON.stringify(parsedSchema, null, 2)); // Display formatted JSON
+          console.log("Parsed JSON Schema received from LLM:", JSON.stringify(parsedSchema, null, 2)); // Debug log
           
           // Convert the refined JSON schema back to a SchemaField
           const refinedField = convertSingleJsonSchemaToSchemaField(parsedSchema, reusableTypes);
+          console.log("Converted SchemaField after refinement:", refinedField); // Debug log
           
           // Preserve the original ID and name of the field being refined
           const finalRefinedField = {
