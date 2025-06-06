@@ -46,7 +46,7 @@ const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
         </DialogHeader>
         <div className="flex-1 overflow-hidden py-4">
           <ScrollArea className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white">
-            <pre className="p-4 text-left text-sm block min-w-0 whitespace-pre"> {/* Removed overflow-x-auto, added whitespace-pre */}
+            <pre className="p-4 text-left text-sm block min-w-0 whitespace-pre overflow-x-auto"> {/* Added overflow-x-auto back */}
               <code>{jsonContent}</code>
             </pre>
           </ScrollArea>
