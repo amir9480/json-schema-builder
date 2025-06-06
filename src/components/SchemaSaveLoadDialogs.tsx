@@ -211,7 +211,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
     <React.Fragment>
       {/* Save Schema Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-xl"> {/* Increased width */}
           <DialogHeader>
             <DialogTitle>Save Current Schema</DialogTitle>
             <DialogDescription>
@@ -254,7 +254,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
 
       {/* Actual Load Schema Dialog */}
       <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
-        <DialogContent className="sm:max-w-[425px] max-h-[80vh] flex flex-col">
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col"> {/* Increased width */}
           <DialogHeader>
             <DialogTitle>Load Saved Schema</DialogTitle>
             <DialogDescription>
@@ -346,7 +346,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
 
       {/* Rename Schema Dialog */}
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-xl"> {/* Increased width */}
           <DialogHeader>
             <DialogTitle>Rename Schema</DialogTitle>
             <DialogDescription>

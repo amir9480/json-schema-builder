@@ -27,7 +27,7 @@ const SchemaImportDialog: React.FC<SchemaImportDialogProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-3xl"> {/* Increased width */}
         <DialogHeader>
           <DialogTitle>Import JSON Schema</DialogTitle>
           <DialogDescription>
