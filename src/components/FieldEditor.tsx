@@ -199,7 +199,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         level > 0 && currentBorderColor
       )}
     >
-      <div className="flex items-center gap-4"> {/* Removed px-6 */}
+      <div className="flex items-center gap-4">
         {/* Drag and Move Buttons */}
         {!isRoot && (
           <div className="flex flex-col items-center justify-center h-full py-4 -my-4 ml-[-1.5rem] shrink-0">
@@ -246,9 +246,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             {typeOptions.map((option) => {
               if (hideRefTypeOption && option.value === "ref") return null;
               return (
-                <SelectItem
+                <DropdownMenuItem // Changed from SelectItem to DropdownMenuItem
                   key={option.value}
-                  value={option.value}
                   onSelect={() => handleTypeChange(option.value)}
                   className={cn(
                     "flex items-center gap-2 cursor-pointer",
@@ -257,7 +256,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 >
                   <FieldTypeIcon type={option.value} className="!bg-transparent !border-none !text-foreground" />
                   <span>{option.label}</span>
-                </SelectItem>
+                </DropdownMenuItem>
               );
             })}
           </DropdownMenuContent>
@@ -371,7 +370,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       </div>
 
       {field.type === "ref" && (
-        <div className="grid gap-2 mt-2"> {/* Removed px-6 */}
+        <div className="grid gap-2 mt-2">
           <div className="flex items-center justify-between">
             <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
             {onManageReusableTypes && (
