@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { showSuccess } from "@/utils/toast";
 import { COUNTRIES_EN, PRIORITY_OPTIONS } from "@/utils/predefinedOptions"; // Import predefined options
+import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
 
 interface FieldDropdownOptionsProps {
   field: SchemaField;
@@ -109,24 +110,26 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
             </DropdownMenu>
           </div>
           {field.options && field.options.length > 0 ? (
-            <div className="space-y-2 mt-2">
-              {field.options.map((option, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={option}
-                    onChange={(e) => handleEditOption(option, e.target.value)}
-                    className="flex-1"
-                  />
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => handleRemoveOption(option)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-            </div>
+            <ScrollArea className="h-48 rounded-md border p-2 mt-2"> {/* Added ScrollArea */}
+              <div className="space-y-2">
+                {field.options.map((option, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={option}
+                      onChange={(e) => handleEditOption(option, e.target.value)}
+                      className="flex-1"
+                    />
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      onClick={() => handleRemoveOption(option)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
           ) : (
             <p className="text-sm text-muted-foreground italic">No options added yet.</p>
           )}
