@@ -40,7 +40,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         requestBody = {
           model: "gpt-4o", // gpt-4o and newer models support json_schema
           messages: messages,
-          response_format: { type: "json_schema", schema: jsonSchema },
+          response_format: { type: "json_schema", json_schema: jsonSchema }, // Corrected here
         };
         break;
       case "gemini":
@@ -61,7 +61,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         requestBody = {
           model: "mistral-large-latest", // Check Mistral's documentation for models supporting json_schema
           messages: messages,
-          response_format: { type: "json_schema", schema: jsonSchema },
+          response_format: { type: "json_schema", json_schema: jsonSchema }, // Corrected here
         };
         break;
       case "openrouter":
@@ -71,7 +71,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         requestBody = {
           model: "mistralai/mistral-7b-instruct", // Example model, choose one from OpenRouter's list that supports json_schema
           messages: messages,
-          response_format: { type: "json_schema", schema: jsonSchema },
+          response_format: { type: "json_schema", json_schema: jsonSchema }, // Corrected here
         };
         break;
       default:
