@@ -40,6 +40,7 @@ import SchemaClearConfirmation from "./SchemaClearConfirmation";
 import SchemaSaveLoadDialogs from "./SchemaSaveLoadDialogs";
 import SchemaAIGenerateDialog from "./SchemaAIGenerateDialog"; // New import
 import SchemaMergeReplaceConfirmation from "./SchemaMergeReplaceConfirmation"; // New import
+import GenerateSchemaPromptCard from "./GenerateSchemaPromptCard"; // New import
 
 interface SchemaBuilderProps {}
 
@@ -596,9 +597,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
           </div>
 
           {schemaFields.length === 0 ? (
-            <p className="text-muted-foreground">
-              Start by adding your first field.
-            </p>
+            <GenerateSchemaPromptCard onAIGenerateSchemaTrigger={() => setIsAIGenerateDialogOpen(true)} />
           ) : (
             <DndContext
               sensors={sensors}
