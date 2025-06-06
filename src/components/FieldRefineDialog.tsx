@@ -23,6 +23,7 @@ import { SchemaField } from "./FieldEditor";
 import { buildSingleFieldJsonSchema } from "@/utils/jsonSchemaBuilder";
 import { convertSingleJsonSchemaToSchemaField } from "@/utils/schemaConverter";
 import ApiResponseDisplay from "./ApiResponseDisplay";
+import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
 
 interface FieldRefineDialogProps {
   isOpen: boolean;
@@ -303,7 +304,15 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
           </div>
 
           <Button onClick={handleRefineField} disabled={isLoading}>
-            {isLoading ? "Refining..." : <><Sparkles className="h-4 w-4 mr-2" /> Refine Field</>}
+            {isLoading ? (
+              <>
+                <LoadingSpinner className="mr-2" /> Refining...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" /> Refine Field
+              </>
+            )}
           </Button>
         </div>
 

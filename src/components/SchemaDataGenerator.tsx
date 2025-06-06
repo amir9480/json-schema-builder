@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
 import ApiResponseDisplay from "./ApiResponseDisplay";
+import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
 
 interface SchemaDataGeneratorProps {
   jsonSchema: any;
@@ -260,7 +261,15 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
       </div>
 
       <Button onClick={handleGenerateData} disabled={isLoading} className="w-full">
-        {isLoading ? "Generating Data..." : <><Sparkles className="h-4 w-4 mr-2" /> Generate Data</>}
+        {isLoading ? (
+          <>
+            <LoadingSpinner className="mr-2" /> Generating Data...
+          </>
+        ) : (
+          <>
+            <Sparkles className="h-4 w-4 mr-2" /> Generate Data
+          </>
+        )}
       </Button>
 
       <ApiResponseDisplay
