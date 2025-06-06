@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// Removed ScrollArea import as it's no longer used for the code block
 
 interface ApiResponseDisplayProps {
   isOpen: boolean;
@@ -45,14 +45,12 @@ const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden py-4">
-          <ScrollArea className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white">
-            {/* Wrapped pre in a div with overflow-x-auto */}
-            <div className="overflow-x-auto">
-              <pre className="p-4 text-left text-sm block min-w-0 whitespace-pre">
-                <code>{jsonContent}</code>
-              </pre>
-            </div>
-          </ScrollArea>
+          {/* Replaced ScrollArea with a simple div for direct control over scrolling */}
+          <div className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white overflow-auto">
+            <pre className="p-4 text-left text-sm block min-w-0 whitespace-pre">
+              <code>{jsonContent}</code>
+            </pre>
+          </div>
         </div>
         <div className="flex justify-end gap-2 mt-auto">
           <Button onClick={handleCopy}>
