@@ -8,9 +8,9 @@ import {
 } from "@/components/ui/dialog";
 import SchemaDisplay from "./SchemaDisplay";
 import { SchemaField } from "./FieldEditor";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"; // Import Tabs components
-import CurlCommandGenerator from "./CurlCommandGenerator"; // Import the new component
-import { buildFullJsonSchema } from "@/utils/jsonSchemaBuilder"; // Import to pass to CurlCommandGenerator
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import CurlCommandGenerator from "./CurlCommandGenerator";
+import { buildFullJsonSchema } from "@/utils/jsonSchemaBuilder";
 
 interface SchemaExportDialogProps {
   isOpen: boolean;
@@ -19,6 +19,8 @@ interface SchemaExportDialogProps {
   reusableTypes: SchemaField[];
 }
 
+const LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY = "jsonSchemaBuilderSelectedExportTab";
+
 const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   isOpen,
   onOpenChange,
@@ -26,6 +28,19 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   reusableTypes,
 }) => {
   const jsonSchema = buildFullJsonSchema(schemaFields, reusableTypes);
+
+  const [selectedTab, setSelectedTab] = React.useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY) || "json-schema";
+    }
+    return "json-schema";
+  });
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY, selectedTab);
+    }
+  }, [selectedTab]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -37,7 +52,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <div className="py-4">
-          <Tabs defaultValue="json-schema" className="w-full">
+          <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="json-schema">JSON Schema</TabsTrigger>
               <TabsTrigger value="curl-command">cURL Command</TabsTrigger>
