@@ -21,94 +21,9 @@ function toSnakeCase(str: string): string {
     .replace(/^-/, "");
 }
 
-// --- Python (Pydantic) Code Generation ---
-
-function generatePydanticModel(
-  schemaName: string,
-  schema: any,
-  definitions: { [key: string]: any },
-  indent: string = "    ",
-): string {
-  const properties = schema.properties || {};
-  const required = new Set(schema.required || []);
-  let modelCode = `class ${toPascalCase(schemaName)}(BaseModel):\n`;
-
-  if (schema.description) {
-    modelCode += `${indent}"""\n${indent}${schema.description}\n${indent}"""\n`;
-  }
-
-  if (Object.keys(properties).length === 0) {
-    modelCode += `${indent}pass\n`; // Empty model
-  } else {
-    for (const propName in properties) {
-      const prop = properties[propName];
-      const isRequired = required.has(propName);
-      let pydanticType = "Any"; // Default to Any if type is unknown
-      let defaultValue = "";
-      let comment = "";
-
-      if (prop.description) {
-        comment += `  # ${prop.description}`;
-      }
-      if (prop.example !== undefined) {
-        comment += `${comment ? ", " : "  # "}Example: ${JSON.stringify(prop.example)}`;
-      }
-
-      if (prop.$ref) {
-        const refName = prop.$ref.split("/").pop();
-        pydanticType = toPascalCase(refName);
-      } else if (prop.type === "array") {
-        const items = prop.items;
-        let itemType = "Any";
-        if (items) {
-          if (items.$ref) {
-            const refName = items.$ref.split("/").pop();
-            itemType = toPascalCase(refName);
-          } else if (items.type === "object") {
-            // Inline object in array, generate a nested anonymous model or handle as dict
-            // For simplicity, we'll treat it as Dict[str, Any] or generate a nested model if complex
-            // For now, let's assume it's a simple type or a defined ref
-            itemType = mapJsonSchemaTypeToPydanticType(items.type, items.format, items.enum);
-          } else {
-            itemType = mapJsonSchemaTypeToPydanticType(items.type, items.format, items.enum);
-          }
-        }
-        pydanticType = `list[${itemType}]`;
-        if (prop.minItems !== undefined) comment += `${comment ? ", " : "  # "}Min items: ${prop.minItems}`;
-        if (prop.maxItems !== undefined) comment += `${comment ? ", " : "  # "}Max items: ${prop.maxItems}`;
-      } else if (prop.type === "object") {
-        // Inline object, treat as Dict[str, Any] or generate nested model
-        // For now, we'll generate a nested model if it has properties
-        if (Object.keys(prop.properties || {}).length > 0) {
-          const nestedModelName = toPascalCase(propName);
-          // This requires a separate definition for the nested model
-          // For simplicity in this generator, we'll assume all objects are either top-level or referenced.
-          // If inline objects are needed, this function would need to recursively call itself and manage unique names.
-          // For now, we'll treat inline objects as Dict[str, Any] or generate a placeholder.
-          pydanticType = `Dict[str, Any]`; // Fallback for inline objects
-          comment += `${comment ? ", " : "  # "}Nested object properties: ${Object.keys(prop.properties).join(", ")}`;
-        } else {
-          pydanticType = `Dict[str, Any]`;
-        }
-      } else {
-        pydanticType = mapJsonSchemaTypeToPydanticType(prop.type, prop.format, prop.enum);
-        if (prop.minimum !== undefined) comment += `${comment ? ", " : "  # "}Min value: ${prop.minimum}`;
-        if (prop.maximum !== undefined) comment += `${comment ? ", " : "  # "}Max value: ${prop.maximum}`;
-        if (prop.pattern) comment += `${comment ? ", " : "  # "}Pattern: ${prop.pattern}`;
-      }
-
-      const fieldName = toSnakeCase(propName);
-
-      if (!isRequired) {
-        pydanticType = `Optional[${pydanticType}]`;
-        defaultValue = " = None";
-      }
-
-      modelCode += `${indent}${fieldName}: ${pydanticType}${defaultValue}${comment}\n`;
-    }
-  }
-  return modelCode;
-}
+// This map will collect all Pydantic models to be generated, keyed by their PascalCase name.
+// It will store the JSON Schema definition for each model.
+const collectedPydanticModels: Map<string, any> = new Map();
 
 function mapJsonSchemaTypeToPydanticType(jsonType: string | string[], format?: string, enumValues?: string[]): string {
   const actualType = Array.isArray(jsonType) ? jsonType.find((t) => t !== "null") : jsonType;
@@ -133,7 +48,86 @@ function mapJsonSchemaTypeToPydanticType(jsonType: string | string[], format?: s
   }
 }
 
+// Recursive helper to build Pydantic model content and collect nested models
+function _buildPydanticModelContent(
+  currentSchema: any,
+  parentName: string, // Used for generating unique names for inline nested objects
+  indent: string = "    ",
+): string {
+  const properties = currentSchema.properties || {};
+  const required = new Set(currentSchema.required || []);
+  let modelContent = "";
+
+  for (const propName in properties) {
+    const prop = properties[propName];
+    const isRequired = required.has(propName);
+    let pydanticType = "Any";
+    let defaultValue = "";
+    let comment = "";
+
+    if (prop.description) {
+      comment += `  # ${prop.description}`;
+    }
+    if (prop.example !== undefined) {
+      comment += `${comment ? ", " : "  # "}Example: ${JSON.stringify(prop.example)}`;
+    }
+
+    if (prop.$ref) {
+      const refName = prop.$ref.split("/").pop();
+      pydanticType = toPascalCase(refName);
+    } else if (prop.type === "array") {
+      const items = prop.items;
+      let itemType = "Any";
+      if (items) {
+        if (items.$ref) {
+          const refName = items.$ref.split("/").pop();
+          itemType = toPascalCase(refName);
+        } else if (items.type === "object") {
+          // Inline object within an array: generate a new nested model
+          const nestedModelName = toPascalCase(`${parentName}${toPascalCase(propName)}Item`);
+          // Add this new model to the collection if not already present
+          if (!collectedPydanticModels.has(nestedModelName)) {
+            collectedPydanticModels.set(nestedModelName, items);
+          }
+          itemType = nestedModelName;
+        } else {
+          itemType = mapJsonSchemaTypeToPydanticType(items.type, items.format, items.enum);
+        }
+      }
+      pydanticType = `list[${itemType}]`;
+      if (prop.minItems !== undefined) comment += `${comment ? ", " : "  # "}Min items: ${prop.minItems}`;
+      if (prop.maxItems !== undefined) comment += `${comment ? ", " : "  # "}Max items: ${prop.maxItems}`;
+    } else if (prop.type === "object") {
+      // Inline object: generate a new nested model
+      const nestedModelName = toPascalCase(`${parentName}${toPascalCase(propName)}`);
+      // Add this new model to the collection if not already present
+      if (!collectedPydanticModels.has(nestedModelName)) {
+        collectedPydanticModels.set(nestedModelName, prop);
+      }
+      pydanticType = nestedModelName;
+    } else {
+      pydanticType = mapJsonSchemaTypeToPydanticType(prop.type, prop.format, prop.enum);
+      if (prop.minimum !== undefined) comment += `${comment ? ", " : "  # "}Min value: ${prop.minimum}`;
+      if (prop.maximum !== undefined) comment += `${comment ? ", " : "  # "}Max value: ${prop.maximum}`;
+      if (prop.pattern) comment += `${comment ? ", " : "  # "}Pattern: ${prop.pattern}`;
+    }
+
+    const fieldName = toSnakeCase(propName);
+
+    if (!isRequired) {
+      pydanticType = `Optional[${pydanticType}]`;
+      defaultValue = " = None";
+    }
+
+    modelContent += `${indent}${fieldName}: ${pydanticType}${defaultValue}${comment}\n`;
+  }
+  return modelContent;
+}
+
 export function generatePythonCode(jsonSchema: any, selectedProvider: string, apiKey: string): string {
+  // Clear collected models for each new generation
+  collectedPydanticModels.clear();
+
   const definitions = jsonSchema.definitions || {};
   const rootSchemaName = jsonSchema.title ? toPascalCase(jsonSchema.title) : "MainSchema";
   let code = `from pydantic import BaseModel\n`;
@@ -173,17 +167,36 @@ export function generatePythonCode(jsonSchema: any, selectedProvider: string, ap
   code += clientConfig;
   code += "\n";
 
-  // Generate reusable type models first
+  // First, add all explicit definitions (reusable types) to the collection
   for (const defName in definitions) {
-    code += generatePydanticModel(defName, definitions[defName], definitions);
-    code += "\n";
+    collectedPydanticModels.set(toPascalCase(defName), definitions[defName]);
   }
 
-  // Generate the main schema model
-  code += generatePydanticModel(rootSchemaName, jsonSchema, definitions);
-  code += "\n";
+  // Then, process the root schema. This will recursively add any inline nested objects to the collection.
+  collectedPydanticModels.set(rootSchemaName, jsonSchema);
 
-  // Add example usage
+  // Generate code for all collected models (definitions + root + inline nested)
+  // Iterate over a copy of keys to allow map modification during iteration
+  const modelNamesToProcess = Array.from(collectedPydanticModels.keys());
+  for (const modelName of modelNamesToProcess) {
+    const modelSchema = collectedPydanticModels.get(modelName);
+    if (!modelSchema) continue; // Should not happen
+
+    let modelCode = `class ${modelName}(BaseModel):\n`;
+    if (modelSchema.description) {
+      modelCode += `    """\n    ${modelSchema.description}\n    """\n`;
+    }
+
+    const content = _buildPydanticModelContent(modelSchema, modelName); // Pass modelName as parentName
+    if (content.trim() === "") {
+      modelCode += `    pass\n`;
+    } else {
+      modelCode += content;
+    }
+    code += modelCode + "\n";
+  }
+
+  // Add example usage (this part remains the same)
   code += `# Example usage:\n`;
   code += `system_message = "Extract the event information."\n`;
   code += `user_content = "Alice and Bob are going to a science fair on Friday."\n\n`;
