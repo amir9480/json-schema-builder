@@ -145,8 +145,9 @@ const buildPropertiesAndRequired = (
       }
 
       // Handle isRequired logic: if not required, allow null type
-      // This is now separate from adding to the root 'required' array for LLM compatibility
-      if (!field.isRequired) {
+      // This should NOT apply to 'ref' types, as 'ref' is a schema keyword, not a data type.
+      // The nullability of a referenced object should be defined within the referenced schema itself.
+      if (!field.isRequired && field.type !== "ref") {
         fieldSchema.type = Array.isArray(fieldSchema.type)
           ? [...fieldSchema.type, "null"]
           : [fieldSchema.type, "null"];
@@ -162,7 +163,7 @@ const buildPropertiesAndRequired = (
         arraySchema.minItems = field.minItems;
       }
       if (field.maxItems !== undefined) {
-        arraySchema.maximum = field.maxItems; // Changed to maximum for array length
+        arraySchema.maxItems = field.maxItems; // Changed to maximum for array length
       }
       properties[field.name] = arraySchema;
     } else {
