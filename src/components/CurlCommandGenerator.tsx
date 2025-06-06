@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
-import ResponseDisplayDialog from "./ResponseDisplayDialog"; // Import the new dialog
+import ApiResponseDisplay from "./ApiResponseDisplay"; // Import the new component
 
 interface CurlCommandGeneratorProps {
   jsonSchema: any;
@@ -47,7 +47,6 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     return "Generate a JSON object based on the schema.";
   });
 
-  const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false);
   const [responseJson, setResponseJson] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState(false);
 
@@ -192,7 +191,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
 
     setIsLoading(true);
     setResponseJson("Loading...");
-    setIsResponseModalOpen(true);
+    // No longer opening a modal, just updating state
 
     try {
       const response = await fetch(endpoint, {
@@ -317,13 +316,13 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         Remember to replace `YOUR_APP_URL` if you are using OpenRouter.
       </p>
 
-      <ResponseDisplayDialog
-        isOpen={isResponseModalOpen}
-        onOpenChange={setIsResponseModalOpen}
-        title="API Response"
-        description="The response from the LLM API call."
-        jsonContent={responseJson}
-      />
+      {responseJson && (
+        <ApiResponseDisplay
+          title="API Response"
+          description="The response from the LLM API call."
+          jsonContent={responseJson}
+        />
+      )}
     </div>
   );
 };
