@@ -10,7 +10,7 @@ const CustomCollapsibleContent = React.forwardRef<
     ref={ref}
     className={cn(
       "overflow-hidden text-sm transition-all duration-300 ease-in-out",
-      "data-[state=closed]:max-h-0 data-[state=open]:max-h-[1000px]", // Use a large max-height for open state
+      "data-[state=closed]:max-h-0 data-[state=open]:max-h-none", // Changed to max-h-none for full expansion
       className
     )}
     {...props}
