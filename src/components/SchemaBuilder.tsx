@@ -11,10 +11,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger, // Added DialogTrigger here
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { showSuccess, showError } from "@/utils/toast";
-import { jsonSchemaToSchemaFields } from "@/utils/schemaConverter";
+import { convertFullJsonSchemaToSchemaFieldsAndReusableTypes } from "@/utils/schemaConverter";
 import {
   DndContext,
   closestCenter,
@@ -38,6 +38,8 @@ import SchemaPreviewDialog from "./SchemaPreviewDialog";
 import SchemaExportDialog from "./SchemaExportDialog";
 import SchemaClearConfirmation from "./SchemaClearConfirmation";
 import SchemaSaveLoadDialogs from "./SchemaSaveLoadDialogs";
+import SchemaAIGenerateDialog from "./SchemaAIGenerateDialog"; // New import
+import SchemaMergeReplaceConfirmation from "./SchemaMergeReplaceConfirmation"; // New import
 
 interface SchemaBuilderProps {}
 
@@ -62,6 +64,12 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [selectedLoadSchemaName, setSelectedLoadSchemaName] = useState("");
   const [savedSchemaNames, setSavedSchemaNames] = useState<string[]>([]);
   const [isLoadConfirmOpen, setIsLoadConfirmOpen] = useState(false);
+
+  // New states for AI generation and merge/replace
+  const [isAIGenerateDialogOpen, setIsAIGenerateDialogOpen] = useState(false);
+  const [isMergeReplaceConfirmOpen, setIsMergeReplaceConfirmOpen] = useState(false);
+  const [pendingGeneratedFields, setPendingGeneratedFields] = useState<SchemaField[]>([]);
+  const [pendingGeneratedReusableTypes, setPendingGeneratedReusableTypes] = useState<SchemaField[]>([]);
 
   // Track initial load to determine if there are "unsaved changes"
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -230,14 +238,21 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const handleImportSchema = () => {
     try {
       const parsedJson = JSON.parse(importJsonInput);
-      const convertedFields = jsonSchemaToSchemaFields(parsedJson);
-      setSchemaFields(convertedFields);
-      setReusableTypes([]); // Clear reusable types on import, as they are not part of standard JSON Schema
-      setInitialSchemaFields(JSON.stringify(convertedFields)); // Update initial state
-      setInitialReusableTypes(JSON.stringify([])); // Update initial state
-      showSuccess("JSON schema imported successfully!");
-      setIsImportDialogOpen(false);
-      setImportJsonInput("");
+      const { mainFields, reusableTypes: importedReusableTypes } = convertFullJsonSchemaToSchemaFieldsAndReusableTypes(parsedJson);
+      
+      if (schemaFields.length > 0 || reusableTypes.length > 0) {
+        setPendingGeneratedFields(mainFields);
+        setPendingGeneratedReusableTypes(importedReusableTypes);
+        setIsMergeReplaceConfirmOpen(true);
+      } else {
+        setSchemaFields(mainFields);
+        setReusableTypes(importedReusableTypes);
+        setInitialSchemaFields(JSON.stringify(mainFields));
+        setInitialReusableTypes(JSON.stringify(importedReusableTypes));
+        showSuccess("JSON schema imported successfully!");
+        setIsImportDialogOpen(false);
+        setImportJsonInput("");
+      }
     } catch (error) {
       console.error("Failed to import JSON schema:", error);
       showError("Failed to import JSON schema. Please ensure it's valid JSON.");
@@ -510,6 +525,53 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     }
   };
 
+  const handleAIGeneratedSchema = (mainFields: SchemaField[], newReusableTypes: SchemaField[]) => {
+    if (schemaFields.length > 0 || reusableTypes.length > 0) {
+      setPendingGeneratedFields(mainFields);
+      setPendingGeneratedReusableTypes(newReusableTypes);
+      setIsMergeReplaceConfirmOpen(true);
+    } else {
+      setSchemaFields(mainFields);
+      setReusableTypes(newReusableTypes);
+      setInitialSchemaFields(JSON.stringify(mainFields));
+      setInitialReusableTypes(JSON.stringify(newReusableTypes));
+      showSuccess("Schema generated and applied!");
+    }
+  };
+
+  const handleReplaceSchema = () => {
+    setSchemaFields(pendingGeneratedFields);
+    setReusableTypes(pendingGeneratedReusableTypes);
+    setInitialSchemaFields(JSON.stringify(pendingGeneratedFields));
+    setInitialReusableTypes(JSON.stringify(pendingGeneratedReusableTypes));
+    showSuccess("Schema replaced successfully!");
+    setIsMergeReplaceConfirmOpen(false);
+    setPendingGeneratedFields([]);
+    setPendingGeneratedReusableTypes([]);
+  };
+
+  const handleMergeSchema = () => {
+    // Merge main fields
+    const mergedFields = [...schemaFields, ...pendingGeneratedFields];
+    // Merge reusable types, ensuring uniqueness by name (or ID if names can be duplicated)
+    const mergedReusableTypesMap = new Map<string, SchemaField>();
+    [...reusableTypes, ...pendingGeneratedReusableTypes].forEach(rt => {
+      // Prioritize existing types if names clash, or merge properties if that's desired
+      // For simplicity, we'll just use the last one if names clash.
+      mergedReusableTypesMap.set(rt.name, rt);
+    });
+    const mergedReusableTypes = Array.from(mergedReusableTypesMap.values());
+
+    setSchemaFields(mergedFields);
+    setReusableTypes(mergedReusableTypes);
+    setInitialSchemaFields(JSON.stringify(mergedFields));
+    setInitialReusableTypes(JSON.stringify(mergedReusableTypes));
+    showSuccess("Schema merged successfully!");
+    setIsMergeReplaceConfirmOpen(false);
+    setPendingGeneratedFields([]);
+    setPendingGeneratedReusableTypes([]);
+  };
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <h1 className="text-4xl font-bold text-center mb-8">
@@ -518,7 +580,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
       <div className="grid grid-cols-1 gap-8">
         <div className="space-y-6">
-          <div className="sticky top-0 z-10 bg-background py-4 px-6 border-b"> {/* Added px-6 and changed pb-4 to py-4 */}
+          <div className="sticky top-0 z-10 bg-background py-4 px-6 border-b">
             <SchemaBuilderToolbar
               onAddField={() => addField()}
               onClearSchemaTrigger={() => setIsClearConfirmOpen(true)}
@@ -527,7 +589,8 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
               onManageTypesTrigger={() => setIsManageTypesOpen(true)}
               onExportSchemaTrigger={() => setIsExportDialogOpen(true)}
               onSaveSchemaTrigger={() => setIsSaveDialogOpen(true)}
-              onLoadSchemaTrigger={() => setIsLoadConfirmOpen(true)} // Trigger confirmation first
+              onLoadSchemaTrigger={() => setIsLoadConfirmOpen(true)}
+              onAIGenerateSchemaTrigger={() => setIsAIGenerateDialogOpen(true)} {/* New trigger */}
               hasSchemaFields={schemaFields.length > 0}
             />
           </div>
@@ -606,7 +669,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                 <Settings className="h-4 w-4 mr-2" /> Manage Reusable Types
               </Button> */}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto"> {/* Increased width */}
+            <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Manage Reusable Types</DialogTitle>
                 <DialogDescription>
@@ -639,6 +702,21 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             setSchemaFields={setSchemaFields}
             setReusableTypes={setReusableTypes}
             hasUnsavedChanges={hasUnsavedChanges}
+          />
+
+          {/* New AI Generate Schema Dialog */}
+          <SchemaAIGenerateDialog
+            isOpen={isAIGenerateDialogOpen}
+            onOpenChange={setIsAIGenerateDialogOpen}
+            onSchemaGenerated={handleAIGeneratedSchema}
+          />
+
+          {/* New Merge/Replace Confirmation Dialog */}
+          <SchemaMergeReplaceConfirmation
+            isOpen={isMergeReplaceConfirmOpen}
+            onOpenChange={setIsMergeReplaceConfirmOpen}
+            onReplace={handleReplaceSchema}
+            onMerge={handleMergeSchema}
           />
         </div>
       </div>
