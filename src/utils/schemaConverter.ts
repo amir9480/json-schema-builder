@@ -10,18 +10,15 @@ const mapJsonSchemaTypeToSchemaFieldType = (jsonType: string, format?: string): 
     case "string":
       if (format === "date") return "date";
       if (format === "date-time") return "datetime";
-      // Check for currency pattern (simple heuristic)
-      // This is a very basic heuristic and might need refinement based on actual patterns.
-      // For now, if a string has a pattern that looks like currency, assume it.
-      // A more robust solution might involve checking for a custom 'currency' format.
-      if (format === undefined && /^\W?\d+(\.\d{1,2})?$/.test("example")) return "currency"; // Placeholder check
       return "string";
     case "number":
-      // JSON schema doesn't distinguish int/float directly, default to int.
-      // User can manually change to float/currency if needed.
+      // JSON schema doesn't distinguish int/float directly, default to float.
+      // User can manually change to int/currency if needed.
+      return "float";
+    case "integer": // Explicit integer type
       return "int";
-    case "boolean": // Add boolean type mapping if needed, defaulting to string for now
-      return "string";
+    case "boolean":
+      return "boolean";
     default:
       console.warn(`Unsupported JSON Schema type or format: ${jsonType} (format: ${format || 'none'}). Defaulting to 'string'.`);
       return "string";
@@ -50,6 +47,7 @@ const convertPropertiesToSchemaFields = (
     let refId: string | undefined = undefined;
     let options: string[] | undefined = undefined;
     let isRequired = requiredFields.has(key);
+    let currency: string | undefined = undefined;
 
     // Handle $ref first
     if (prop.$ref) {
@@ -81,15 +79,16 @@ const convertPropertiesToSchemaFields = (
           children = convertPropertiesToSchemaFields(itemSchema.properties, new Set(itemSchema.required || []), definitionsMap, uuidv4());
         } else {
           // Handle primitive array items
-          if (Array.isArray(itemSchema.type)) {
-            const actualType = itemSchema.type.find((t: string) => t !== "null");
-            fieldType = mapJsonSchemaTypeToSchemaFieldType(actualType || "string", itemSchema.format);
-          } else {
-            fieldType = mapJsonSchemaTypeToSchemaFieldType(itemSchema.type, itemSchema.format);
-          }
+          const actualType = Array.isArray(itemSchema.type) ? itemSchema.type.find((t: string) => t !== "null") : itemSchema.type;
+          fieldType = mapJsonSchemaTypeToSchemaFieldType(actualType || "string", itemSchema.format);
           if (itemSchema.enum) {
             fieldType = "dropdown";
             options = itemSchema.enum;
+          }
+          // Check for custom 'currency' property on array items if applicable
+          if (itemSchema.currency) {
+            fieldType = "currency";
+            currency = itemSchema.currency;
           }
         }
       } else {
@@ -100,7 +99,6 @@ const convertPropertiesToSchemaFields = (
       children = convertPropertiesToSchemaFields(prop.properties, new Set(prop.required || []), definitionsMap, uuidv4());
     } else {
       // Handle single primitive types
-      // Check if type is an array (e.g., ["string", "null"])
       const actualType = Array.isArray(prop.type) ? prop.type.find((t: string) => t !== "null") : prop.type;
       if (Array.isArray(prop.type) && prop.type.includes("null")) {
         isRequired = false; // If null is allowed, it's not strictly required
@@ -111,6 +109,11 @@ const convertPropertiesToSchemaFields = (
       if (prop.enum) {
         fieldType = "dropdown";
         options = prop.enum;
+      }
+      // Check for custom 'currency' property
+      if (prop.currency) {
+        fieldType = "currency";
+        currency = prop.currency;
       }
     }
 
@@ -129,7 +132,7 @@ const convertPropertiesToSchemaFields = (
       maxValue: prop.maximum,
       minItems: prop.minItems,
       maxItems: prop.maxItems,
-      currency: prop.currency, // Assuming 'currency' is a custom property in the schema
+      currency: currency, // Assign the detected currency
       options: options,
       parentId: parentId,
       isValidName: true, // Assume valid name from imported schema
@@ -212,6 +215,7 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
   let refId: string | undefined = undefined;
   let options: string[] | undefined = undefined;
   let isRequired = true; // Default to required for a single field, adjust if 'null' type is present
+  let currency: string | undefined = undefined;
 
   // Check for 'null' type to determine if it's required
   if (Array.isArray(jsonSchema.type) && jsonSchema.type.includes("null")) {
@@ -244,6 +248,10 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
           fieldType = "dropdown";
           options = itemSchema.enum;
         }
+        if (itemSchema.currency) {
+          fieldType = "currency";
+          currency = itemSchema.currency;
+        }
       }
     } else {
       fieldType = "string"; // Default for untyped array items
@@ -268,6 +276,10 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
       fieldType = "dropdown";
       options = jsonSchema.enum;
     }
+    if (jsonSchema.currency) {
+      fieldType = "currency";
+      currency = jsonSchema.currency;
+    }
   }
 
   const convertedField: SchemaField = {
@@ -285,7 +297,7 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
     maxValue: jsonSchema.maximum,
     minItems: jsonSchema.minItems,
     maxItems: jsonSchema.maxItems,
-    currency: jsonSchema.currency, // Assuming 'currency' is a custom property
+    currency: currency, // Assign the detected currency
     options: options,
     isValidName: true, // Assume valid name from AI
   };

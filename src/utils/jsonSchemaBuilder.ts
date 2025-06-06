@@ -29,6 +29,8 @@ const mapTypeToJsonSchemaType = (type: SchemaFieldType): string => {
     case "currency":
     case "dropdown": // Dropdown is a string type with enum
       return "string";
+    case "boolean": // Add boolean type mapping
+      return "boolean";
     default:
       return type;
   }
@@ -96,8 +98,8 @@ const buildPropertiesAndRequired = (
           if (field.type === "int" || field.type === "float") {
             fieldSchema.example = parseFloat(field.example);
             if (isNaN(fieldSchema.example)) delete fieldSchema.example; // Remove if not a valid number
-          } else if (field.type === "currency") { // Keep currency example as string
-            fieldSchema.example = field.example;
+          } else if (field.type === "boolean") {
+            fieldSchema.example = field.example.toLowerCase() === 'true';
           } else {
             fieldSchema.example = field.example;
           }
@@ -112,13 +114,10 @@ const buildPropertiesAndRequired = (
       } else if (field.type === "datetime") {
         fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // ISO 8601
       } else if (field.type === "currency" && field.currency) {
-        const symbol = getCurrencySymbol(field.currency);
-        // Regex: ^[Symbol]\s?\d+(\.\d{1,2})?$
-        // Matches: $100, $100.50, €5, €5.99, etc.
-        // \s? allows optional space between symbol and number
-        // \d+ matches one or more digits
-        // (?:\.\d{1,2})? matches an optional decimal point followed by 1 or 2 digits
-        fieldSchema.pattern = `^${symbol.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s?\\d+(?:\\.\\d{1,2})?$`;
+        // For currency, we just add a custom 'currency' property and the symbol for context,
+        // but don't enforce a pattern as it's not a standard JSON Schema feature.
+        fieldSchema.currency = field.currency;
+        fieldSchema.description = field.description ? `${field.description} (Currency: ${getCurrencySymbol(field.currency)})` : `Currency field (e.g., ${getCurrencySymbol(field.currency)}123.45)`;
       } else if (field.type === "dropdown" && field.options && field.options.length > 0) {
         fieldSchema.enum = field.options;
       }
@@ -308,8 +307,8 @@ export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: Sc
         if (field.type === "int" || field.type === "float") {
           fieldSchema.example = parseFloat(field.example);
           if (isNaN(fieldSchema.example)) delete fieldSchema.example;
-        } else if (field.type === "currency") {
-          fieldSchema.example = field.example;
+        } else if (field.type === "boolean") {
+          fieldSchema.example = field.example.toLowerCase() === 'true';
         } else {
           fieldSchema.example = field.example;
         }
@@ -323,8 +322,8 @@ export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: Sc
     } else if (field.type === "datetime") {
       fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$";
     } else if (field.type === "currency" && field.currency) {
-      const symbol = getCurrencySymbol(field.currency);
-      fieldSchema.pattern = `^${symbol.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&')}\\s?\\d+(?:\\.\\d{1,2})?$`;
+      fieldSchema.currency = field.currency;
+      fieldSchema.description = field.description ? `${field.description} (Currency: ${getCurrencySymbol(field.currency)})` : `Currency field (e.g., ${getCurrencySymbol(field.currency)}123.45)`;
     } else if (field.type === "dropdown" && field.options && field.options.length > 0) {
       fieldSchema.enum = field.options;
     }
