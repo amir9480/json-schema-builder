@@ -16,6 +16,7 @@ import {
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { toTitleCase } from "@/lib/utils";
 import { SchemaField, SchemaFieldType } from "./FieldEditor"; // Import SchemaField and SchemaFieldType
+import { Button } from "@/components/ui/button"; // Import Button
 
 interface FieldAdvancedOptionsProps {
   field: SchemaField;
@@ -28,7 +29,7 @@ const CURRENCY_OPTIONS = [
   { value: "GBP", label: "GBP - British Pound" },
   { value: "JPY", label: "JPY - Japanese Yen" },
   { value: "CAD", label: "CAD - Canadian Dollar" },
-  { value: "AUD", label: "AUD - Australian Dollar" },
+  { value: "AUD", label: "A$ - Australian Dollar" },
   { value: "CHF", label: "CHF - Swiss Franc" },
   { value: "CNY", label: "CNY - Chinese Yuan" },
   { value: "INR", label: "INR - Indian Rupee" },
