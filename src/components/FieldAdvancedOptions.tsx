@@ -36,7 +36,7 @@ const CURRENCY_OPTIONS = [
   { value: "BRL", label: "BRL - Brazilian Real" },
 ];
 
-const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = ({
+const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = React.memo(({
   field,
   onFieldChange,
 }) => {
@@ -202,6 +202,8 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = ({
       </CustomCollapsibleContent>
     </Collapsible>
   );
-};
+});
+
+FieldAdvancedOptions.displayName = "FieldAdvancedOptions";
 
 export default FieldAdvancedOptions;

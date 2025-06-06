@@ -38,7 +38,7 @@ interface FieldObjectPropertiesProps {
   onConvertToReusableType?: (fieldId: string) => void;
 }
 
-const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
+const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = React.memo(({
   field,
   onFieldChange,
   onAddField,
@@ -150,6 +150,8 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
       </CustomCollapsibleContent>
     </Collapsible>
   );
-};
+});
+
+FieldObjectProperties.displayName = "FieldObjectProperties";
 
 export default FieldObjectProperties;

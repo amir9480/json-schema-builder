@@ -35,7 +35,7 @@ interface FieldDropdownOptionsProps {
   onFieldChange: (field: SchemaField) => void;
 }
 
-const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
+const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = React.memo(({
   field,
   onFieldChange,
 }) => {
@@ -185,6 +185,8 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
       </CustomCollapsibleContent>
     </Collapsible>
   );
-};
+});
+
+FieldDropdownOptions.displayName = "FieldDropdownOptions";
 
 export default FieldDropdownOptions;
