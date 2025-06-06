@@ -31,12 +31,12 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
   hasSchemaFields,
 }) => {
   return (
-    <div className="flex items-center justify-between gap-4"> {/* Changed to flex-row, items-center, justify-between */}
+    <div className="flex items-center justify-between gap-4">
       <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
-      <div className="flex flex-wrap gap-2"> {/* Removed justify-end as parent handles it */}
+      <div className="flex flex-wrap gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={onSaveSchemaTrigger}>
+            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onSaveSchemaTrigger}>
               <Save className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -47,7 +47,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={onLoadSchemaTrigger}>
+            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onLoadSchemaTrigger}>
               <FolderOpen className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -58,7 +58,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" onClick={onImportSchemaTrigger}>
+            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onImportSchemaTrigger}>
               <Upload className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -80,7 +80,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
         
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button className="bg-secondary hover:bg-secondary/90 text-secondary-foreground" size="icon" onClick={onManageTypesTrigger}>
+            <Button variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground" size="icon" onClick={onManageTypesTrigger}>
               <Settings className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -91,7 +91,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
         
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button className="bg-success hover:bg-success/90 text-success-foreground" size="icon" onClick={onExportSchemaTrigger}>
+            <Button variant="default" className="bg-primary hover:bg-primary/90 text-primary-foreground" size="icon" onClick={onExportSchemaTrigger}>
               <Download className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -102,7 +102,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="outline" size="icon" className="text-destructive hover:text-destructive/90" onClick={onClearSchemaTrigger}>
+            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onClearSchemaTrigger}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
