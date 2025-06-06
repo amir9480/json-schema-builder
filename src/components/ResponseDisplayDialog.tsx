@@ -44,10 +44,9 @@ const ResponseDisplayDialog: React.FC<ResponseDisplayDialogProps> = ({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {/* The ScrollArea now directly manages its max height, allowing it to scroll */}
-        <div className="py-4">
-          <ScrollArea className="max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white">
-            <pre className="p-4 text-left text-sm">
+        <div className="flex-1 overflow-hidden py-4">
+          <ScrollArea className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white">
+            <pre className="p-4 text-left text-sm block min-w-0"> {/* Added block and min-w-0 */}
               <code>{jsonContent}</code>
             </pre>
           </ScrollArea>
