@@ -27,7 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast"; // Ensure showError is imported if used
-import { COUNTRIES_EN, PRIORITY_OPTIONS, CURRENCY_CODES } from "@/utils/predefinedOptions";
+import { COUNTRIES_EN, PRIORITY_OPTIONS, CURRENCY_CODES, DAYS_OF_WEEK, MONTHS_OF_YEAR } from "@/utils/predefinedOptions";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface FieldDropdownOptionsProps {
@@ -126,6 +126,12 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => handlePopulateOptions(CURRENCY_CODES, "Currency Codes")}>
                   Populate with Currency Codes
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handlePopulateOptions(DAYS_OF_WEEK, "Days of the Week")}>
+                  Populate with Days of the Week
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => handlePopulateOptions(MONTHS_OF_YEAR, "Months of the Year")}>
+                  Populate with Months of the Year
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

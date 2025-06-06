@@ -162,7 +162,7 @@ export const COUNTRIES_EN: string[] = [
   "Palau",
   "Palestine",
   "Panama",
-  "Papua New Guinea",
+  "Papua New Guinean Kina",
   "Paraguay",
   "Qatar",
   "Rwanda",
@@ -356,4 +356,29 @@ export const CURRENCY_CODES: string[] = [
   "XPF", // CFP Franc
   "ZMW", // Zambian Kwacha
   "ZWL", // Zimbabwean Dollar
+];
+
+export const DAYS_OF_WEEK: string[] = [
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+  "Sunday",
+];
+
+export const MONTHS_OF_YEAR: string[] = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
