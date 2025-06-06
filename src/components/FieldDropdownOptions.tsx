@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { showSuccess, showError } from "@/utils/toast"; // Ensure showError is imported if used
 import { COUNTRIES_EN, PRIORITY_OPTIONS, CURRENCY_CODES, DAYS_OF_WEEK, MONTHS_OF_YEAR } from "@/utils/predefinedOptions";
-import { ScrollArea } from "@/components/ui/scroll-area";
+// Removed ScrollArea import
 
 interface FieldDropdownOptionsProps {
   field: SchemaField;
@@ -158,7 +158,7 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
             </AlertDialog>
           </div>
           {field.options && field.options.length > 0 ? (
-            <ScrollArea className="h-48 rounded-md border p-2 mt-2">
+            <div className="rounded-md border p-2 mt-2"> {/* Changed from ScrollArea to div */}
               <div className="space-y-2">
                 {field.options.map((option, index) => (
                   <div key={index} className="flex items-center gap-2">
@@ -177,7 +177,7 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
                   </div>
                 ))}
               </div>
-            </ScrollArea>
+            </div>
           ) : (
             <p className="text-sm text-muted-foreground italic">No options added yet.</p>
           )}
