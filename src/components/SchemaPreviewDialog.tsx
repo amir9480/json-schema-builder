@@ -24,7 +24,7 @@ const SchemaPreviewDialog: React.FC<SchemaPreviewDialogProps> = ({
 }) => {
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Schema Form Preview</DialogTitle>
           <DialogDescription>
