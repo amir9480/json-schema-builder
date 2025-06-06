@@ -55,7 +55,8 @@ export type SchemaFieldType =
   | "currency"
   | "object"
   | "ref"
-  | "dropdown";
+  | "dropdown"
+  | "boolean"; // Add boolean
 
 export interface SchemaField {
   id: string;
@@ -211,6 +212,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
     { value: "datetime", label: "DateTime" },
     { value: "object", label: "Object" },
     { value: "dropdown", label: "Dropdown" },
+    { value: "boolean", label: "Boolean" }, // Added boolean
     { value: "ref", label: "Reference ($ref)" },
   ];
 

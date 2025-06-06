@@ -9,7 +9,8 @@ import {
   Link,
   HelpCircle,
   LucideIcon,
-  List, // Import List icon for dropdown
+  List,
+  ToggleLeft, // Import ToggleLeft icon for boolean
 } from "lucide-react";
 import {
   Tooltip,
@@ -36,7 +37,8 @@ const typeIconMap: Record<
   datetime: { icon: Clock, name: "DateTime" },
   object: { icon: Box, name: "Object" },
   ref: { icon: Link, name: "Reference" },
-  dropdown: { icon: List, name: "Dropdown" }, // Added icon for dropdown
+  dropdown: { icon: List, name: "Dropdown" },
+  boolean: { icon: ToggleLeft, name: "Boolean" }, // Added icon for boolean
 };
 
 const FieldTypeIcon: React.FC<FieldTypeIconProps> = ({ type, className }) => {

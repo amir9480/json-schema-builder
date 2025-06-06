@@ -9,6 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch"; // Import Switch for boolean type
 import { cn, toTitleCase } from "@/lib/utils";
 
 interface SchemaFormPreviewProps {
@@ -56,6 +57,8 @@ const getPlaceholderValue = (type: SchemaFieldType, currencyCode?: string, optio
       return "Referenced Value";
     case "dropdown":
       return options && options.length > 0 ? options[0] : "Select an option";
+    case "boolean":
+      return "true/false"; // Placeholder for boolean
     default:
       return "N/A";
   }
@@ -144,6 +147,14 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
                   )}
                 </SelectContent>
               </Select>
+            ) : displayField.type === "boolean" ? (
+              <div className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-800 p-2 rounded-md border border-gray-200 dark:border-gray-700">
+                <Switch
+                  checked={fieldValue !== undefined ? Boolean(fieldValue) : (displayField.example === 'true')}
+                  disabled // Preview only, not interactive
+                />
+                <Label>{fieldValue !== undefined ? String(fieldValue) : (displayField.example === 'true' ? 'True' : 'False')}</Label>
+              </div>
             ) : (
               <>
                 {displayField.isMultiple && Array.isArray(fieldValue) ? (
@@ -186,8 +197,8 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
                       {field.maxItems !== undefined && <span>Max Items: {field.maxItems}</span>}
                     </>
                   )}
-                  {field.type === "currency" && field.currency && (
-                    <span>Currency: {field.currency}</span>
+                  {displayField.type === "currency" && displayField.currency && (
+                    <span>Currency: {displayField.currency}</span>
                   )}
                 </div>
               </>
