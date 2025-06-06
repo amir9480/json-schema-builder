@@ -36,6 +36,9 @@ const SchemaImportDialog: React.FC<SchemaImportDialogProps> = ({
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <Label htmlFor="json-input">Paste your JSON Schema here:</Label>
+          <p className="text-sm text-muted-foreground -mt-2">
+            Note: Not all JSON Schema features may be fully supported.
+          </p>
           <Textarea
             id="json-input"
             value={importJsonInput}
