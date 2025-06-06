@@ -82,7 +82,7 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
     const systemMessage = "You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema. Do not include any additional text or markdown outside the JSON object.";
     const messages = [
       { role: "system", content: systemMessage },
-      { role: "user", content: `${prompt}\n\nHere is the JSON Schema:\n\n${JSON.stringify(schema, null, 2)}` },
+      { role: "user", content: prompt }, // The schema is now passed via response_format
     ];
 
     switch (provider) {
@@ -92,14 +92,21 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
         requestBody = {
           model: "gpt-4o-mini", // Using a smaller model for faster responses
           messages: messages,
-          response_format: { type: "json_object" },
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "generated_schema",
+              strict: true,
+              schema: schema,
+            },
+          },
         };
         break;
       case "gemini":
         endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         requestBody = {
           contents: [
-            { role: "user", parts: [{ text: `${systemMessage}\n\n${messages[1].content}` }] },
+            { role: "user", parts: [{ text: `${systemMessage}\n\n${prompt}\n\nHere is the JSON Schema:\n\n${JSON.stringify(schema, null, 2)}` }] },
           ],
           generationConfig: {
             responseMimeType: "application/json",
@@ -112,7 +119,14 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
         requestBody = {
           model: "mistral-small-latest", // Using a smaller model for faster responses
           messages: messages,
-          response_format: { type: "json_object" },
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "generated_schema",
+              strict: true,
+              schema: schema,
+            },
+          },
         };
         break;
       case "openrouter":
@@ -122,7 +136,14 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
         requestBody = {
           model: "openai/gpt-4o-mini",
           messages: messages,
-          response_format: { type: "json_object" },
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "generated_schema",
+              strict: true,
+              schema: schema,
+            },
+          },
         };
         break;
       default:
@@ -176,7 +197,10 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
         showError(`API Error: ${response.status} ${response.statusText}`);
       } else {
         let generatedContent: string | object = data;
+        // Extract content based on provider and response format
         if (selectedProvider === "openai" || selectedProvider === "mistral" || selectedProvider === "openrouter") {
+          // For json_schema response format, the parsed content is directly in message.parsed
+          // However, the raw content is still in message.content as a string
           generatedContent = data?.choices?.[0]?.message?.content || data;
         } else if (selectedProvider === "gemini") {
           generatedContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || data;
