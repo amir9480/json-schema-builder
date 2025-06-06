@@ -8,18 +8,20 @@ import { generatePythonCode } from "@/utils/schemaToCode";
 
 interface PythonCodeGeneratorProps {
   jsonSchema: any;
+  selectedProvider: string; // Added prop
+  apiKey: string; // Added prop
 }
 
-const PythonCodeGenerator: React.FC<PythonCodeGeneratorProps> = ({ jsonSchema }) => {
+const PythonCodeGenerator: React.FC<PythonCodeGeneratorProps> = ({ jsonSchema, selectedProvider, apiKey }) => {
   const generatedCode = React.useMemo(() => {
     if (!jsonSchema) return "";
     try {
-      return generatePythonCode(jsonSchema);
+      return generatePythonCode(jsonSchema, selectedProvider, apiKey);
     } catch (error) {
       console.error("Error generating Python code:", error);
       return `Error generating Python code: ${(error as Error).message}`;
     }
-  }, [jsonSchema]);
+  }, [jsonSchema, selectedProvider, apiKey]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(generatedCode)

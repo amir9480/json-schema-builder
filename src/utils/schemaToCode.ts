@@ -133,7 +133,7 @@ function mapJsonSchemaTypeToPydanticType(jsonType: string | string[], format?: s
   }
 }
 
-export function generatePythonCode(jsonSchema: any): string {
+export function generatePythonCode(jsonSchema: any, selectedProvider: string, apiKey: string): string {
   const definitions = jsonSchema.definitions || {};
   const rootSchemaName = jsonSchema.title ? toPascalCase(jsonSchema.title) : "MainSchema";
   let code = `from pydantic import BaseModel\n`;
@@ -141,7 +141,37 @@ export function generatePythonCode(jsonSchema: any): string {
   code += `from datetime import date, datetime # For date and datetime formats\n`;
   code += `from openai import OpenAI\n\n`;
 
-  code += `client = OpenAI()\n\n`;
+  let clientConfig = "";
+  const apiKeyPlaceholder = apiKey || `"<YOUR_${selectedProvider.toUpperCase()}_API_KEY>"`;
+
+  switch (selectedProvider) {
+    case "openai":
+      clientConfig = `client = OpenAI(api_key=${apiKeyPlaceholder})\n`;
+      break;
+    case "gemini":
+      clientConfig = `client = OpenAI(
+    base_url="https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+    api_key=${apiKeyPlaceholder},
+)\n`;
+      break;
+    case "mistral":
+      clientConfig = `client = OpenAI(
+    base_url="https://api.mistral.ai/v1",
+    api_key=${apiKeyPlaceholder},
+)\n`;
+      break;
+    case "openrouter":
+      clientConfig = `client = OpenAI(
+    base_url="https://openrouter.ai/api/v1",
+    api_key=${apiKeyPlaceholder},
+)\n`;
+      break;
+    default:
+      clientConfig = `client = OpenAI(api_key=${apiKeyPlaceholder})\n`; // Default to OpenAI config
+  }
+
+  code += clientConfig;
+  code += "\n";
 
   // Generate reusable type models first
   for (const defName in definitions) {
@@ -262,14 +292,48 @@ function mapJsonSchemaTypeToZodType(jsonType: string | string[], format?: string
   }
 }
 
-export function generateJavaScriptCode(jsonSchema: any): string {
+export function generateJavaScriptCode(jsonSchema: any, selectedProvider: string, apiKey: string): string {
   const definitions = jsonSchema.definitions || {};
   const rootSchemaName = jsonSchema.title ? toPascalCase(jsonSchema.title) : "MainSchema";
   let code = `import OpenAI from "openai";\n`;
   code += `import { zodResponseFormat } from "openai/helpers/zod";\n`;
   code += `import { z } from "zod";\n\n`;
 
-  code += `const openai = new OpenAI();\n\n`;
+  let openaiConfig = "";
+  const apiKeyPlaceholder = apiKey || `'<YOUR_${selectedProvider.toUpperCase()}_API_KEY>'`;
+
+  switch (selectedProvider) {
+    case "openai":
+      openaiConfig = `const openai = new OpenAI({ apiKey: ${apiKeyPlaceholder} });\n`;
+      break;
+    case "gemini":
+      openaiConfig = `const openai = new OpenAI({
+  baseURL: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent',
+  apiKey: ${apiKeyPlaceholder},
+});\n`;
+      break;
+    case "mistral":
+      openaiConfig = `const openai = new OpenAI({
+  baseURL: 'https://api.mistral.ai/v1',
+  apiKey: ${apiKeyPlaceholder},
+});\n`;
+      break;
+    case "openrouter":
+      openaiConfig = `const openai = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: ${apiKeyPlaceholder},
+  defaultHeaders: {
+    'HTTP-Referer': '<YOUR_APP_URL>', // Optional. Site URL for rankings on openrouter.ai.
+    'X-Title': 'JSON Schema Builder & Generator', // Optional. Site title for rankings on openrouter.ai.
+  },
+});\n`;
+      break;
+    default:
+      openaiConfig = `const openai = new OpenAI({ apiKey: ${apiKeyPlaceholder} });\n`; // Default to OpenAI config
+  }
+
+  code += openaiConfig;
+  code += "\n";
 
   // Generate reusable type Zod schemas first
   for (const defName in definitions) {

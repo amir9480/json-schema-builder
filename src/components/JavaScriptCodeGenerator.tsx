@@ -8,18 +8,20 @@ import { generateJavaScriptCode } from "@/utils/schemaToCode";
 
 interface JavaScriptCodeGeneratorProps {
   jsonSchema: any;
+  selectedProvider: string; // Added prop
+  apiKey: string; // Added prop
 }
 
-const JavaScriptCodeGenerator: React.FC<JavaScriptCodeGeneratorProps> = ({ jsonSchema }) => {
+const JavaScriptCodeGenerator: React.FC<JavaScriptCodeGeneratorProps> = ({ jsonSchema, selectedProvider, apiKey }) => {
   const generatedCode = React.useMemo(() => {
     if (!jsonSchema) return "";
     try {
-      return generateJavaScriptCode(jsonSchema);
+      return generateJavaScriptCode(jsonSchema, selectedProvider, apiKey);
     } catch (error) {
       console.error("Error generating JavaScript code:", error);
       return `Error generating JavaScript code: ${(error as Error).message}`;
     }
-  }, [jsonSchema]);
+  }, [jsonSchema, selectedProvider, apiKey]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(generatedCode)
