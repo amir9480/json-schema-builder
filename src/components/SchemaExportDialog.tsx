@@ -13,6 +13,8 @@ import CurlCommandGenerator from "./CurlCommandGenerator";
 import { buildFullJsonSchema } from "@/utils/jsonSchemaBuilder";
 import SchemaFormPreview from "./SchemaFormPreview"; // Import SchemaFormPreview
 import SchemaDataGenerator from "./SchemaDataGenerator"; // Import SchemaDataGenerator
+import PythonCodeGenerator from "./PythonCodeGenerator"; // Import PythonCodeGenerator
+import JavaScriptCodeGenerator from "./JavaScriptCodeGenerator"; // Import JavaScriptCodeGenerator
 
 interface SchemaExportDialogProps {
   isOpen: boolean;
@@ -75,11 +77,13 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         </DialogHeader>
         <div className="py-4">
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-4"> {/* Increased grid columns */}
+            <TabsList className="grid w-full grid-cols-6"> {/* Increased grid columns to accommodate new tabs */}
               <TabsTrigger value="json-schema">JSON Schema</TabsTrigger>
               <TabsTrigger value="curl-command">cURL Command</TabsTrigger>
-              <TabsTrigger value="form-preview">Form Preview</TabsTrigger> {/* New Tab */}
-              <TabsTrigger value="generate-data">Generate Data (AI)</TabsTrigger> {/* New Tab */}
+              <TabsTrigger value="form-preview">Form Preview</TabsTrigger>
+              <TabsTrigger value="generate-data">Generate Data (AI)</TabsTrigger>
+              <TabsTrigger value="python-code">Python Code</TabsTrigger> {/* New Tab Trigger */}
+              <TabsTrigger value="javascript-code">JavaScript Code</TabsTrigger> {/* New Tab Trigger */}
             </TabsList>
             <TabsContent value="json-schema" className="mt-4">
               {generatedJsonSchema ? (
@@ -95,7 +99,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 <p className="text-muted-foreground text-center">Generating cURL command...</p>
               )}
             </TabsContent>
-            <TabsContent value="form-preview" className="mt-4"> {/* New Tab Content */}
+            <TabsContent value="form-preview" className="mt-4">
               {schemaFields.length > 0 ? (
                 <SchemaFormPreview fields={schemaFields} reusableTypes={reusableTypes} formData={generatedFormData} />
               ) : (
@@ -104,16 +108,34 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 </p>
               )}
             </TabsContent>
-            <TabsContent value="generate-data" className="mt-4"> {/* New Tab Content */}
+            <TabsContent value="generate-data" className="mt-4">
               {generatedJsonSchema ? (
                 <SchemaDataGenerator
                   jsonSchema={generatedJsonSchema}
                   onDataGenerated={setGeneratedFormData}
-                  onGenerationComplete={handleDataGenerationComplete} // Pass the new callback
+                  onGenerationComplete={handleDataGenerationComplete}
                 />
               ) : (
                 <p className="text-muted-foreground text-center">
                   Build your schema first to generate data.
+                </p>
+              )}
+            </TabsContent>
+            <TabsContent value="python-code" className="mt-4"> {/* New Tab Content */}
+              {generatedJsonSchema ? (
+                <PythonCodeGenerator jsonSchema={generatedJsonSchema} />
+              ) : (
+                <p className="text-muted-foreground text-center">
+                  Build your schema first to generate Python code.
+                </p>
+              )}
+            </TabsContent>
+            <TabsContent value="javascript-code" className="mt-4"> {/* New Tab Content */}
+              {generatedJsonSchema ? (
+                <JavaScriptCodeGenerator jsonSchema={generatedJsonSchema} />
+              ) : (
+                <p className="text-muted-foreground text-center">
+                  Build your schema first to generate JavaScript code.
                 </p>
               )}
             </TabsContent>
