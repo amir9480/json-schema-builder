@@ -192,7 +192,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     }
 
     setIsLoading(true);
-    setResponseJson("Loading...");
+    setResponseJson("Loading..."); // Set initial loading text
     setIsResponseModalOpen(true); // Open the modal when starting the request
 
     try {
@@ -326,15 +326,15 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         Remember to replace `YOUR_APP_URL` if you are using OpenRouter.
       </p>
 
-      {responseJson && (
-        <ApiResponseDisplay
-          isOpen={isResponseModalOpen}
-          onOpenChange={setIsResponseModalOpen}
-          title="API Response"
-          description="The response from the LLM API call."
-          jsonContent={responseJson}
-        />
-      )}
+      {/* Pass isLoading prop to ApiResponseDisplay */}
+      <ApiResponseDisplay
+        isOpen={isResponseModalOpen}
+        onOpenChange={setIsResponseModalOpen}
+        title="API Response"
+        description="The response from the LLM API call."
+        jsonContent={responseJson}
+        isLoading={isLoading}
+      />
     </div>
   );
 };
