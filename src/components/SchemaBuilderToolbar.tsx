@@ -11,7 +11,7 @@ interface SchemaBuilderToolbarProps {
   onAddField: () => void;
   onClearSchemaTrigger: () => void;
   onImportSchemaTrigger: () => void;
-  onPreviewSchemaTrigger: () => void;
+  // onPreviewSchemaTrigger: () => void; // Removed
   onManageTypesTrigger: () => void;
   onExportSchemaTrigger: () => void;
   onSaveSchemaTrigger: () => void;
@@ -24,7 +24,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
   onAddField,
   onClearSchemaTrigger,
   onImportSchemaTrigger,
-  onPreviewSchemaTrigger,
+  // onPreviewSchemaTrigger, // Removed
   onManageTypesTrigger,
   onExportSchemaTrigger,
   onSaveSchemaTrigger,
@@ -93,6 +93,8 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
           </TooltipContent>
         </Tooltip>
 
+        {/* Removed Preview Fields Button */}
+        {/*
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onPreviewSchemaTrigger}>
@@ -103,6 +105,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
             <p>Preview Fields</p>
           </TooltipContent>
         </Tooltip>
+        */}
         
         <Tooltip>
           <TooltipTrigger asChild>
