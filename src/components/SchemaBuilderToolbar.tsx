@@ -34,8 +34,10 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 }) => {
   return (
     <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-4"> {/* Left group */}
+      <div className="flex items-center gap-4"> {/* Left group: Title only */}
         <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
+      </div>
+      <div className="flex flex-wrap gap-2"> {/* Right group: All action buttons */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onClearSchemaTrigger}>
@@ -46,8 +48,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
             <p>Clear All Fields</p>
           </TooltipContent>
         </Tooltip>
-      </div>
-      <div className="flex flex-wrap gap-2"> {/* Right group */}
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onSaveSchemaTrigger}>
