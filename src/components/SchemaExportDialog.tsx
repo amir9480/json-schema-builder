@@ -290,6 +290,72 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
   };
 
+  // handleTryIt function for the "For Developers" tab
+  const handleTryIt = async () => {
+    if (!apiKey) {
+      showError("Please enter your API Key before trying the request.");
+      return;
+    }
+    if (!userPrompt.trim()) {
+      showError("Please enter a user prompt.");
+      return;
+    }
+    if (!generatedJsonSchema || Object.keys(generatedJsonSchema).length === 0) {
+      showError("No schema defined to generate data from.");
+      return;
+    }
+
+    setIsLoading(true);
+    setIsResponseModalOpen(true); // Open the response modal immediately
+
+    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, generatedJsonSchema);
+
+    if (!endpoint) {
+      showError("Please select a valid LLM provider.");
+      setIsLoading(false);
+      setResponseJson("Error: Invalid LLM provider selected.");
+      return;
+    }
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify(requestBody),
+      });
+
+      let data;
+      const contentType = response.headers.get("content-type");
+
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+
+      if (!response.ok) {
+        console.error("API Error:", data);
+        setResponseJson(`API Error: ${response.status} ${response.statusText}\n\n${JSON.stringify(data, null, 2)}`);
+        showError(`API Error: ${response.status} ${response.statusText}. Check response modal for details.`);
+      } else {
+        let generatedContent: string | object = data;
+        if (selectedProvider === "openai" || selectedProvider === "mistral" || selectedProvider === "openrouter") {
+          generatedContent = data?.choices?.[0]?.message?.content || data;
+        } else if (selectedProvider === "gemini") {
+          generatedContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || data;
+        }
+        setResponseJson(typeof generatedContent === 'string' ? generatedContent : JSON.stringify(generatedContent, null, 2));
+        showSuccess("API request successful!");
+      }
+    } catch (error) {
+      console.error("Network or Fetch Error:", error);
+      setResponseJson(`Network or Fetch Error: ${(error as Error).message}`);
+      showError("Failed to send request. Check your API key, network connection, or browser's CORS policy.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] flex flex-col">
