@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
+  // DialogTrigger, // Removed as it's no longer needed here
 } from "@/components/ui/dialog";
 import { showSuccess, showError } from "@/utils/toast";
 import { convertFullJsonSchemaToSchemaFieldsAndReusableTypes } from "@/utils/schemaConverter";
@@ -663,12 +663,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
           />
 
           <Dialog open={isManageTypesOpen} onOpenChange={setIsManageTypesOpen}>
-            <DialogTrigger asChild>
-              {/* This trigger is now handled by SchemaBuilderToolbar, but keeping it here for context if needed */}
-              {/* <Button className="w-full mt-4 bg-purple-600 hover:bg-purple-700 text-white">
-                <Settings className="h-4 w-4 mr-2" /> Manage Reusable Types
-              </Button> */}
-            </DialogTrigger>
+            {/* This trigger is now handled by SchemaBuilderToolbar, so DialogTrigger is removed here */}
             <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Manage Reusable Types</DialogTitle>
