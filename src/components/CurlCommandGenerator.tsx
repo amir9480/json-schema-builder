@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input"; // Import Input
 import { showSuccess, showError } from "@/utils/toast";
 
 interface CurlCommandGeneratorProps {
@@ -18,11 +19,41 @@ interface CurlCommandGeneratorProps {
 
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
+const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
+const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
+
 const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema }) => {
-  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
+  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
+    if (typeof window !== "undefined") {
+      const savedProvider = localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY);
+      return (savedProvider as LLMProvider) || "openai";
+    }
+    return "openai";
+  });
+
+  const [apiKey, setApiKey] = React.useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_API_KEY) || "";
+    }
+    return "";
+  });
+
+  // Persist selectedProvider and apiKey to localStorage
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
+    }
+  }, [selectedProvider]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
+    }
+  }, [apiKey]);
+
   const jsonString = JSON.stringify(jsonSchema, null, 2);
 
-  const generateCurlCommand = (provider: LLMProvider): string => {
+  const generateCurlCommand = (provider: LLMProvider, currentApiKey: string): string => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
@@ -36,15 +67,15 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     switch (provider) {
       case "openai":
         endpoint = "https://api.openai.com/v1/chat/completions";
-        headers["Authorization"] = "Bearer YOUR_OPENAI_API_KEY";
+        headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENAI_API_KEY"}`;
         requestBody = {
           model: "gpt-4o", // gpt-4o and newer models support json_schema
           messages: messages,
-          response_format: { type: "json_schema", json_schema: jsonSchema }, // Corrected here
+          response_format: { type: "json_schema", json_schema: jsonSchema },
         };
         break;
       case "gemini":
-        endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=YOUR_GEMINI_API_KEY";
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         // Gemini typically uses responseMimeType and relies on prompt engineering for schema adherence
         requestBody = {
           contents: [
@@ -57,21 +88,21 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         break;
       case "mistral":
         endpoint = "https://api.mistral.ai/v1/chat/completions";
-        headers["Authorization"] = "Bearer YOUR_MISTRAL_API_KEY";
+        headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_MISTRAL_API_KEY"}`;
         requestBody = {
           model: "mistral-large-latest", // Check Mistral's documentation for models supporting json_schema
           messages: messages,
-          response_format: { type: "json_schema", json_schema: jsonSchema }, // Corrected here
+          response_format: { type: "json_schema", json_schema: jsonSchema },
         };
         break;
       case "openrouter":
         endpoint = "https://openrouter.ai/api/v1/chat/completions";
-        headers["Authorization"] = "Bearer YOUR_OPENROUTER_API_KEY";
+        headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
         headers["HTTP-Referer"] = "YOUR_APP_URL"; // Optional, but good practice
         requestBody = {
           model: "mistralai/mistral-7b-instruct", // Example model, choose one from OpenRouter's list that supports json_schema
           messages: messages,
-          response_format: { type: "json_schema", json_schema: jsonSchema }, // Corrected here
+          response_format: { type: "json_schema", json_schema: jsonSchema },
         };
         break;
       default:
@@ -93,7 +124,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     return commandParts.join(" \\\n  ");
   };
 
-  const currentCurlCommand = generateCurlCommand(selectedProvider);
+  const currentCurlCommand = generateCurlCommand(selectedProvider, apiKey);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(currentCurlCommand)
@@ -122,6 +153,21 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
           </SelectContent>
         </Select>
       </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="api-key-input">API Key</Label>
+        <Input
+          id="api-key-input"
+          type="password" // Use type="password" for sensitive input
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder={`Enter your ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key`}
+        />
+        <p className="text-sm text-muted-foreground">
+          Your API key is stored locally in your browser for convenience and is not sent to any server.
+        </p>
+      </div>
+
       <div className="grid gap-2">
         <Label htmlFor="curl-command-output">Generated cURL Command</Label>
         <Textarea
@@ -136,7 +182,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         <Copy className="h-4 w-4 mr-2" /> Copy cURL Command
       </Button>
       <p className="text-sm text-muted-foreground">
-        Remember to replace placeholder API keys (e.g., `YOUR_OPENAI_API_KEY`) and `YOUR_APP_URL` with your actual values.
+        Remember to replace `YOUR_APP_URL` if you are using OpenRouter.
       </p>
     </div>
   );
