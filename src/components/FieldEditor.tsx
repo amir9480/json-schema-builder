@@ -35,27 +35,16 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import FieldTypeIcon from "./FieldTypeIcon";
-import SortableFieldEditor from "./SortableFieldEditor"; // Import SortableFieldEditor for nested fields
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-  arrayMove,
-} from "@dnd-kit/sortable";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"; // Import Tooltip components
+} from "@/components/ui/tooltip";
+
+// Import new sub-components
+import FieldAdvancedOptions from "./FieldAdvancedOptions";
+import FieldDropdownOptions from "./FieldDropdownOptions";
+import FieldObjectProperties from "./FieldObjectProperties";
 
 export type SchemaFieldType =
   | "string"
@@ -66,7 +55,7 @@ export type SchemaFieldType =
   | "currency"
   | "object"
   | "ref"
-  | "dropdown"; // Added new type
+  | "dropdown";
 
 export interface SchemaField {
   id: string;
@@ -79,13 +68,13 @@ export interface SchemaField {
   example?: string;
   children?: SchemaField[];
   refId?: string;
-  minValue?: number; // Minimum value for number types
-  maxValue?: number; // Maximum value for number types
-  minItems?: number; // Minimum items for array types
-  maxItems?: number; // Maximum items for array types
-  currency?: string; // Currency code for 'currency' type
-  options?: string[]; // New: Options for 'dropdown' type
-  parentId?: string; // New: Parent ID for nested fields
+  minValue?: number;
+  maxValue?: number;
+  minItems?: number;
+  maxItems?: number;
+  currency?: string;
+  options?: string[];
+  parentId?: string;
 }
 
 interface FieldEditorProps {
@@ -98,26 +87,13 @@ interface FieldEditorProps {
   level?: number;
   reusableTypes?: SchemaField[];
   hideRefTypeOption?: boolean;
-  dragHandleAttributes?: React.HTMLAttributes<HTMLButtonElement>; // New prop for drag attributes
-  dragHandleListeners?: React.HTMLAttributes<HTMLButtonElement>; // New prop for drag listeners
-  isFirstItem?: boolean; // New prop to disable 'move up' for the first item
-  isLastItem?: boolean; // New prop to disable 'move down' for the last item
+  dragHandleAttributes?: React.HTMLAttributes<HTMLButtonElement>;
+  dragHandleListeners?: React.HTMLAttributes<HTMLButtonElement>;
+  isFirstItem?: boolean;
+  isLastItem?: boolean;
   onManageReusableTypes?: () => void;
   onConvertToReusableType?: (fieldId: string) => void;
 }
-
-const CURRENCY_OPTIONS = [
-  { value: "USD", label: "USD - United States Dollar" },
-  { value: "EUR", label: "EUR - Euro" },
-  { value: "GBP", label: "GBP - British Pound" },
-  { value: "JPY", label: "JPY - Japanese Yen" },
-  { value: "CAD", label: "CAD - Canadian Dollar" },
-  { value: "AUD", label: "AUD - Australian Dollar" },
-  { value: "CHF", label: "CHF - Swiss Franc" },
-  { value: "CNY", label: "CNY - Chinese Yuan" },
-  { value: "INR", label: "INR - Indian Rupee" },
-  { value: "BRL", label: "BRL - Brazilian Real" },
-];
 
 const FieldEditor: React.FC<FieldEditorProps> = ({
   field,
@@ -136,18 +112,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   onManageReusableTypes,
   onConvertToReusableType,
 }) => {
-  const [isAdvancedOpen, setIsAdvancedOpen] = React.useState(false);
-  const [isObjectPropertiesOpen, setIsObjectPropertiesOpen] = React.useState(true);
-  const [isDropdownOptionsOpen, setIsDropdownOptionsOpen] = React.useState(true);
-  const [newOption, setNewOption] = React.useState("");
-
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
   const borderColors = [
     "border-blue-400",
     "border-green-400",
@@ -203,78 +167,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     onFieldChange({ ...field, isRequired: checked });
   };
 
-  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFieldChange({ ...field, title: e.target.value });
-  };
-
-  const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFieldChange({ ...field, description: e.target.value });
-  };
-
-  const handleExampleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onFieldChange({ ...field, example: e.target.value });
-  };
-
-  const handleMinValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value === "" ? undefined : parseFloat(e.target.value);
-    onFieldChange({ ...field, minValue: value });
-  };
-
-  const handleMaxValueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value === "" ? undefined : parseFloat(e.target.value);
-    onFieldChange({ ...field, maxValue: value });
-  };
-
-  const handleMinItemsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
-    onFieldChange({ ...field, minItems: value });
-  };
-
-  const handleMaxItemsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
-    onFieldChange({ ...field, maxItems: value });
-  };
-
-  const handleCurrencyChange = (value: string) => {
-    onFieldChange({ ...field, currency: value });
-  };
-
-  const handleAddOption = () => {
-    if (newOption.trim() !== "") {
-      const updatedOptions = [...(field.options || []), newOption.trim()];
-      onFieldChange({ ...field, options: updatedOptions });
-      setNewOption("");
-    }
-  };
-
-  const handleRemoveOption = (optionToRemove: string) => {
-    const updatedOptions = (field.options || []).filter(
-      (option) => option !== optionToRemove
-    );
-    onFieldChange({ ...field, options: updatedOptions });
-  };
-
-  const handleEditOption = (oldOption: string, newText: string) => {
-    const updatedOptions = (field.options || []).map((option) =>
-      option === oldOption ? newText.trim() : option
-    );
-    onFieldChange({ ...field, options: updatedOptions });
-  };
-
-  const handleNestedDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (active.id !== over?.id && field.children) {
-      const oldIndex = field.children.findIndex((f) => f.id === active.id);
-      const newIndex = field.children.findIndex((f) => f.id === over?.id);
-
-      if (oldIndex !== -1 && newIndex !== -1) {
-        const newChildren = arrayMove(field.children, oldIndex, newIndex);
-        onFieldChange({ ...field, children: newChildren });
-      }
-    }
-  };
-
   const handleMoveUp = () => {
     if (onMoveField) {
       onMoveField(field.id, "up", field.parentId);
@@ -299,8 +191,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     { value: "ref", label: "Reference ($ref)" },
   ];
 
-  const isNumberLikeType = field.type === "int" || field.type === "float" || field.type === "currency";
-
   return (
     <div
       className={cn(
@@ -308,12 +198,12 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         getBackgroundClasses(level),
         level > 0 && currentBorderColor
       )}
-      style={{ marginLeft: `${level * 24}px` }} // Indent based on level (24px for px-6)
+      style={{ marginLeft: `${level * 24}px` }}
     >
-      <div className="flex items-center gap-4 px-6"> {/* Apply px-6 here */}
+      <div className="flex items-center gap-4 px-6">
         {/* Drag and Move Buttons */}
-        {!isRoot && ( // Only show for non-root fields
-          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 ml-[-1.5rem] shrink-0"> {/* ml-[-1.5rem] = -24px */}
+        {!isRoot && (
+          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 ml-[-1.5rem] shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -482,7 +372,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       </div>
 
       {field.type === "ref" && (
-        <div className="grid gap-2 mt-2 px-6"> {/* Apply px-6 here */}
+        <div className="grid gap-2 mt-2 px-6">
           <div className="flex items-center justify-between">
             <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
             {onManageReusableTypes && (
@@ -520,259 +410,26 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       )}
 
       {field.type !== "ref" && (
-        <Collapsible
-          open={isAdvancedOpen}
-          onOpenChange={setIsAdvancedOpen}
-          className="w-full space-y-2 px-6" // Apply px-6 here
-        >
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start px-0">
-              {isAdvancedOpen ? (
-                <ChevronUp className="h-4 w-4 mr-2" />
-              ) : (
-                <ChevronDown className="h-4 w-4 mr-2" />
-              )}
-              Advanced options
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
-                <Input
-                  id={`field-title-${field.id}`}
-                  value={field.title || ""}
-                  onChange={handleTitleChange}
-                  placeholder={field.name ? toTitleCase(field.name) : "e.g., Product Name"}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor={`field-description-${field.id}`}>Description (Optional)</Label>
-                <Input
-                  id={`field-description-${field.id}`}
-                  value={field.description || ""}
-                  onChange={handleDescriptionChange}
-                  placeholder="e.g., Name of the product"
-                />
-              </div>
-              <div className="grid gap-2 col-span-full">
-                <Label htmlFor={`field-example-${field.id}`}>Example Value (Optional)</Label>
-                <Input
-                  id={`field-example-${field.id}`}
-                  value={field.example || ""}
-                  onChange={handleExampleChange}
-                  placeholder="e.g., 'Laptop', 123, '2023-10-26'"
-                />
-              </div>
-
-              {isNumberLikeType && (
-                <>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`field-min-value-${field.id}`}>Min Value (Optional)</Label>
-                    <Input
-                      id={`field-min-value-${field.id}`}
-                      type="number"
-                      value={field.minValue === undefined ? "" : field.minValue}
-                      onChange={handleMinValueChange}
-                      placeholder="e.g., 0"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`field-max-value-${field.id}`}>Max Value (Optional)</Label>
-                    <Input
-                      id={`field-max-value-${field.id}`}
-                      type="number"
-                      value={field.maxValue === undefined ? "" : field.maxValue}
-                      onChange={handleMaxValueChange}
-                      placeholder="e.g., 100"
-                    />
-                  </div>
-                </>
-              )}
-
-              {field.isMultiple && (
-                <>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`field-min-items-${field.id}`}>Min Items (Optional)</Label>
-                    <Input
-                      id={`field-min-items-${field.id}`}
-                      type="number"
-                      value={field.minItems === undefined ? "" : field.minItems}
-                      onChange={handleMinItemsChange}
-                      placeholder="e.g., 1"
-                      min="0"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor={`field-max-items-${field.id}`}>Max Items (Optional)</Label>
-                    <Input
-                      id={`field-max-items-${field.id}`}
-                      type="number"
-                      value={field.maxItems === undefined ? "" : field.maxItems}
-                      onChange={handleMaxItemsChange}
-                      placeholder="e.g., 10"
-                      min="0"
-                    />
-                  </div>
-                </>
-              )}
-
-              {field.type === "currency" && (
-                <div className="grid gap-2 col-span-full">
-                  <Label htmlFor={`field-currency-${field.id}`}>Currency (Optional)</Label>
-                  <Select
-                    value={field.currency || ""}
-                    onValueChange={handleCurrencyChange}
-                  >
-                    <SelectTrigger id={`field-currency-${field.id}`}>
-                      <SelectValue placeholder="Select currency" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {CURRENCY_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        <FieldAdvancedOptions field={field} onFieldChange={onFieldChange} />
       )}
 
       {field.type === "dropdown" && (
-        <Collapsible
-          open={isDropdownOptionsOpen}
-          onOpenChange={setIsDropdownOptionsOpen}
-          className="flex flex-col gap-4 mt-4 border-t pt-4 px-6" // Apply px-6 here
-        >
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start px-0 -mt-4">
-              {isDropdownOptionsOpen ? (
-                <ChevronUp className="h-4 w-4 mr-2" />
-              ) : (
-                <ChevronDown className="h-4 w-4 mr-2" />
-              )}
-              <h3 className="text-md font-semibold">Options for {field.name || "Unnamed Dropdown"}:</h3>
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            <div className="grid gap-2 col-span-full">
-              <Label htmlFor={`field-options-${field.id}`}>Dropdown Options</Label>
-              <div className="flex gap-2">
-                <Input
-                  id={`field-options-${field.id}`}
-                  value={newOption}
-                  onChange={(e) => setNewOption(e.target.value)}
-                  placeholder="Add new option"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddOption();
-                    }
-                  }}
-                />
-                <Button onClick={handleAddOption} variant="outline" size="icon">
-                  <PlusCircle className="h-4 w-4" />
-                </Button>
-              </div>
-              {field.options && field.options.length > 0 ? (
-                <div className="space-y-2 mt-2">
-                  {field.options.map((option, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <Input
-                        value={option}
-                        onChange={(e) => handleEditOption(option, e.target.value)}
-                        className="flex-1"
-                      />
-                      <Button
-                        variant="destructive"
-                        size="icon"
-                        onClick={() => handleRemoveOption(option)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">No options added yet.</p>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+        <FieldDropdownOptions field={field} onFieldChange={onFieldChange} />
       )}
 
       {field.type === "object" && (
-        <Collapsible
-          open={isObjectPropertiesOpen}
-          onOpenChange={setIsObjectPropertiesOpen}
-          className="flex flex-col gap-4 mt-4 border-t pt-4 px-6" // Apply px-6 here
-        >
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" className="w-full justify-start px-0 -mt-4">
-              {isObjectPropertiesOpen ? (
-                <ChevronUp className="h-4 w-4 mr-2" />
-              ) : (
-                <ChevronDown className="h-4 w-4 mr-2" />
-              )}
-              <h3 className="text-md font-semibold">Properties for {field.name || "Unnamed Object"}:</h3>
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-            {field.children && field.children.length > 0 ? (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleNestedDragEnd}
-              >
-                <SortableContext
-                  items={field.children.map((child) => child.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-4">
-                    {field.children.map((childField, index) => (
-                      <SortableFieldEditor
-                        key={childField.id}
-                        field={childField}
-                        onFieldChange={onFieldChange}
-                        onAddField={onAddField}
-                        onRemoveField={onRemoveField}
-                        onMoveField={onMoveField}
-                        level={level + 1}
-                        reusableTypes={reusableTypes}
-                        hideRefTypeOption={hideRefTypeOption}
-                        isFirst={index === 0}
-                        isLast={index === (field.children?.length || 0) - 1}
-                        onManageReusableTypes={onManageReusableTypes}
-                        onConvertToReusableType={onConvertToReusableType}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            ) : (
-              <p className="text-sm text-muted-foreground">
-                No properties defined for this object.
-              </p>
-            )}
-            {onAddField && (
-              <Button
-                variant="outline"
-                onClick={() => onAddField(field.id)}
-                className={cn(
-                  "w-full",
-                  level > 0 && borderColors[level % borderColors.length],
-                  "text-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <PlusCircle className="h-4 w-4 mr-2" /> Add Property to {field.name || "Unnamed Object"}
-              </Button>
-            )}
-          </CollapsibleContent>
-        </Collapsible>
+        <FieldObjectProperties
+          field={field}
+          onFieldChange={onFieldChange}
+          onAddField={onAddField}
+          onRemoveField={onRemoveField}
+          onMoveField={onMoveField}
+          level={level}
+          reusableTypes={reusableTypes}
+          hideRefTypeOption={hideRefTypeOption}
+          onManageReusableTypes={onManageReusableTypes}
+          onConvertToReusableType={onConvertToReusableType}
+        />
       )}
     </div>
   );
