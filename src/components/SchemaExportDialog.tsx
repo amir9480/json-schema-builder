@@ -56,7 +56,8 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 }) => {
   const [selectedTab, setSelectedTab] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY) || initialTab;
+      // Prioritize initialTab prop if provided, otherwise load from localStorage
+      return initialTab || localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY) || "json-schema";
     }
     return initialTab;
   });
@@ -122,12 +123,14 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   }, [isOpen, schemaFields, reusableTypes]);
 
   React.useEffect(() => {
+    // Set the tab based on initialTab prop when dialog opens
     if (isOpen) {
       setSelectedTab(initialTab);
     }
   }, [isOpen, initialTab]);
 
   React.useEffect(() => {
+    // Persist selectedTab to localStorage whenever it changes
     if (typeof window !== "undefined") {
       localStorage.setItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY, selectedTab);
     }
