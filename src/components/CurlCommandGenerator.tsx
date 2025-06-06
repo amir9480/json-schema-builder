@@ -49,6 +49,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
 
   const [responseJson, setResponseJson] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState(false);
+  const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false); // State to control modal
 
   // Persist selectedProvider, apiKey, and userPrompt to localStorage
   React.useEffect(() => {
@@ -191,7 +192,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
 
     setIsLoading(true);
     setResponseJson("Loading...");
-    // No longer opening a modal, just updating state
+    setIsResponseModalOpen(true); // Open the modal when starting the request
 
     try {
       const response = await fetch(endpoint, {
@@ -318,6 +319,8 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
 
       {responseJson && (
         <ApiResponseDisplay
+          isOpen={isResponseModalOpen}
+          onOpenChange={setIsResponseModalOpen}
           title="API Response"
           description="The response from the LLM API call."
           jsonContent={responseJson}

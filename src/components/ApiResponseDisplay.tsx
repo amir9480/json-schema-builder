@@ -11,15 +11,15 @@ import { Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
-interface ResponseDisplayDialogProps {
-  isOpen: boolean;
-  onOpenChange: (open: boolean) => void;
+interface ApiResponseDisplayProps {
+  isOpen: boolean; // Added isOpen prop back
+  onOpenChange: (open: boolean) => void; // Added onOpenChange prop back
   title: string;
   description: string;
   jsonContent: string;
 }
 
-const ResponseDisplayDialog: React.FC<ResponseDisplayDialogProps> = ({
+const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
   isOpen,
   onOpenChange,
   title,
@@ -46,7 +46,7 @@ const ResponseDisplayDialog: React.FC<ResponseDisplayDialogProps> = ({
         </DialogHeader>
         <div className="flex-1 overflow-hidden py-4">
           <ScrollArea className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white">
-            <pre className="p-4 text-left text-sm block min-w-0"> {/* Added block and min-w-0 */}
+            <pre className="p-4 text-left text-sm block min-w-0 overflow-x-auto">
               <code>{jsonContent}</code>
             </pre>
           </ScrollArea>
@@ -62,4 +62,4 @@ const ResponseDisplayDialog: React.FC<ResponseDisplayDialogProps> = ({
   );
 };
 
-export default ResponseDisplayDialog;
+export default ApiResponseDisplay;
