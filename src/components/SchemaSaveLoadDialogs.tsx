@@ -23,7 +23,15 @@ import { Button } from "@/components/ui/button";
 import { XCircle, Pencil } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import { SchemaField } from "./FieldEditor";
-import { ScrollArea } from "@/components/ui/scroll-area"; // Import ScrollArea
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SchemaSaveLoadDialogsProps {
   isSaveDialogOpen: boolean;
@@ -34,8 +42,8 @@ interface SchemaSaveLoadDialogsProps {
   setIsLoadConfirmOpen: (open: boolean) => void;
   saveSchemaName: string;
   setSaveSchemaName: (name: string) => void;
-  selectedLoadSchemaName: string; // Still used for internal tracking if needed, but not for Select component
-  setSelectedLoadSchemaName: (name: string) => void; // Still used for internal tracking if needed
+  selectedLoadSchemaName: string;
+  setSelectedLoadSchemaName: (name: string) => void;
   savedSchemaNames: string[];
   setSavedSchemaNames: (names: string[]) => void;
   schemaFields: SchemaField[];
@@ -56,8 +64,8 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
   setIsLoadConfirmOpen,
   saveSchemaName,
   setSaveSchemaName,
-  selectedLoadSchemaName, // Keep for potential future use or internal logic
-  setSelectedLoadSchemaName, // Keep for potential future use or internal logic
+  selectedLoadSchemaName,
+  setSelectedLoadSchemaName,
   savedSchemaNames,
   setSavedSchemaNames,
   schemaFields,
@@ -70,29 +78,63 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
   const [schemaToRename, setSchemaToRename] = React.useState<string | null>(null);
   const [newSchemaName, setNewSchemaName] = React.useState("");
 
-  const handleSaveSchemaByName = () => {
-    if (!saveSchemaName.trim()) {
-      showError("Please enter a name for your schema.");
-      return;
-    }
-    if (savedSchemaNames.includes(saveSchemaName.trim())) {
-      showError(`A schema with the name "${saveSchemaName.trim()}" already exists. Please choose a different name.`);
-      return;
-    }
+  const [saveMode, setSaveMode] = React.useState<"new" | "overwrite">("new");
+  const [selectedOverwriteSchema, setSelectedOverwriteSchema] = React.useState<string>("");
+  const [isOverwriteConfirmOpen, setIsOverwriteConfirmOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    if (isSaveDialogOpen) {
+      // Reset save mode and selected overwrite schema when dialog opens
+      setSaveMode("new");
+      setSelectedOverwriteSchema("");
+      setSaveSchemaName(""); // Clear new schema name input
+    }
+  }, [isSaveDialogOpen]);
+
+  const handleSaveSchema = () => {
+    if (saveMode === "new") {
+      if (!saveSchemaName.trim()) {
+        showError("Please enter a name for your new schema.");
+        return;
+      }
+      if (savedSchemaNames.includes(saveSchemaName.trim())) {
+        showError(`A schema with the name "${saveSchemaName.trim()}" already exists. Please choose a different name or select 'Overwrite existing'.`);
+        return;
+      }
+      performSave(saveSchemaName.trim());
+    } else { // saveMode === "overwrite"
+      if (!selectedOverwriteSchema) {
+        showError("Please select an existing schema to overwrite.");
+        return;
+      }
+      setIsOverwriteConfirmOpen(true); // Open confirmation dialog
+    }
+  };
+
+  const performSave = (schemaName: string) => {
     try {
-      localStorage.setItem(`dyad_schema_${saveSchemaName.trim()}_fields`, JSON.stringify(schemaFields));
-      localStorage.setItem(`dyad_schema_${saveSchemaName.trim()}_reusableTypes`, JSON.stringify(reusableTypes));
-      const updatedNames = [...savedSchemaNames, saveSchemaName.trim()];
-      setSavedSchemaNames(updatedNames);
-      localStorage.setItem(LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY, JSON.stringify(updatedNames));
-      showSuccess(`Schema "${saveSchemaName.trim()}" saved successfully!`);
+      localStorage.setItem(`dyad_schema_${schemaName}_fields`, JSON.stringify(schemaFields));
+      localStorage.setItem(`dyad_schema_${schemaName}_reusableTypes`, JSON.stringify(reusableTypes));
+      
+      if (!savedSchemaNames.includes(schemaName)) {
+        const updatedNames = [...savedSchemaNames, schemaName].sort(); // Keep sorted
+        setSavedSchemaNames(updatedNames);
+        localStorage.setItem(LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY, JSON.stringify(updatedNames));
+      }
+      
+      showSuccess(`Schema "${schemaName}" saved successfully!`);
       setIsSaveDialogOpen(false);
       setSaveSchemaName("");
+      setSelectedOverwriteSchema("");
     } catch (error) {
-      console.error("Failed to save schema by name:", error);
+      console.error("Failed to save schema:", error);
       showError("Failed to save schema. Please try again.");
     }
+  };
+
+  const handleConfirmOverwrite = () => {
+    performSave(selectedOverwriteSchema);
+    setIsOverwriteConfirmOpen(false);
   };
 
   const handleLoadSchemaByName = (schemaName: string) => {
@@ -114,7 +156,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
 
       showSuccess(`Schema "${schemaName}" loaded successfully!`);
       setIsLoadDialogOpen(false);
-      // setSelectedLoadSchemaName(""); // No longer needed for Select component
+      setSelectedLoadSchemaName("");
     } catch (error) {
       console.error("Failed to load schema by name:", error);
       showError("Failed to load schema. It might be corrupted.");
@@ -122,21 +164,20 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
   };
 
   const handleDeleteSavedSchema = (nameToDelete: string) => {
-    console.log("Attempting to delete schema:", nameToDelete);
     try {
       localStorage.removeItem(`dyad_schema_${nameToDelete}_fields`);
-      console.log(`Removed fields for: dyad_schema_${nameToDelete}_fields`);
       localStorage.removeItem(`dyad_schema_${nameToDelete}_reusableTypes`);
-      console.log(`Removed reusable types for: dyad_schema_${nameToDelete}_reusableTypes`);
 
       const updatedNames = savedSchemaNames.filter((name) => name !== nameToDelete);
       setSavedSchemaNames(updatedNames);
       localStorage.setItem(LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY, JSON.stringify(updatedNames));
-      console.log("Updated saved schema names in localStorage:", updatedNames);
       
       showSuccess(`Schema "${nameToDelete}" deleted successfully!`);
       if (selectedLoadSchemaName === nameToDelete) {
-        setSelectedLoadSchemaName(""); // Clear selection if deleted
+        setSelectedLoadSchemaName("");
+      }
+      if (selectedOverwriteSchema === nameToDelete) {
+        setSelectedOverwriteSchema("");
       }
     } catch (error) {
       console.error("Failed to delete saved schema:", error);
@@ -162,22 +203,18 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
     }
 
     try {
-      // Get old data
       const oldFields = localStorage.getItem(`dyad_schema_${schemaToRename}_fields`);
       const oldReusableTypes = localStorage.getItem(`dyad_schema_${schemaToRename}_reusableTypes`);
 
-      // Save with new name
       if (oldFields) localStorage.setItem(`dyad_schema_${trimmedNewName}_fields`, oldFields);
       if (oldReusableTypes) localStorage.setItem(`dyad_schema_${trimmedNewName}_reusableTypes`, oldReusableTypes);
 
-      // Delete old entries
       localStorage.removeItem(`dyad_schema_${schemaToRename}_fields`);
       localStorage.removeItem(`dyad_schema_${schemaToRename}_reusableTypes`);
 
-      // Update saved names index
       const updatedNames = savedSchemaNames.map(name =>
         name === schemaToRename ? trimmedNewName : name
-      );
+      ).sort();
       setSavedSchemaNames(updatedNames);
       localStorage.setItem(LOCAL_STORAGE_SAVED_SCHEMAS_INDEX_KEY, JSON.stringify(updatedNames));
 
@@ -186,7 +223,10 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
       setSchemaToRename(null);
       setNewSchemaName("");
       if (selectedLoadSchemaName === schemaToRename) {
-        setSelectedLoadSchemaName(trimmedNewName); // Update selection if renamed
+        setSelectedLoadSchemaName(trimmedNewName);
+      }
+      if (selectedOverwriteSchema === schemaToRename) {
+        setSelectedOverwriteSchema(trimmedNewName);
       }
     } catch (error) {
       console.error("Failed to rename schema:", error);
@@ -211,28 +251,89 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
     <React.Fragment>
       {/* Save Schema Dialog */}
       <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-        <DialogContent className="sm:max-w-xl"> {/* Increased width */}
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Save Current Schema</DialogTitle>
             <DialogDescription>
-              Enter a name to save your current schema and reusable types.
+              Choose whether to save as a new schema or overwrite an existing one.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <Label htmlFor="save-schema-name">Schema Name</Label>
-            <Input
-              id="save-schema-name"
-              value={saveSchemaName}
-              onChange={(e) => setSaveSchemaName(e.target.value)}
-              placeholder="e.g., MyProductSchema"
-            />
+            <RadioGroup
+              value={saveMode}
+              onValueChange={(value: "new" | "overwrite") => setSaveMode(value)}
+              className="flex flex-col space-y-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="new" id="save-mode-new" />
+                <Label htmlFor="save-mode-new">Save as new schema</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="overwrite" id="save-mode-overwrite" disabled={savedSchemaNames.length === 0} />
+                <Label htmlFor="save-mode-overwrite">Overwrite existing schema</Label>
+              </div>
+            </RadioGroup>
+
+            {saveMode === "new" ? (
+              <div className="grid gap-2">
+                <Label htmlFor="save-schema-name">New Schema Name</Label>
+                <Input
+                  id="save-schema-name"
+                  value={saveSchemaName}
+                  onChange={(e) => setSaveSchemaName(e.target.value)}
+                  placeholder="e.g., MyProductSchema"
+                />
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label htmlFor="overwrite-schema-select">Select Schema to Overwrite</Label>
+                <Select
+                  value={selectedOverwriteSchema}
+                  onValueChange={setSelectedOverwriteSchema}
+                  disabled={savedSchemaNames.length === 0}
+                >
+                  <SelectTrigger id="overwrite-schema-select">
+                    <SelectValue placeholder="Select a schema" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {savedSchemaNames.length === 0 ? (
+                      <SelectItem value="no-schemas" disabled>No schemas available to overwrite</SelectItem>
+                    ) : (
+                      savedSchemaNames.map((name) => (
+                        <SelectItem key={name} value={name}>
+                          {name}
+                        </SelectItem>
+                      ))
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setIsSaveDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSaveSchemaByName}>Save</Button>
+            <Button onClick={handleSaveSchema}>Save</Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Overwrite Confirmation Dialog */}
+      <AlertDialog open={isOverwriteConfirmOpen} onOpenChange={setIsOverwriteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Overwrite Existing Schema?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You are about to overwrite the schema named "<strong>{selectedOverwriteSchema}</strong>". This action cannot be undone. Are you sure you want to proceed?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmOverwrite} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+              Overwrite
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Load Schema Confirmation Dialog */}
       <AlertDialog open={isLoadConfirmOpen} onOpenChange={setIsLoadConfirmOpen}>
@@ -254,7 +355,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
 
       {/* Actual Load Schema Dialog */}
       <Dialog open={isLoadDialogOpen} onOpenChange={setIsLoadDialogOpen}>
-        <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col"> {/* Increased width */}
+        <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Load Saved Schema</DialogTitle>
             <DialogDescription>
@@ -289,9 +390,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-gray-500 hover:text-blue-600"
-                          onClick={(e) => {
-                            // e.stopPropagation(); // Removed
-                            // e.preventDefault(); // Removed
+                          onClick={() => {
                             setSchemaToRename(name);
                             setNewSchemaName(name);
                             setIsRenameDialogOpen(true);
@@ -306,10 +405,6 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
                               variant="ghost"
                               size="icon"
                               className="h-8 w-8 text-red-500 hover:text-red-600"
-                              // onClick={(e) => { // Removed onClick from here
-                              //   e.stopPropagation();
-                              //   e.preventDefault();
-                              // }}
                               aria-label={`Delete ${name}`}
                             >
                               <XCircle className="h-4 w-4" />
@@ -346,7 +441,7 @@ const SchemaSaveLoadDialogs: React.FC<SchemaSaveLoadDialogsProps> = ({
 
       {/* Rename Schema Dialog */}
       <Dialog open={isRenameDialogOpen} onOpenChange={setIsRenameDialogOpen}>
-        <DialogContent className="sm:max-w-xl"> {/* Increased width */}
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <DialogTitle>Rename Schema</DialogTitle>
             <DialogDescription>
