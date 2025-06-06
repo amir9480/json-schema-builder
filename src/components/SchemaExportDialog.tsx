@@ -60,6 +60,10 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
   }, [selectedTab]);
 
+  const handleDataGenerationComplete = () => {
+    setSelectedTab("form-preview"); // Switch to Form Preview tab
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
@@ -102,7 +106,11 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
             </TabsContent>
             <TabsContent value="generate-data" className="mt-4"> {/* New Tab Content */}
               {generatedJsonSchema ? (
-                <SchemaDataGenerator jsonSchema={generatedJsonSchema} onDataGenerated={setGeneratedFormData} />
+                <SchemaDataGenerator
+                  jsonSchema={generatedJsonSchema}
+                  onDataGenerated={setGeneratedFormData}
+                  onGenerationComplete={handleDataGenerationComplete} // Pass the new callback
+                />
               ) : (
                 <p className="text-muted-foreground text-center">
                   Build your schema first to generate data.

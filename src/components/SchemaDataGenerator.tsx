@@ -12,12 +12,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
-import ApiResponseDisplay from "./ApiResponseDisplay";
 import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
 
 interface SchemaDataGeneratorProps {
   jsonSchema: any;
   onDataGenerated: (data: Record<string, any>) => void;
+  onGenerationComplete: () => void; // New prop to signal completion and switch tab
 }
 
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
@@ -29,6 +29,7 @@ const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt"; // Us
 const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
   jsonSchema,
   onDataGenerated,
+  onGenerationComplete, // Destructure new prop
 }) => {
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
     if (typeof window !== "undefined") {
@@ -53,8 +54,6 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
   });
 
   const [isLoading, setIsLoading] = React.useState(false);
-  const [generatedJson, setGeneratedJson] = React.useState<string>("");
-  const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false);
 
   // Persist selectedProvider, apiKey, and userPrompt to localStorage
   React.useEffect(() => {
@@ -147,8 +146,6 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
     }
 
     setIsLoading(true);
-    setGeneratedJson("Generating data...");
-    setIsResponseModalOpen(true);
 
     const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, jsonSchema);
 
@@ -176,11 +173,6 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
 
       if (!response.ok) {
         console.error("API Error:", data);
-        setGeneratedJson(JSON.stringify({
-          status: response.status,
-          statusText: response.statusText,
-          error: data
-        }, null, 2));
         showError(`API Error: ${response.status} ${response.statusText}`);
       } else {
         let generatedContent: string | object = data;
@@ -193,22 +185,16 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
         let parsedData: any;
         try {
           parsedData = typeof generatedContent === 'string' ? JSON.parse(generatedContent) : generatedContent;
-          setGeneratedJson(JSON.stringify(parsedData, null, 2)); // Display formatted JSON
           onDataGenerated(parsedData); // Pass generated data to parent
           showSuccess("Data generated successfully!");
+          onGenerationComplete(); // Signal parent to switch tab
         } catch (parseError) {
           console.error("Failed to parse generated content as JSON:", parseError);
-          setGeneratedJson(typeof generatedContent === 'string' ? generatedContent : JSON.stringify(generatedContent, null, 2));
           showError("Generated content is not valid JSON. Please refine your prompt.");
         }
       }
     } catch (error) {
       console.error("Network or Fetch Error:", error);
-      setGeneratedJson(JSON.stringify({
-        error: "Network or Fetch Error",
-        message: (error as Error).message,
-        details: "Check your API key, network connection, or browser's CORS policy. For production, consider using a backend proxy."
-      }, null, 2));
       showError("Failed to send request. Check console for details.");
     } finally {
       setIsLoading(false);
@@ -271,14 +257,6 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
           </>
         )}
       </Button>
-
-      <ApiResponseDisplay
-        isOpen={isResponseModalOpen}
-        onOpenChange={setIsResponseModalOpen}
-        title="AI Data Generation Response"
-        description="The raw response from the LLM API call. If successful, the form preview will be updated."
-        jsonContent={generatedJson}
-      />
     </div>
   );
 };
