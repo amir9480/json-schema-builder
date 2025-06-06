@@ -31,9 +31,10 @@ interface SchemaAIGenerateDialogProps {
 
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
-const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmSchemaBuilderSelectedProvider";
-const LOCAL_STORAGE_API_KEY = "llmSchemaBuilderApiKey";
-const LOCAL_STORAGE_USER_PROMPT_KEY = "llmSchemaBuilderUserPrompt";
+// Updated to use the same keys as CurlCommandGenerator
+const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
+const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
+const LOCAL_STORAGE_USER_PROMPT_KEY = "llmSchemaBuilderUserPrompt"; // This prompt is specific to schema generation
 
 const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
   isOpen,
