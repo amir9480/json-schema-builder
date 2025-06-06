@@ -34,8 +34,20 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 }) => {
   return (
     <div className="flex items-center justify-between gap-4">
-      <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex items-center gap-4"> {/* Left group */}
+        <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onClearSchemaTrigger}>
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Clear All Fields</p>
+          </TooltipContent>
+        </Tooltip>
+      </div>
+      <div className="flex flex-wrap gap-2"> {/* Right group */}
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onSaveSchemaTrigger}>
@@ -110,17 +122,6 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
           </TooltipTrigger>
           <TooltipContent>
             <p>Export Generated JSON Schema</p>
-          </TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onClearSchemaTrigger}>
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Clear All Fields</p>
           </TooltipContent>
         </Tooltip>
       </div>
