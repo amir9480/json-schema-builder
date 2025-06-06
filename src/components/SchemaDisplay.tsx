@@ -34,7 +34,7 @@ const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ jsonSchema }) => {
         </Button>
       </CardHeader>
       <CardContent>
-        <div className="bg-gray-800 text-white p-4 rounded-md overflow-auto text-left text-sm">
+        <div className="p-4 rounded-md overflow-auto text-left text-sm">
           <ReactJson
             src={jsonSchema}
             theme={resolvedTheme === 'dark' ? 'codeschool' : 'rjv-default'}

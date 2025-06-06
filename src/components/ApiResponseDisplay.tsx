@@ -68,7 +68,7 @@ const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden py-4">
-          <div className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white overflow-auto flex">
+          <div className="h-full max-h-[calc(90vh-200px)] rounded-md border text-white overflow-auto flex">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center w-full h-full text-white">
                 <LoadingSpinner size={48} className="text-blue-400" />
