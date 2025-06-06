@@ -22,6 +22,7 @@ type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
 const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
 const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
+const LOCAL_STORAGE_USER_PROMPT_KEY = "llmBuilderUserPrompt"; // New key for user prompt
 
 const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema }) => {
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
@@ -39,11 +40,18 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     return "";
   });
 
+  const [userPrompt, setUserPrompt] = React.useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_USER_PROMPT_KEY) || "Generate a JSON object based on the schema.";
+    }
+    return "Generate a JSON object based on the schema.";
+  });
+
   const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false);
   const [responseJson, setResponseJson] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Persist selectedProvider and apiKey to localStorage
+  // Persist selectedProvider, apiKey, and userPrompt to localStorage
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
@@ -56,17 +64,23 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     }
   }, [apiKey]);
 
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_USER_PROMPT_KEY, userPrompt);
+    }
+  }, [userPrompt]);
+
   const jsonString = JSON.stringify(jsonSchema, null, 2);
 
   // Refactored to return request details as an object
-  const getRequestDetails = (provider: LLMProvider, currentApiKey: string) => {
+  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
 
     const messages = [
       { role: "system", content: "You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema." },
-      { role: "user", content: "Generate a JSON object based on the schema." },
+      { role: "user", content: prompt },
     ];
 
     switch (provider) {
@@ -76,14 +90,21 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         requestBody = {
           model: "gpt-4o",
           messages: messages,
-          response_format: { type: "json_schema", json_schema: jsonSchema },
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "generated_schema", // A default name for the schema
+              strict: true,
+              schema: jsonSchema, // The actual JSON schema
+            },
+          },
         };
         break;
       case "gemini":
         endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         requestBody = {
           contents: [
-            { role: "user", parts: [{ text: `Generate a JSON object based on the following schema:\n\n${jsonString}` }] },
+            { role: "user", parts: [{ text: `${prompt}\n\nHere is the schema:\n\n${jsonString}` }] },
           ],
           generationConfig: {
             responseMimeType: "application/json",
@@ -96,7 +117,14 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         requestBody = {
           model: "mistral-large-latest",
           messages: messages,
-          response_format: { type: "json_schema", json_schema: jsonSchema },
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "generated_schema",
+              strict: true,
+              schema: jsonSchema,
+            },
+          },
         };
         break;
       case "openrouter":
@@ -106,7 +134,14 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         requestBody = {
           model: "openai/o4-mini", // Updated model here
           messages: messages,
-          response_format: { type: "json_schema", json_schema: jsonSchema },
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "generated_schema",
+              strict: true,
+              schema: jsonSchema,
+            },
+          },
         };
         break;
       default:
@@ -132,7 +167,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
     };
   };
 
-  const { endpoint, headers, requestBody, curlCommand } = getRequestDetails(selectedProvider, apiKey);
+  const { endpoint, headers, requestBody, curlCommand } = getRequestDetails(selectedProvider, apiKey, userPrompt);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(curlCommand)
@@ -243,6 +278,20 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         />
         <p className="text-sm text-muted-foreground">
           Your API key is stored locally in your browser for convenience and is not sent to any server.
+        </p>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="user-prompt-input">User Prompt</Label>
+        <Textarea
+          id="user-prompt-input"
+          value={userPrompt}
+          onChange={(e) => setUserPrompt(e.target.value)}
+          placeholder="e.g., Extract the product details from the following text."
+          rows={4}
+        />
+        <p className="text-sm text-muted-foreground">
+          This prompt will be sent to the LLM along with your schema.
         </p>
       </div>
 
