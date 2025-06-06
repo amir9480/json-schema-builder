@@ -202,7 +202,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       <div className="flex items-center gap-4">
         {/* Drag and Move Buttons */}
         {!isRoot && (
-          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 ml-[-1.5rem] shrink-0"> {/* ml-[-1.5rem] is correctly here */}
+          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 shrink-0"> {/* Removed ml-[-1.5rem] */}
             <Button
               variant="ghost"
               size="icon"
