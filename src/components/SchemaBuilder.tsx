@@ -590,7 +590,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
               onExportSchemaTrigger={() => setIsExportDialogOpen(true)}
               onSaveSchemaTrigger={() => setIsSaveDialogOpen(true)}
               onLoadSchemaTrigger={() => setIsLoadConfirmOpen(true)}
-              onAIGenerateSchemaTrigger={() => setIsAIGenerateDialogOpen(true)} {/* New trigger */}
+              onAIGenerateSchemaTrigger={() => setIsAIGenerateDialogOpen(true)} 
               hasSchemaFields={schemaFields.length > 0}
             />
           </div>
