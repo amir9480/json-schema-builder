@@ -10,13 +10,13 @@ import {
 } from "@/components/ui/select";
 import {
   Collapsible,
-  CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent"; // Import CustomCollapsibleContent
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { toTitleCase } from "@/lib/utils";
-import { SchemaField, SchemaFieldType } from "./FieldEditor"; // Import SchemaField and SchemaFieldType
-import { Button } from "@/components/ui/button"; // Import Button
+import { SchemaField, SchemaFieldType } from "./FieldEditor";
+import { Button } from "@/components/ui/button";
 
 interface FieldAdvancedOptionsProps {
   field: SchemaField;
@@ -87,7 +87,7 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = ({
       className="w-full space-y-2"
     >
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-start px-0"> {/* Removed px-6 */}
+        <Button variant="ghost" className="w-full justify-start px-0">
           {isAdvancedOpen ? (
             <ChevronUp className="h-4 w-4 mr-2" />
           ) : (
@@ -96,8 +96,8 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = ({
           Advanced options
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Removed px-6 */}
+      <CustomCollapsibleContent className="space-y-4"> {/* Use CustomCollapsibleContent */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="grid gap-2">
             <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
             <Input
@@ -199,7 +199,7 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = ({
             </div>
           )}
         </div>
-      </CollapsibleContent>
+      </CustomCollapsibleContent>
     </Collapsible>
   );
 };

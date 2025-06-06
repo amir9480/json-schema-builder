@@ -2,13 +2,13 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
-  CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent"; // Import CustomCollapsibleContent
 import { PlusCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SortableFieldEditor from "./SortableFieldEditor";
-import { SchemaField } from "./FieldEditor"; // Import SchemaField
+import { SchemaField } from "./FieldEditor";
 import {
   DndContext,
   closestCenter,
@@ -88,7 +88,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
       className="flex flex-col gap-4 mt-4 border-t pt-4"
     >
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-start px-6 -mt-4"> {/* Re-added px-6 */}
+        <Button variant="ghost" className="w-full justify-start px-6 -mt-4">
           {isObjectPropertiesOpen ? (
             <ChevronUp className="h-4 w-4 mr-2" />
           ) : (
@@ -97,7 +97,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
           <h3 className="text-md font-semibold">Properties for {field.name || "Unnamed Object"}:</h3>
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
+      <CustomCollapsibleContent className="space-y-4"> {/* Use CustomCollapsibleContent */}
         {field.children && field.children.length > 0 ? (
           <DndContext
             sensors={sensors}
@@ -130,7 +130,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
             </SortableContext>
           </DndContext>
         ) : (
-          <p className="text-sm text-muted-foreground px-6"> {/* Re-added px-6 */}
+          <p className="text-sm text-muted-foreground px-6">
             No properties defined for this object.
           </p>
         )}
@@ -139,7 +139,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
             variant="outline"
             onClick={() => onAddField(field.id)}
             className={cn(
-              "w-full px-6", // Re-added px-6
+              "w-full px-6",
               level > 0 && borderColors[level % borderColors.length],
               "text-foreground hover:bg-accent hover:text-accent-foreground"
             )}
@@ -147,7 +147,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
             <PlusCircle className="h-4 w-4 mr-2" /> Add Property to {field.name || "Unnamed Object"}
           </Button>
         )}
-      </CollapsibleContent>
+      </CustomCollapsibleContent>
     </Collapsible>
   );
 };

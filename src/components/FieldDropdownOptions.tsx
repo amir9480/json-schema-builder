@@ -4,11 +4,11 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import {
   Collapsible,
-  CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent"; // Import CustomCollapsibleContent
 import { PlusCircle, Trash2, ChevronDown, ChevronUp } from "lucide-react";
-import { SchemaField } from "./FieldEditor"; // Import SchemaField
+import { SchemaField } from "./FieldEditor";
 
 interface FieldDropdownOptionsProps {
   field: SchemaField;
@@ -51,7 +51,7 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
       className="flex flex-col gap-4 mt-4 border-t pt-4"
     >
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-start px-6 -mt-4"> {/* Re-added px-6 */}
+        <Button variant="ghost" className="w-full justify-start px-6 -mt-4">
           {isDropdownOptionsOpen ? (
             <ChevronUp className="h-4 w-4 mr-2" />
           ) : (
@@ -60,8 +60,8 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
           <h3 className="text-md font-semibold">Options for {field.name || "Unnamed Dropdown"}:</h3>
         </Button>
       </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-        <div className="grid gap-2 col-span-full px-6"> {/* Re-added px-6 */}
+      <CustomCollapsibleContent className="space-y-4"> {/* Use CustomCollapsibleContent */}
+        <div className="grid gap-2 col-span-full px-6">
           <Label htmlFor={`field-options-${field.id}`}>Dropdown Options</Label>
           <div className="flex gap-2">
             <Input
@@ -103,7 +103,7 @@ const FieldDropdownOptions: React.FC<FieldDropdownOptionsProps> = ({
             <p className="text-sm text-muted-foreground italic">No options added yet.</p>
           )}
         </div>
-      </CollapsibleContent>
+      </CustomCollapsibleContent>
     </Collapsible>
   );
 };
