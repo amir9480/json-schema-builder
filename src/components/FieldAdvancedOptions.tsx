@@ -87,7 +87,7 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = ({
       className="w-full space-y-2"
     >
       <CollapsibleTrigger asChild>
-        <Button variant="ghost" className="w-full justify-start px-6"> {/* Re-added px-6 */}
+        <Button variant="ghost" className="w-full justify-start px-0"> {/* Removed px-6 */}
           {isAdvancedOpen ? (
             <ChevronUp className="h-4 w-4 mr-2" />
           ) : (
@@ -97,7 +97,7 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = ({
         </Button>
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-4 data-[state=open]:animate-accordion-down data-[state=closed]:animate-accordion-up">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6"> {/* Re-added px-6 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4"> {/* Removed px-6 */}
           <div className="grid gap-2">
             <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
             <Input
