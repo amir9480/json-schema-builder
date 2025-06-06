@@ -47,14 +47,14 @@ const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden py-4">
-          <div className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white overflow-auto flex items-center justify-center">
+          <div className="h-full max-h-[calc(90vh-200px)] rounded-md border bg-gray-800 text-white overflow-auto flex"> {/* Removed items-center and justify-center */}
             {isLoading ? (
-              <div className="flex flex-col items-center gap-4 text-white">
+              <div className="flex flex-col items-center justify-center w-full h-full text-white"> {/* Centering for spinner */}
                 <LoadingSpinner size={48} className="text-blue-400" />
                 <p className="text-lg">Loading response...</p>
               </div>
             ) : (
-              <pre className="p-4 text-left text-sm block min-w-0 whitespace-pre">
+              <pre className="p-4 text-left text-sm block w-full whitespace-pre"> {/* Added w-full */}
                 <code>{jsonContent}</code>
               </pre>
             )}
