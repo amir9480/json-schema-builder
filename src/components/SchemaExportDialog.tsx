@@ -56,10 +56,15 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 }) => {
   const [selectedTab, setSelectedTab] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
-      // Prioritize initialTab prop if provided, otherwise load from localStorage
-      return initialTab || localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY) || "json-schema";
+      // Prioritize initialTab prop if provided and is not the default "json-schema",
+      // which indicates an action (e.g., after data generation) is trying to force the tab.
+      // Otherwise, use the saved tab from localStorage, or default to "json-schema".
+      if (initialTab && initialTab !== "json-schema") {
+        return initialTab;
+      }
+      return localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY) || "json-schema";
     }
-    return initialTab;
+    return initialTab || "json-schema"; // Fallback for SSR or initial render
   });
   const [selectedDevExportType, setSelectedDevExportType] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -122,12 +127,8 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
   }, [isOpen, schemaFields, reusableTypes]);
 
-  React.useEffect(() => {
-    // Set the tab based on initialTab prop when dialog opens
-    if (isOpen) {
-      setSelectedTab(initialTab);
-    }
-  }, [isOpen, initialTab]);
+  // Removed the problematic useEffect that was resetting the tab on dialog open.
+  // The initial state is now correctly handled by the useState initializer.
 
   React.useEffect(() => {
     // Persist selectedTab to localStorage whenever it changes
