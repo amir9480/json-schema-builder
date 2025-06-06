@@ -45,7 +45,7 @@ const ResponseDisplayDialog: React.FC<ResponseDisplayDialogProps> = ({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden py-4">
-          <ScrollArea className="h-full rounded-md border bg-gray-800 text-white">
+          <ScrollArea className="h-full max-h-[calc(90vh-150px)] rounded-md border bg-gray-800 text-white">
             <pre className="p-4 text-left text-sm">
               <code>{jsonContent}</code>
             </pre>

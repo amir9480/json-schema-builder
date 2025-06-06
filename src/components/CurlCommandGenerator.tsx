@@ -104,7 +104,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
         headers["HTTP-Referer"] = "YOUR_APP_URL";
         requestBody = {
-          model: "mistralai/mistral-7b-instruct",
+          model: "openai/o4-mini", // Updated model here
           messages: messages,
           response_format: { type: "json_schema", json_schema: jsonSchema },
         };
