@@ -306,7 +306,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
             Export your schema, preview it as a form, or generate sample data.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 flex-1 flex flex-col">
+        <div className="py-4 flex-1 flex flex-col overflow-y-auto"> {/* Added overflow-y-auto here */}
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full flex-1 flex flex-col">
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="json-schema">JSON Schema</TabsTrigger>
@@ -314,14 +314,14 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
               <TabsTrigger value="generate-data">Generate Data (AI)</TabsTrigger>
               <TabsTrigger value="for-developers">For Developers</TabsTrigger>
             </TabsList>
-            <TabsContent value="json-schema" className="mt-4 flex-1 overflow-auto">
+            <TabsContent value="json-schema" className="mt-4 flex-1"> {/* Removed overflow-auto */}
               {generatedJsonSchema ? (
                 <SchemaDisplay jsonSchema={generatedJsonSchema} />
               ) : (
                 <p className="text-muted-foreground text-center">Generating schema...</p>
               )}
             </TabsContent>
-            <TabsContent value="form-preview" className="mt-4 flex-1 overflow-auto">
+            <TabsContent value="form-preview" className="mt-4 flex-1"> {/* Removed overflow-auto */}
               {schemaFields.length > 0 ? (
                 <SchemaFormPreview fields={schemaFields} reusableTypes={reusableTypes} formData={generatedFormData} />
               ) : (
@@ -330,7 +330,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 </p>
               )}
             </TabsContent>
-            <TabsContent value="generate-data" className="mt-4 flex-1 overflow-auto">
+            <TabsContent value="generate-data" className="mt-4 flex-1"> {/* Removed overflow-auto */}
               {generatedJsonSchema ? (
                 <SchemaDataGenerator
                   jsonSchema={generatedJsonSchema}
@@ -343,7 +343,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 </p>
               )}
             </TabsContent>
-            <TabsContent value="for-developers" className="mt-4 flex-1 flex flex-col">
+            <TabsContent value="for-developers" className="mt-4 flex-1 flex flex-col"> {/* Removed overflow-auto */}
               <div className="grid gap-4 mb-4"> {/* Added margin-bottom */}
                 <div className="grid gap-2">
                   <Label htmlFor="llm-provider-select">Select LLM Provider</Label>
