@@ -22,7 +22,6 @@ import {
 import { SchemaField } from "./FieldEditor";
 import { buildSingleFieldJsonSchema } from "@/utils/jsonSchemaBuilder";
 import { convertSingleJsonSchemaToSchemaField } from "@/utils/schemaConverter";
-import ApiResponseDisplay from "./ApiResponseDisplay";
 import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
 
 interface FieldRefineDialogProps {
@@ -69,8 +68,6 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
   });
 
   const [isLoading, setIsLoading] = React.useState(false);
-  const [generatedJson, setGeneratedJson] = React.useState<string>("");
-  const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false);
 
   // Persist selectedProvider, apiKey, and userPrompt to localStorage
   React.useEffect(() => {
@@ -164,8 +161,6 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
     }
 
     setIsLoading(true);
-    setGeneratedJson("Refining field...");
-    setIsResponseModalOpen(true);
 
     const currentFieldSchema = buildSingleFieldJsonSchema(fieldToRefine, reusableTypes);
     console.log("JSON Schema sent to LLM for refinement:", JSON.stringify(currentFieldSchema, null, 2)); // Debug log
@@ -196,12 +191,7 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
 
       if (!response.ok) {
         console.error("API Error:", data);
-        setGeneratedJson(JSON.stringify({
-          status: response.status,
-          statusText: response.statusText,
-          error: data
-        }, null, 2));
-        showError(`API Error: ${response.status} ${response.statusText}`);
+        showError(`API Error: ${response.status} ${response.statusText}. Check console for details.`);
       } else {
         let generatedContent: string | object = data;
         if (selectedProvider === "openai" || selectedProvider === "mistral" || selectedProvider === "openrouter") {
@@ -213,7 +203,6 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
         let parsedSchema: any;
         try {
           parsedSchema = typeof generatedContent === 'string' ? JSON.parse(generatedContent) : generatedContent;
-          setGeneratedJson(JSON.stringify(parsedSchema, null, 2)); // Display formatted JSON
           console.log("Parsed JSON Schema received from LLM:", JSON.stringify(parsedSchema, null, 2)); // Debug log
           
           // Convert the refined JSON schema back to a SchemaField
@@ -233,18 +222,12 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
           onOpenChange(false); // Close the dialog
         } catch (parseError) {
           console.error("Failed to parse generated content as JSON:", parseError);
-          setGeneratedJson(typeof generatedContent === 'string' ? generatedContent : JSON.stringify(generatedContent, null, 2));
           showError("Generated content is not a valid JSON Schema for a field. Please refine your prompt.");
         }
       }
     } catch (error) {
       console.error("Network or Fetch Error:", error);
-      setGeneratedJson(JSON.stringify({
-        error: "Network or Fetch Error",
-        message: (error as Error).message,
-        details: "Check your API key, network connection, or browser's CORS policy. For production, consider using a backend proxy."
-      }, null, 2));
-      showError("Failed to send request. Check console for details.");
+      showError("Failed to send request. Check your API key, network connection, or browser's CORS policy. For production, consider using a backend proxy.");
     } finally {
       setIsLoading(false);
     }
@@ -315,14 +298,6 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
             )}
           </Button>
         </div>
-
-        <ApiResponseDisplay
-          isOpen={isResponseModalOpen}
-          onOpenChange={setIsResponseModalOpen}
-          title="AI Refinement Response"
-          description="The raw response from the LLM API call. If successful, the field will be updated."
-          jsonContent={generatedJson}
-        />
       </DialogContent>
     </Dialog>
   );
