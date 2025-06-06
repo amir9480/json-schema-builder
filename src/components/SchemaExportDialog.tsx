@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CurlCommandGenerator from "./CurlCommandGenerator";
 import { buildFullJsonSchema } from "@/utils/jsonSchemaBuilder";
 import SchemaFormPreview from "./SchemaFormPreview";
-import SchemaDataGenerator from "./SchemaDataGenerator";
 import PythonCodeGenerator from "./PythonCodeGenerator";
 import JavaScriptCodeGenerator from "./JavaScriptCodeGenerator";
 import {
@@ -23,13 +22,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button"; // Import Button
-import { Textarea } from "@/components/ui/textarea"; // Import Textarea
-import { Input } from "@/components/ui/input"; // Import Input
-import { Sparkles, Play } from "lucide-react"; // Import icons
-import { showSuccess, showError } from "@/utils/toast"; // Import toast utilities
-import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
-import ApiResponseDisplay from "./ApiResponseDisplay"; // Import ApiResponseDisplay
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Sparkles, Play } from "lucide-react";
+import { showSuccess, showError } from "@/utils/toast";
+import LoadingSpinner from "./LoadingSpinner";
+import ApiResponseDisplay from "./ApiResponseDisplay";
 
 interface SchemaExportDialogProps {
   isOpen: boolean;
@@ -62,9 +61,11 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
       if (initialTab && initialTab !== "json-schema") {
         return initialTab;
       }
-      return localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY) || "json-schema";
+      // Ensure "generate-data" is not a default option anymore
+      const savedTab = localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY);
+      return (savedTab === "generate-data" ? "form-preview" : savedTab) || "json-schema";
     }
-    return initialTab || "json-schema"; // Fallback for SSR or initial render
+    return initialTab || "json-schema";
   });
   const [selectedDevExportType, setSelectedDevExportType] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -75,7 +76,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   const [generatedJsonSchema, setGeneratedJsonSchema] = React.useState<any>(null);
   const [generatedFormData, setGeneratedFormData] = React.useState<Record<string, any> | undefined>(undefined);
 
-  // LLM configuration states, moved here
+  // LLM configuration states, moved here from SchemaDataGenerator
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
     if (typeof window !== "undefined") {
       const savedProvider = localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY);
@@ -93,14 +94,14 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY) || "Generate a JSON object based on the schema.";
+      return localStorage.getItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY) || "Generate a realistic JSON object based on the provided schema.";
     }
-    return "Generate a JSON object based on the schema.";
+    return "Generate a realistic JSON object based on the provided schema.";
   });
 
-  const [responseJson, setResponseJson] = React.useState<string>("");
   const [isLoading, setIsLoading] = React.useState(false);
   const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false);
+  const [responseJson, setResponseJson] = React.useState<string>("");
 
   // Persist LLM config states
   React.useEffect(() => {
@@ -127,9 +128,6 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
   }, [isOpen, schemaFields, reusableTypes]);
 
-  // Removed the problematic useEffect that was resetting the tab on dialog open.
-  // The initial state is now correctly handled by the useState initializer.
-
   React.useEffect(() => {
     // Persist selectedTab to localStorage whenever it changes
     if (typeof window !== "undefined") {
@@ -143,18 +141,15 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
   }, [selectedDevExportType]);
 
-  const handleDataGenerationComplete = () => {
-    setSelectedTab("form-preview");
-  };
-
-  // LLM request details function, moved here
+  // LLM request details function, moved here from SchemaDataGenerator
   const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string, schema: any) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
 
+    const systemMessage = "You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema. Do not include any additional text or markdown outside the JSON object.";
     const messages = [
-      { role: "system", content: "You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema." },
+      { role: "system", content: systemMessage },
       { role: "user", content: prompt },
     ];
 
@@ -163,7 +158,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         endpoint = "https://api.openai.com/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENAI_API_KEY"}`;
         requestBody = {
-          model: "gpt-4o",
+          model: "gpt-4o-mini", // Using a smaller model for faster responses
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -179,7 +174,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         requestBody = {
           contents: [
-            { role: "user", parts: [{ text: `${prompt}\n\nHere is the schema:\n\n${JSON.stringify(schema, null, 2)}` }] },
+            { role: "user", parts: [{ text: `${systemMessage}\n\n${prompt}\n\nHere is the JSON Schema:\n\n${JSON.stringify(schema, null, 2)}` }] },
           ],
           generationConfig: {
             responseMimeType: "application/json",
@@ -190,7 +185,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         endpoint = "https://api.mistral.ai/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_MISTRAL_API_KEY"}`;
         requestBody = {
-          model: "mistral-large-latest",
+          model: "mistral-small-latest", // Using a smaller model for faster responses
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -205,9 +200,9 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
       case "openrouter":
         endpoint = "https://openrouter.ai/api/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
-        headers["HTTP-Referer"] = "YOUR_APP_URL";
+        headers["HTTP-Referer"] = "YOUR_APP_URL"; // Replace with your app's URL if deployed
         requestBody = {
-          model: "openai/o4-mini",
+          model: "openai/gpt-4o-mini",
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -225,10 +220,14 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     return { endpoint, headers, requestBody };
   };
 
-  // Handle "Try it" button click, moved here
-  const handleTryIt = async () => {
+  // Handle "Generate Data" button click, moved here from SchemaDataGenerator
+  const handleGenerateData = async () => {
     if (!apiKey) {
-      showError("Please enter your API Key before trying the request.");
+      showError("Please enter your API Key before generating data.");
+      return;
+    }
+    if (!userPrompt.trim()) {
+      showError("Please enter a prompt for data generation.");
       return;
     }
     if (!generatedJsonSchema || Object.keys(generatedJsonSchema).length === 0) {
@@ -237,8 +236,6 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
 
     setIsLoading(true);
-    setResponseJson("Loading...");
-    setIsResponseModalOpen(true);
 
     const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, generatedJsonSchema);
 
@@ -266,11 +263,6 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 
       if (!response.ok) {
         console.error("API Error:", data);
-        setResponseJson(JSON.stringify({
-          status: response.status,
-          statusText: response.statusText,
-          error: data
-        }, null, 2));
         showError(`API Error: ${response.status} ${response.statusText}`);
       } else {
         let generatedContent: string | object = data;
@@ -279,22 +271,19 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         } else if (selectedProvider === "gemini") {
           generatedContent = data?.candidates?.[0]?.content?.parts?.[0]?.text || data;
         }
-        
+
+        let parsedData: any;
         try {
-          const parsedContent = JSON.parse(generatedContent as string);
-          setResponseJson(JSON.stringify(parsedContent, null, 2));
+          parsedData = typeof generatedContent === 'string' ? JSON.parse(generatedContent) : generatedContent;
+          setGeneratedFormData(parsedData); // Update generated form data
+          showSuccess("Data generated successfully!");
         } catch (parseError) {
-          setResponseJson(typeof generatedContent === 'string' ? generatedContent : JSON.stringify(generatedContent, null, 2));
+          console.error("Failed to parse generated content as JSON:", parseError);
+          showError("Generated content is not valid JSON. Please refine your prompt.");
         }
-        showSuccess("Request successful!");
       }
     } catch (error) {
       console.error("Network or Fetch Error:", error);
-      setResponseJson(JSON.stringify({
-        error: "Network or Fetch Error",
-        message: (error as Error).message,
-        details: "Check your API key, network connection, or browser's CORS policy. For production, consider using a backend proxy."
-      }, null, 2));
       showError("Failed to send request. Check console for details.");
     } finally {
       setIsLoading(false);
@@ -310,22 +299,85 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
             Export your schema, preview it as a form, or generate sample data.
           </DialogDescription>
         </DialogHeader>
-        <div className="py-4 flex-1 flex flex-col overflow-y-auto"> {/* Added overflow-y-auto here */}
+        <div className="py-4 flex-1 flex flex-col overflow-y-auto">
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-3"> {/* Changed to 3 columns */}
               <TabsTrigger value="json-schema">JSON Schema</TabsTrigger>
-              <TabsTrigger value="form-preview">Form Preview</TabsTrigger>
-              <TabsTrigger value="generate-data">Generate Data (AI)</TabsTrigger>
+              <TabsTrigger value="form-preview">Form Preview & Data</TabsTrigger> {/* Updated tab name */}
               <TabsTrigger value="for-developers">For Developers</TabsTrigger>
             </TabsList>
-            <TabsContent value="json-schema" className="mt-4 flex-1"> {/* Removed overflow-auto */}
+            <TabsContent value="json-schema" className="mt-4 flex-1">
               {generatedJsonSchema ? (
                 <SchemaDisplay jsonSchema={generatedJsonSchema} />
               ) : (
                 <p className="text-muted-foreground text-center">Generating schema...</p>
               )}
             </TabsContent>
-            <TabsContent value="form-preview" className="mt-4 flex-1"> {/* Removed overflow-auto */}
+            <TabsContent value="form-preview" className="mt-4 flex-1 flex flex-col">
+              {/* AI Data Generation Section */}
+              <div className="space-y-4 mb-6 p-4 border rounded-md bg-gray-50 dark:bg-gray-800">
+                <h3 className="text-lg font-semibold">Generate Sample Data with AI</h3>
+                <p className="text-sm text-muted-foreground">
+                  Use AI to generate realistic data based on your current schema.
+                </p>
+                <div className="grid gap-2">
+                  <Label htmlFor="llm-provider-select-data">Select LLM Provider</Label>
+                  <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as LLMProvider)}>
+                    <SelectTrigger id="llm-provider-select-data">
+                      <SelectValue placeholder="Select a provider" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openai">OpenAI (ChatGPT)</SelectItem>
+                      <SelectItem value="gemini">Google (Gemini)</SelectItem>
+                      <SelectItem value="mistral">Mistral AI</SelectItem>
+                      <SelectItem value="openrouter">OpenRouter</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="api-key-input-data">API Key</Label>
+                  <Input
+                    id="api-key-input-data"
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder={`Enter your ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key`}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Your API key is stored locally in your browser for convenience and is not sent to any server.
+                  </p>
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="user-prompt-input-data">Prompt for Data Generation</Label>
+                  <Textarea
+                    id="user-prompt-input-data"
+                    value={userPrompt}
+                    onChange={(e) => setUserPrompt(e.target.value)}
+                    placeholder="e.g., Generate a JSON object for a product with a name 'Laptop Pro', price 1200.50, and categories ['Electronics', 'Computers']."
+                    rows={4}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    Describe the data you want to generate based on your schema.
+                  </p>
+                </div>
+
+                <Button onClick={handleGenerateData} disabled={isLoading} className="w-full">
+                  {isLoading ? (
+                    <>
+                      <LoadingSpinner className="mr-2" /> Generating Data...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="h-4 w-4 mr-2" /> Generate Data
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Form Preview Section */}
+              <h3 className="text-lg font-semibold mb-4">Form Preview</h3>
               {schemaFields.length > 0 ? (
                 <SchemaFormPreview fields={schemaFields} reusableTypes={reusableTypes} formData={generatedFormData} />
               ) : (
@@ -334,21 +386,8 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 </p>
               )}
             </TabsContent>
-            <TabsContent value="generate-data" className="mt-4 flex-1"> {/* Removed overflow-auto */}
-              {generatedJsonSchema ? (
-                <SchemaDataGenerator
-                  jsonSchema={generatedJsonSchema}
-                  onDataGenerated={setGeneratedFormData}
-                  onGenerationComplete={handleDataGenerationComplete}
-                />
-              ) : (
-                <p className="text-muted-foreground text-center">
-                  Build your schema first to generate data.
-                </p>
-              )}
-            </TabsContent>
-            <TabsContent value="for-developers" className="mt-4 flex-1 flex flex-col"> {/* Removed overflow-auto */}
-              <div className="grid gap-4 mb-4"> {/* Added margin-bottom */}
+            <TabsContent value="for-developers" className="mt-4 flex-1 flex flex-col">
+              <div className="grid gap-4 mb-4">
                 <div className="grid gap-2">
                   <Label htmlFor="llm-provider-select">Select LLM Provider</Label>
                   <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as LLMProvider)}>
@@ -410,7 +449,6 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 </p>
               </div>
 
-              {/* Dropdown for selecting code type */}
               <div className="grid gap-2 mb-4">
                 <Label htmlFor="dev-export-type-select">Select Code Type</Label>
                 <Select value={selectedDevExportType} onValueChange={setSelectedDevExportType}>
