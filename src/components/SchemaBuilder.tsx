@@ -41,6 +41,7 @@ import SchemaSaveLoadDialogs from "./SchemaSaveLoadDialogs";
 import SchemaAIGenerateDialog from "./SchemaAIGenerateDialog"; // New import
 import SchemaMergeReplaceConfirmation from "./SchemaMergeReplaceConfirmation"; // New import
 import GenerateSchemaPromptCard from "./GenerateSchemaPromptCard"; // New import
+import FieldRefineDialog from "./FieldRefineDialog"; // New import
 
 interface SchemaBuilderProps {}
 
@@ -71,6 +72,10 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [isMergeReplaceConfirmOpen, setIsMergeReplaceConfirmOpen] = useState(false);
   const [pendingGeneratedFields, setPendingGeneratedFields] = useState<SchemaField[]>([]);
   const [pendingGeneratedReusableTypes, setPendingGeneratedReusableTypes] = useState<SchemaField[]>([]);
+
+  // New states for Field Refinement
+  const [isFieldRefineDialogOpen, setIsFieldRefineDialogOpen] = useState(false);
+  const [fieldToRefine, setFieldToRefine] = useState<SchemaField | null>(null);
 
   // Track initial load to determine if there are "unsaved changes"
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
@@ -573,6 +578,31 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     setPendingGeneratedReusableTypes([]);
   }, [schemaFields, reusableTypes, pendingGeneratedFields, pendingGeneratedReusableTypes]);
 
+  const handleRefineFieldWithAI = useCallback((field: SchemaField) => {
+    setFieldToRefine(field);
+    setIsFieldRefineDialogOpen(true);
+  }, []);
+
+  const handleFieldRefined = useCallback((refinedField: SchemaField) => {
+    const updateFields = (fields: SchemaField[]): SchemaField[] => {
+      return fields.map((field) => {
+        if (field.id === refinedField.id) {
+          return refinedField;
+        } else if (field.type === "object" && field.children) {
+          return {
+            ...field,
+            children: updateFields(field.children),
+          };
+        }
+        return field;
+      });
+    };
+    setSchemaFields(updateFields(schemaFields));
+    setInitialSchemaFields(JSON.stringify(updateFields(schemaFields))); // Update initial state
+    setIsFieldRefineDialogOpen(false);
+    setFieldToRefine(null);
+  }, [schemaFields]);
+
   return (
     <div className="container mx-auto p-6 space-y-8">
       <h1 className="text-4xl font-bold text-center mb-8">
@@ -622,6 +652,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
                       isLast={index === schemaFields.length - 1}
                       onManageReusableTypes={() => setIsManageTypesOpen(true)}
                       onConvertToReusableType={handleConvertToReusableType}
+                      onRefineFieldWithAI={handleRefineFieldWithAI} // Pass the new handler
                     />
                   ))}
                 </div>
@@ -711,6 +742,15 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             onOpenChange={setIsMergeReplaceConfirmOpen}
             onReplace={handleReplaceSchema}
             onMerge={handleMergeSchema}
+          />
+
+          {/* New Field Refine Dialog */}
+          <FieldRefineDialog
+            isOpen={isFieldRefineDialogOpen}
+            onOpenChange={setIsFieldRefineDialogOpen}
+            fieldToRefine={fieldToRefine}
+            reusableTypes={reusableTypes}
+            onFieldRefined={handleFieldRefined}
           />
         </div>
       </div>
