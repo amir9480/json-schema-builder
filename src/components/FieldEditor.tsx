@@ -96,7 +96,7 @@ interface FieldEditorProps {
   onConvertToReusableType?: (fieldId: string) => void;
 }
 
-const FieldEditor: React.FC<FieldEditorProps> = ({
+const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
   field,
   onFieldChange,
   onAddField,
@@ -457,6 +457,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       )}
     </div>
   );
-};
+});
+
+FieldEditor.displayName = "FieldEditor";
 
 export default FieldEditor;

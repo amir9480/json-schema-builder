@@ -20,7 +20,7 @@ interface SortableFieldEditorProps {
   onConvertToReusableType?: (fieldId: string) => void;
 }
 
-const SortableFieldEditor: React.FC<SortableFieldEditorProps> = ({
+const SortableFieldEditor: React.FC<SortableFieldEditorProps> = React.memo(({
   field,
   onFieldChange,
   onAddField,
@@ -81,6 +81,8 @@ const SortableFieldEditor: React.FC<SortableFieldEditorProps> = ({
       />
     </div>
   );
-};
+});
+
+SortableFieldEditor.displayName = "SortableFieldEditor";
 
 export default SortableFieldEditor;
