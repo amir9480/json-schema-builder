@@ -1,18 +1,15 @@
 import React from "react";
-import { SchemaField } from "./FieldEditor";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Copy } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
-import { buildFullJsonSchema } from "@/utils/jsonSchemaBuilder"; // Import from new utility
+// Removed buildFullJsonSchema import as it's no longer needed here
 
 interface SchemaDisplayProps {
-  schemaFields: SchemaField[];
-  reusableTypes: SchemaField[]; // New prop for reusable types
+  jsonSchema: any; // Now directly receives the full JSON schema
 }
 
-const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ schemaFields, reusableTypes }) => {
-  const jsonSchema = buildFullJsonSchema(schemaFields, reusableTypes);
+const SchemaDisplay: React.FC<SchemaDisplayProps> = ({ jsonSchema }) => {
   const jsonString = JSON.stringify(jsonSchema, null, 2);
 
   const handleCopy = () => {

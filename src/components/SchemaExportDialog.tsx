@@ -27,14 +27,21 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   schemaFields,
   reusableTypes,
 }) => {
-  const jsonSchema = buildFullJsonSchema(schemaFields, reusableTypes);
-
   const [selectedTab, setSelectedTab] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY) || "json-schema";
     }
     return "json-schema";
   });
+
+  const [generatedJsonSchema, setGeneratedJsonSchema] = React.useState<any>(null);
+
+  // Generate schema only when the dialog opens or when schemaFields/reusableTypes change
+  React.useEffect(() => {
+    if (isOpen) {
+      setGeneratedJsonSchema(buildFullJsonSchema(schemaFields, reusableTypes));
+    }
+  }, [isOpen, schemaFields, reusableTypes]);
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -44,7 +51,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto"> {/* Increased width */}
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Export Schema</DialogTitle>
           <DialogDescription>
@@ -58,10 +65,18 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
               <TabsTrigger value="curl-command">cURL Command</TabsTrigger>
             </TabsList>
             <TabsContent value="json-schema" className="mt-4">
-              <SchemaDisplay schemaFields={schemaFields} reusableTypes={reusableTypes} />
+              {generatedJsonSchema ? (
+                <SchemaDisplay jsonSchema={generatedJsonSchema} />
+              ) : (
+                <p className="text-muted-foreground text-center">Generating schema...</p>
+              )}
             </TabsContent>
             <TabsContent value="curl-command" className="mt-4">
-              <CurlCommandGenerator jsonSchema={jsonSchema} />
+              {generatedJsonSchema ? (
+                <CurlCommandGenerator jsonSchema={generatedJsonSchema} />
+              ) : (
+                <p className="text-muted-foreground text-center">Generating cURL command...</p>
+              )}
             </TabsContent>
           </Tabs>
         </div>
