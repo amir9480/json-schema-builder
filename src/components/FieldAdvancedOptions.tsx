@@ -84,7 +84,7 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = ({
     <Collapsible
       open={isAdvancedOpen}
       onOpenChange={setIsAdvancedOpen}
-      className="w-full space-y-2 px-6"
+      className="w-full space-y-2" // Removed px-6
     >
       <CollapsibleTrigger asChild>
         <Button variant="ghost" className="w-full justify-start px-0">

@@ -85,7 +85,7 @@ const FieldObjectProperties: React.FC<FieldObjectPropertiesProps> = ({
     <Collapsible
       open={isObjectPropertiesOpen}
       onOpenChange={setIsObjectPropertiesOpen}
-      className="flex flex-col gap-4 mt-4 border-t pt-4 px-6"
+      className="flex flex-col gap-4 mt-4 border-t pt-4" // Removed px-6
     >
       <CollapsibleTrigger asChild>
         <Button variant="ghost" className="w-full justify-start px-0 -mt-4">
