@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Eye, Upload, Download, Settings, Save, FolderOpen, Sparkles } from "lucide-react"; // Import Sparkles icon
+import { PlusCircle, Trash2, Eye, Upload, Download, Settings, Save, FolderOpen, Sparkles } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -11,12 +11,12 @@ interface SchemaBuilderToolbarProps {
   onAddField: () => void;
   onClearSchemaTrigger: () => void;
   onImportSchemaTrigger: () => void;
-  // onPreviewSchemaTrigger: () => void; // Removed
+  onPreviewSchemaTrigger: () => void; // Re-added for clarity, but now triggers the combined tab
   onManageTypesTrigger: () => void;
   onExportSchemaTrigger: () => void;
   onSaveSchemaTrigger: () => void;
   onLoadSchemaTrigger: () => void;
-  onAIGenerateSchemaTrigger: () => void; // New prop for AI generation
+  onAIGenerateSchemaTrigger: () => void;
   hasSchemaFields: boolean;
 }
 
@@ -24,20 +24,20 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
   onAddField,
   onClearSchemaTrigger,
   onImportSchemaTrigger,
-  // onPreviewSchemaTrigger, // Removed
+  onPreviewSchemaTrigger, // Destructure
   onManageTypesTrigger,
   onExportSchemaTrigger,
   onSaveSchemaTrigger,
   onLoadSchemaTrigger,
-  onAIGenerateSchemaTrigger, // Destructure new prop
+  onAIGenerateSchemaTrigger,
   hasSchemaFields,
 }) => {
   return (
     <div className="flex items-center justify-between gap-4">
-      <div className="flex items-center gap-4"> {/* Left group: Title only */}
+      <div className="flex items-center gap-4">
         <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
       </div>
-      <div className="flex flex-wrap gap-2"> {/* Right group: All action buttons */}
+      <div className="flex flex-wrap gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onClearSchemaTrigger}>
@@ -84,7 +84,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onAIGenerateSchemaTrigger}> {/* New AI Generate Button */}
+            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onAIGenerateSchemaTrigger}>
               <Sparkles className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
@@ -92,9 +92,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
             <p>Generate with AI</p>
           </TooltipContent>
         </Tooltip>
-
-        {/* Removed Preview Fields Button */}
-        {/*
+        
         <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onPreviewSchemaTrigger}>
@@ -102,10 +100,9 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
             </Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Preview Fields</p>
+            <p>Preview Fields & Generate Data</p>
           </TooltipContent>
         </Tooltip>
-        */}
         
         <Tooltip>
           <TooltipTrigger asChild>

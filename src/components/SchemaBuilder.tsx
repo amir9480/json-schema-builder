@@ -15,13 +15,13 @@ import { convertFullJsonSchemaToSchemaFieldsAndReusableTypes } from "@/utils/sch
 // Import new components
 import SchemaBuilderToolbar from "./SchemaBuilderToolbar";
 import SchemaImportDialog from "./SchemaImportDialog";
-import SchemaExportDialog from "./SchemaExportDialog"; // Updated import
+import SchemaExportDialog from "./SchemaExportDialog";
 import SchemaClearConfirmation from "./SchemaClearConfirmation";
 import SchemaSaveLoadDialogs from "./SchemaSaveLoadDialogs";
 import SchemaAIGenerateDialog from "./SchemaAIGenerateDialog";
 import SchemaMergeReplaceConfirmation from "./SchemaMergeReplaceConfirmation";
 import FieldRefineDialog from "./FieldRefineDialog";
-import SchemaFieldList from "./SchemaFieldList"; // New import
+import SchemaFieldList from "./SchemaFieldList";
 
 interface SchemaBuilderProps {}
 
@@ -33,7 +33,6 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   const [schemaFields, setSchemaFields] = useState<SchemaField[]>([]);
   const [reusableTypes, setReusableTypes] = useState<SchemaField[]>([]);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
-  // const [isPreviewOpen, setIsPreviewOpen] = useState(false); // Removed
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [isExportDialogOpen, setIsExportDialogOpen] = useState(false);
   const [isManageTypesOpen, setIsManageTypesOpen] = useState(false);
@@ -436,10 +435,10 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
               }}
               onClearSchemaTrigger={() => setIsClearConfirmOpen(true)}
               onImportSchemaTrigger={() => setIsImportDialogOpen(true)}
-              // onPreviewSchemaTrigger={() => { // Modified to open export dialog with preview tab
-              //   setExportDialogInitialTab("form-preview");
-              //   setIsExportDialogOpen(true);
-              // }}
+              onPreviewSchemaTrigger={() => { // Modified to open export dialog with preview tab
+                setExportDialogInitialTab("form-preview");
+                setIsExportDialogOpen(true);
+              }}
               onManageTypesTrigger={() => setIsManageTypesOpen(true)}
               onExportSchemaTrigger={() => { // Modified to open export dialog with json-schema tab
                 setExportDialogInitialTab("json-schema");
@@ -470,8 +469,6 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             onImportJsonInputChange={(e) => setImportJsonInput(e.target.value)}
             onImportSchema={handleImportSchema}
           />
-
-          {/* SchemaPreviewDialog is now removed */}
 
           <SchemaExportDialog
             isOpen={isExportDialogOpen}
