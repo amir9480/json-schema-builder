@@ -121,88 +121,100 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
               {field.isMultiple && <span className="text-muted-foreground ml-1">(Multiple)</span>}
               {isReference && <span className="text-blue-600 ml-1">(Ref: {reusableTypes.find(rt => rt.id === field.refId)?.name || 'Unknown'})</span>}
             </Label>
-            {displayField.type === "object" ? (
-              <div className="ml-4 mt-2 space-y-2">
-                <p className="text-sm text-muted-foreground">Object Properties:</p>
-                {displayField.children && displayField.children.length > 0 ? (
-                  <SchemaFormPreview fields={displayField.children} level={level + 1} reusableTypes={reusableTypes} formData={fieldValue} />
-                ) : (
-                  <p className="text-xs text-muted-foreground italic">No properties defined.</p>
-                )}
-              </div>
-            ) : displayField.type === "dropdown" ? (
-              <Select value={fieldValue !== undefined ? String(fieldValue) : (displayField.example || (displayField.options && displayField.options.length > 0 ? displayField.options[0] : ""))}>
-                <SelectTrigger className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700">
-                  <SelectValue placeholder={getPlaceholderValue(displayField.type, undefined, displayField.options)} />
-                </SelectTrigger>
-                <SelectContent>
-                  {displayField.options && displayField.options.length > 0 ? (
-                    displayField.options.map((option, idx) => (
-                      <SelectItem key={idx} value={option}>
-                        {option}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="no-options" disabled>No options defined</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            ) : displayField.type === "boolean" ? (
-              <div className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-800 p-2 rounded-md border border-gray-200 dark:border-gray-700">
-                <Switch
-                  checked={fieldValue !== undefined ? Boolean(fieldValue) : (displayField.example === 'true')}
-                  disabled // Preview only, not interactive
+            {displayField.isMultiple ? (
+              Array.isArray(fieldValue) && fieldValue.length > 0 ? (
+                <div className="space-y-4 mt-2">
+                  {fieldValue.map((item, idx) => (
+                    <div key={idx} className="border border-dashed p-3 rounded-md bg-gray-50 dark:bg-gray-800">
+                      <p className="text-sm font-semibold mb-2 text-muted-foreground">Item {idx + 1}</p>
+                      {displayField.type === "object" ? ( // Check if the resolved item type is an object
+                        <SchemaFormPreview
+                          fields={displayField.children || []} // Use children of the resolved object type
+                          level={level + 1}
+                          reusableTypes={reusableTypes}
+                          formData={item} // Pass the individual object data
+                        />
+                      ) : (
+                        // If it's an array of primitives (string, int, float, etc.)
+                        <Input
+                          type="text"
+                          value={String(item)}
+                          readOnly
+                          className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-600"
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <Input
+                  type="text"
+                  value="No items generated"
+                  readOnly
+                  className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
                 />
-                <Label>{fieldValue !== undefined ? String(fieldValue) : (displayField.example === 'true' ? 'True' : 'False')}</Label>
-              </div>
+              )
             ) : (
-              <>
-                {displayField.isMultiple && Array.isArray(fieldValue) ? (
-                  fieldValue.length > 0 ? (
-                    fieldValue.map((item, idx) => (
-                      <Input
-                        key={idx}
-                        type="text"
-                        value={typeof item === 'object' && item !== null ? JSON.stringify(item) : String(item)}
-                        readOnly
-                        className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700 mb-1"
-                      />
-                    ))
+              displayField.type === "object" ? (
+                <div className="ml-4 mt-2 space-y-2">
+                  <p className="text-sm text-muted-foreground">Object Properties:</p>
+                  {displayField.children && displayField.children.length > 0 ? (
+                    <SchemaFormPreview fields={displayField.children} level={level + 1} reusableTypes={reusableTypes} formData={fieldValue} />
                   ) : (
-                    <Input
-                      type="text"
-                      value="No items generated"
-                      readOnly
-                      className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
-                    />
-                  )
-                ) : (
-                  <Input
-                    type="text"
-                    value={fieldValue !== undefined ? String(fieldValue) : (field.example || getPlaceholderValue(displayField.type, field.currency))}
-                    readOnly
-                    className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
-                  />
-                )}
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
-                  {isNumberType && (
-                    <>
-                      {field.minValue !== undefined && <span>Min: {field.minValue}</span>}
-                      {field.maxValue !== undefined && <span>Max: {field.maxValue}</span>}
-                    </>
-                  )}
-                  {field.isMultiple && (
-                    <>
-                      {field.minItems !== undefined && <span>Min Items: {field.minItems}</span>}
-                      {field.maxItems !== undefined && <span>Max Items: {field.maxItems}</span>}
-                    </>
-                  )}
-                  {displayField.type === "currency" && displayField.currency && (
-                    <span>Currency: {displayField.currency}</span>
+                    <p className="text-xs text-muted-foreground italic">No properties defined.</p>
                   )}
                 </div>
-              </>
+              ) : displayField.type === "dropdown" ? (
+                <Select value={fieldValue !== undefined ? String(fieldValue) : (displayField.example || (displayField.options && displayField.options.length > 0 ? displayField.options[0] : ""))}>
+                  <SelectTrigger className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700">
+                    <SelectValue placeholder={getPlaceholderValue(displayField.type, undefined, displayField.options)} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {displayField.options && displayField.options.length > 0 ? (
+                      displayField.options.map((option, idx) => (
+                        <SelectItem key={idx} value={option}>
+                          {option}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-options" disabled>No options defined</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              ) : displayField.type === "boolean" ? (
+                <div className="flex items-center space-x-2 bg-gray-50 dark:bg-gray-800 p-2 rounded-md border border-gray-200 dark:border-gray-700">
+                  <Switch
+                    checked={fieldValue !== undefined ? Boolean(fieldValue) : (displayField.example === 'true')}
+                    disabled // Preview only, not interactive
+                  />
+                  <Label>{fieldValue !== undefined ? String(fieldValue) : (displayField.example === 'true' ? 'True' : 'False')}</Label>
+                </div>
+              ) : (
+                <Input
+                  type="text"
+                  value={fieldValue !== undefined ? String(fieldValue) : (field.example || getPlaceholderValue(displayField.type, field.currency))}
+                  readOnly
+                  className="bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-700"
+                />
+              )
             )}
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground mt-1">
+              {isNumberType && (
+                <>
+                  {field.minValue !== undefined && <span>Min: {field.minValue}</span>}
+                  {field.maxValue !== undefined && <span>Max: {field.maxValue}</span>}
+                </>
+              )}
+              {field.isMultiple && (
+                <>
+                  {field.minItems !== undefined && <span>Min Items: {field.minItems}</span>}
+                  {field.maxItems !== undefined && <span>Max Items: {field.maxItems}</span>}
+                </>
+              )}
+              {displayField.type === "currency" && displayField.currency && (
+                <span>Currency: {displayField.currency}</span>
+              )}
+            </div>
           </div>
         );
       })}
