@@ -287,8 +287,6 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
     }
   };
 
-  const paddingLeft = level * 20;
-
   const typeOptions: { value: SchemaFieldType; label: string }[] = [
     { value: "string", label: "String" },
     { value: "int", label: "Integer" },
@@ -306,16 +304,16 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 p-4 border rounded-md",
+        "flex flex-col gap-4 py-4 border rounded-md",
         getBackgroundClasses(level),
         level > 0 && currentBorderColor
       )}
-      style={{ paddingLeft: `${paddingLeft + 16}px` }}
+      style={{ marginLeft: `${level * 24}px` }} // Indent based on level (24px for px-6)
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 px-6"> {/* Apply px-6 here */}
         {/* Drag and Move Buttons */}
         {!isRoot && ( // Only show for non-root fields
-          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 -ml-4 shrink-0">
+          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 ml-[-1.5rem] shrink-0"> {/* ml-[-1.5rem] = -24px */}
             <Button
               variant="ghost"
               size="icon"
@@ -359,8 +357,9 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
             {typeOptions.map((option) => {
               if (hideRefTypeOption && option.value === "ref") return null;
               return (
-                <DropdownMenuItem
+                <SelectItem
                   key={option.value}
+                  value={option.value}
                   onSelect={() => handleTypeChange(option.value)}
                   className={cn(
                     "flex items-center gap-2 cursor-pointer",
@@ -369,7 +368,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
                 >
                   <FieldTypeIcon type={option.value} className="!bg-transparent !border-none !text-foreground" />
                   <span>{option.label}</span>
-                </DropdownMenuItem>
+                </SelectItem>
               );
             })}
           </DropdownMenuContent>
@@ -483,7 +482,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       </div>
 
       {field.type === "ref" && (
-        <div className="grid gap-2 mt-2">
+        <div className="grid gap-2 mt-2 px-6"> {/* Apply px-6 here */}
           <div className="flex items-center justify-between">
             <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
             {onManageReusableTypes && (
@@ -524,7 +523,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         <Collapsible
           open={isAdvancedOpen}
           onOpenChange={setIsAdvancedOpen}
-          className="w-full space-y-2"
+          className="w-full space-y-2 px-6" // Apply px-6 here
         >
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-start px-0">
@@ -647,7 +646,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         <Collapsible
           open={isDropdownOptionsOpen}
           onOpenChange={setIsDropdownOptionsOpen}
-          className="flex flex-col gap-4 mt-4 border-t pt-4"
+          className="flex flex-col gap-4 mt-4 border-t pt-4 px-6" // Apply px-6 here
         >
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-start px-0 -mt-4">
@@ -710,7 +709,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         <Collapsible
           open={isObjectPropertiesOpen}
           onOpenChange={setIsObjectPropertiesOpen}
-          className="flex flex-col gap-4 mt-4 border-t pt-4"
+          className="flex flex-col gap-4 mt-4 border-t pt-4 px-6" // Apply px-6 here
         >
           <CollapsibleTrigger asChild>
             <Button variant="ghost" className="w-full justify-start px-0 -mt-4">
