@@ -1,11 +1,11 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Eye, Upload, Download, Settings, Save, FolderOpen } from "lucide-react";
+import { PlusCircle, Trash2, Eye, Upload, Download, Settings, Save, FolderOpen, Sparkles } from "lucide-react"; // Import Sparkles icon
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-} from "@/components/ui/tooltip"; // Import Tooltip components
+} from "@/components/ui/tooltip";
 
 interface SchemaBuilderToolbarProps {
   onAddField: () => void;
@@ -16,6 +16,7 @@ interface SchemaBuilderToolbarProps {
   onExportSchemaTrigger: () => void;
   onSaveSchemaTrigger: () => void;
   onLoadSchemaTrigger: () => void;
+  onAIGenerateSchemaTrigger: () => void; // New prop for AI generation
   hasSchemaFields: boolean;
 }
 
@@ -28,6 +29,7 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
   onExportSchemaTrigger,
   onSaveSchemaTrigger,
   onLoadSchemaTrigger,
+  onAIGenerateSchemaTrigger, // Destructure new prop
   hasSchemaFields,
 }) => {
   return (
@@ -64,6 +66,17 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
           </TooltipTrigger>
           <TooltipContent>
             <p>Import JSON</p>
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onAIGenerateSchemaTrigger}> {/* New AI Generate Button */}
+              <Sparkles className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Generate with AI</p>
           </TooltipContent>
         </Tooltip>
 
