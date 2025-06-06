@@ -373,9 +373,9 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant="ghost"
+                variant="default" // Changed to default variant
                 size="icon"
-                className="h-8 w-8 text-muted-foreground hover:text-purple-600 shrink-0"
+                className="h-8 w-8 bg-primary hover:bg-primary/90 text-primary-foreground shrink-0" // Added primary color classes
                 onClick={() => onRefineFieldWithAI(field)}
                 aria-label="Refine field with AI"
               >
