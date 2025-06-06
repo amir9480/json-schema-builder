@@ -22,7 +22,7 @@ type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
 const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
 const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
-const LOCAL_STORAGE_USER_PROMPT_KEY = "llmBuilderUserPrompt"; // New key for user prompt
+const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt"; // New shared key for user prompt
 
 const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema }) => {
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
@@ -42,7 +42,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_USER_PROMPT_KEY) || "Generate a JSON object based on the schema.";
+      return localStorage.getItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY) || "Generate a JSON object based on the schema.";
     }
     return "Generate a JSON object based on the schema.";
   });
@@ -66,7 +66,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_USER_PROMPT_KEY, userPrompt);
+      localStorage.setItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY, userPrompt);
     }
   }, [userPrompt]);
 

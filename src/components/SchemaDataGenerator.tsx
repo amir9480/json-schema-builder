@@ -23,7 +23,7 @@ type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
 const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
 const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
-const LOCAL_STORAGE_DATA_PROMPT_KEY = "llmSchemaDataPrompt"; // Specific prompt key for data generation
+const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt"; // Using the shared key
 
 const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
   jsonSchema,
@@ -46,7 +46,7 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_DATA_PROMPT_KEY) || "Generate a realistic JSON object based on the provided schema.";
+      return localStorage.getItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY) || "Generate a realistic JSON object based on the provided schema.";
     }
     return "Generate a realistic JSON object based on the provided schema.";
   });
@@ -70,7 +70,7 @@ const SchemaDataGenerator: React.FC<SchemaDataGeneratorProps> = ({
 
   React.useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_DATA_PROMPT_KEY, userPrompt);
+      localStorage.setItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY, userPrompt);
     }
   }, [userPrompt]);
 
