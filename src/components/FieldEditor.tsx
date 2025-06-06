@@ -194,7 +194,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 py-4 border rounded-md px-6", // Added px-6 here
+        "flex flex-col gap-4 py-4 border rounded-md px-6", // px-6 is correctly here for the main container
         getBackgroundClasses(level),
         level > 0 && currentBorderColor
       )}
@@ -202,7 +202,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       <div className="flex items-center gap-4">
         {/* Drag and Move Buttons */}
         {!isRoot && (
-          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 ml-[-1.5rem] shrink-0"> {/* Restored ml-[-1.5rem] */}
+          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 ml-[-1.5rem] shrink-0"> {/* ml-[-1.5rem] is correctly here */}
             <Button
               variant="ghost"
               size="icon"
