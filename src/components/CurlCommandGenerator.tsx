@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { showSuccess, showError } from "@/utils/toast";
 import ApiResponseDisplay from "./ApiResponseDisplay"; // Import the new component
+import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
 
 interface CurlCommandGeneratorProps {
   jsonSchema: any;
@@ -310,7 +311,15 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema 
           <Copy className="h-4 w-4 mr-2" /> Copy cURL Command
         </Button>
         <Button onClick={handleTryIt} disabled={isLoading} className="flex-1">
-          {isLoading ? "Sending Request..." : <><Play className="h-4 w-4 mr-2" /> Try it</>}
+          {isLoading ? (
+            <>
+              <LoadingSpinner className="mr-2" /> Sending Request...
+            </>
+          ) : (
+            <>
+              <Play className="h-4 w-4 mr-2" /> Try it
+            </>
+          )}
         </Button>
       </div>
       <p className="text-sm text-muted-foreground">

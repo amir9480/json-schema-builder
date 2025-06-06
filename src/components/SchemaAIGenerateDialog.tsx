@@ -22,6 +22,7 @@ import {
 import { SchemaField } from "./FieldEditor";
 import { convertFullJsonSchemaToSchemaFieldsAndReusableTypes } from "@/utils/schemaConverter";
 import ApiResponseDisplay from "./ApiResponseDisplay"; // Re-using the API response display
+import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
 
 interface SchemaAIGenerateDialogProps {
   isOpen: boolean;
@@ -281,7 +282,15 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
           </div>
 
           <Button onClick={handleGenerateSchema} disabled={isLoading}>
-            {isLoading ? "Generating..." : <><Sparkles className="h-4 w-4 mr-2" /> Generate Schema</>}
+            {isLoading ? (
+              <>
+                <LoadingSpinner className="mr-2" /> Generating...
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4 mr-2" /> Generate Schema
+              </>
+            )}
           </Button>
         </div>
 
