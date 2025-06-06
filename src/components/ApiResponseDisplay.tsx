@@ -67,12 +67,12 @@ const ApiResponseDisplay: React.FC<ApiResponseDisplayProps> = ({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        <div className="flex-1 overflow-hidden py-4">
-          <div className="h-full max-h-[calc(90vh-200px)] rounded-md border text-white overflow-auto flex">
+        <div className="flex-1 overflow-y-auto py-4"> {/* Applied overflow-y-auto here */}
+          <div className="h-full rounded-md border text-white"> {/* Removed max-h-[calc...] and flex */}
             {isLoading ? (
-              <div className="flex flex-col items-center justify-center w-full h-full text-white">
+              <div className="flex flex-col items-center justify-center w-full h-full text-white py-8">
                 <LoadingSpinner size={48} className="text-blue-400" />
-                <p className="text-lg">Loading response...</p>
+                <p className="text-lg mt-4">Loading response...</p>
               </div>
             ) : isJsonValid && parsedJson !== null ? (
               <div className="p-4 text-left text-sm block w-full whitespace-pre">
