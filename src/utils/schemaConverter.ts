@@ -290,7 +290,7 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
     isRequired: isRequired,
     title: jsonSchema.title,
     description: jsonSchema.description,
-    example: jsonSchema.example !== undefined ? String(jsonSchema.example) : undefined,
+    example: jsonSchema.example !== undefined ? String(json.example) : undefined,
     children: children,
     refId: refId,
     minValue: jsonSchema.minimum,
