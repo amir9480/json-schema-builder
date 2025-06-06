@@ -49,6 +49,7 @@ const SortableFieldEditor: React.FC<SortableFieldEditorProps> = ({
     transition,
     zIndex: isDragging ? 10 : 0, // Bring dragged item to front
     opacity: isDragging ? 0.8 : 1,
+    paddingLeft: `${level * 24}px`, // Apply indentation here
   };
 
   return (

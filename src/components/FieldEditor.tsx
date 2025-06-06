@@ -198,9 +198,8 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
         getBackgroundClasses(level),
         level > 0 && currentBorderColor
       )}
-      style={{ marginLeft: `${level * 24}px` }}
     >
-      <div className="flex items-center gap-4 px-6">
+      <div className="flex items-center gap-4 px-4"> {/* Changed px-6 to px-4 */}
         {/* Drag and Move Buttons */}
         {!isRoot && (
           <div className="flex flex-col items-center justify-center h-full py-4 -my-4 ml-[-1.5rem] shrink-0">
@@ -372,7 +371,7 @@ const FieldEditor: React.FC<FieldEditorProps> = ({
       </div>
 
       {field.type === "ref" && (
-        <div className="grid gap-2 mt-2 px-6">
+        <div className="grid gap-2 mt-2 px-4"> {/* Changed px-6 to px-4 */}
           <div className="flex items-center justify-between">
             <Label htmlFor={`field-ref-${field.id}`}>Select Reference</Label>
             {onManageReusableTypes && (
