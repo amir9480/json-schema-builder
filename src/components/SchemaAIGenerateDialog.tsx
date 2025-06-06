@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Copy, Play, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dialog";
 import { SchemaField } from "./FieldEditor";
 import { convertFullJsonSchemaToSchemaFieldsAndReusableTypes } from "@/utils/schemaConverter";
-import ApiResponseDisplay from "./ApiResponseDisplay"; // Re-using the API response display
 import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
 
 interface SchemaAIGenerateDialogProps {
@@ -65,8 +64,6 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
   });
 
   const [isLoading, setIsLoading] = React.useState(false);
-  const [generatedJson, setGeneratedJson] = React.useState<string>("");
-  const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false);
 
   // Persist selectedProvider, apiKey, and userPrompt to localStorage
   React.useEffect(() => {
@@ -155,14 +152,13 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
     }
 
     setIsLoading(true);
-    setGeneratedJson("Generating schema...");
-    setIsResponseModalOpen(true); // Open the modal to show loading state
 
     const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt);
 
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
       setIsLoading(false);
+      onOpenChange(false); // Close dialog on invalid provider
       return;
     }
 
@@ -184,12 +180,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
 
       if (!response.ok) {
         console.error("API Error:", data);
-        setGeneratedJson(JSON.stringify({
-          status: response.status,
-          statusText: response.statusText,
-          error: data
-        }, null, 2));
-        showError(`API Error: ${response.status} ${response.statusText}`);
+        showError(`API Error: ${response.status} ${response.statusText}. Check console for details.`);
       } else {
         let generatedContent: string | object = data;
         if (selectedProvider === "openai" || selectedProvider === "mistral" || selectedProvider === "openrouter") {
@@ -200,31 +191,23 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
 
         let parsedSchema: any;
         try {
-          // Attempt to parse the content if it's a string that looks like JSON
           parsedSchema = typeof generatedContent === 'string' ? JSON.parse(generatedContent) : generatedContent;
-          setGeneratedJson(JSON.stringify(parsedSchema, null, 2)); // Display formatted JSON
           
           // Convert and pass to parent
           const { mainFields, reusableTypes } = convertFullJsonSchemaToSchemaFieldsAndReusableTypes(parsedSchema);
           onSchemaGenerated(mainFields, reusableTypes);
           showSuccess("Schema generated successfully!");
-          onOpenChange(false); // Close the generation dialog
         } catch (parseError) {
           console.error("Failed to parse generated content as JSON:", parseError);
-          setGeneratedJson(typeof generatedContent === 'string' ? generatedContent : JSON.stringify(generatedContent, null, 2));
           showError("Generated content is not a valid JSON Schema. Please refine your prompt.");
         }
       }
     } catch (error) {
       console.error("Network or Fetch Error:", error);
-      setGeneratedJson(JSON.stringify({
-        error: "Network or Fetch Error",
-        message: (error as Error).message,
-        details: "Check your API key, network connection, or browser's CORS policy. For production, consider using a backend proxy."
-      }, null, 2));
-      showError("Failed to send request. Check console for details.");
+      showError("Failed to send request. Check your API key, network connection, or browser's CORS policy.");
     } finally {
       setIsLoading(false);
+      onOpenChange(false); // Close the dialog after operation completes
     }
   };
 
@@ -293,15 +276,6 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
             )}
           </Button>
         </div>
-
-        {/* Display API response in a modal, similar to CurlCommandGenerator */}
-        <ApiResponseDisplay
-          isOpen={isResponseModalOpen}
-          onOpenChange={setIsResponseModalOpen}
-          title="AI Generation Response"
-          description="The raw response from the LLM API call. If successful, the schema will be imported."
-          jsonContent={generatedJson}
-        />
       </DialogContent>
     </Dialog>
   );
