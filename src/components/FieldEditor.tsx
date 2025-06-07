@@ -303,20 +303,16 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
         </div>
 
         {onConvertToReusableType && !isRoot && !hideRefTypeOption && field.type !== "ref" && (
-          <AlertDialog>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600 shrink-0" aria-label="Convert to reusable type">
-                    <Link className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Convert to Reusable Type</p>
-              </TooltipContent>
-              </Tooltip>
-            </AlertDialog>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-600 shrink-0" aria-label="Convert to reusable type" onClick={() => onConvertToReusableType(field.id)}>
+                <Link className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Convert to Reusable Type</p>
+            </TooltipContent>
+          </Tooltip>
         )}
 
         <div className="flex items-center space-x-2 min-w-[100px]"> {/* Added min-w for responsiveness */}
