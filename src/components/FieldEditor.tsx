@@ -224,7 +224,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
         level > 0 && currentBorderColor
       )}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4"> {/* Changed to flex-wrap */}
         {/* Drag and Move Buttons */}
         {!isRoot && (
           <div className="flex flex-col items-center justify-center h-full py-4 -my-4 shrink-0">
@@ -287,7 +287,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex-1 flex flex-col gap-2"> {/* Changed to flex-col to stack input and error */}
+        <div className="flex-1 flex flex-col gap-2 min-w-[150px]"> {/* Added min-w for responsiveness */}
           <div className="grid gap-2 flex-1">
             <Input
               id={`field-name-${field.id}`}
@@ -315,25 +315,11 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
               <TooltipContent>
                 <p>Convert to Reusable Type</p>
               </TooltipContent>
-            </Tooltip>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Convert to Reusable Type?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will convert "{field.name || "Unnamed Field"}" into a new reusable type. The original field will become a reference to this new type. Are you sure you want to proceed?
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => onConvertToReusableType(field.id)}>
-                  Convert
-                </AlertDialogAction>
-              </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         )}
 
-        <div>
+        <div className="flex items-center space-x-2 min-w-[100px]"> {/* Added min-w for responsiveness */}
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center space-x-2 cursor-pointer">
@@ -352,7 +338,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
         </div>
 
         {!isRoot && (
-          <div>
+          <div className="flex items-center space-x-2 min-w-[100px]"> {/* Added min-w for responsiveness */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center space-x-2 cursor-pointer">
@@ -377,7 +363,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
               <Button
                 variant="default"
                 size="icon"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0" // Removed h-8 w-8
+                className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
                 onClick={() => onRefineFieldWithAI(field)}
                 aria-label="Refine field with AI"
               >
@@ -476,6 +462,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
           hideRefTypeOption={hideRefTypeOption}
           onManageReusableTypes={onManageReusableTypes}
           onConvertToReusableType={onConvertToReusableType}
+          onRefineFieldWithAI={onRefineFieldWithAI}
         />
       )}
     </div>
