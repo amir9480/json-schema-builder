@@ -8,7 +8,22 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
+import LoadingSpinner from "./LoadingSpinner";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { Check, ChevronsUpDown } from "lucide-react";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
@@ -43,6 +58,7 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
 }) => {
   const [availableModels, setAvailableModels] = React.useState<string[]>([]);
   const [isFetchingModels, setIsFetchingModels] = React.useState(false);
+  const [isModelSelectOpen, setIsModelSelectOpen] = React.useState(false); // State for Popover
 
   // Load from local storage on mount
   React.useEffect(() => {
@@ -187,30 +203,54 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
 
       <div className="grid gap-2">
         <Label htmlFor="llm-model-select">Select Model</Label>
-        <Select value={selectedModel} onValueChange={setSelectedModel} disabled={isFetchingModels || availableModels.length === 0}>
-          <SelectTrigger id="llm-model-select">
-            {isFetchingModels ? (
-              <div className="flex items-center gap-2">
-                <LoadingSpinner size={16} /> Loading models...
-              </div>
-            ) : (
-              <SelectValue placeholder="Select a model" />
-            )}
-          </SelectTrigger>
-          <SelectContent>
-            {availableModels.length > 0 ? (
-              availableModels.map((model) => (
-                <SelectItem key={model} value={model}>
-                  {model}
-                </SelectItem>
-              ))
-            ) : (
-              <SelectItem value="no-models" disabled>
-                No models available
-              </SelectItem>
-            )}
-          </SelectContent>
-        </Select>
+        <Popover open={isModelSelectOpen} onOpenChange={setIsModelSelectOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={isModelSelectOpen}
+              className="w-full justify-between"
+              disabled={isFetchingModels || availableModels.length === 0}
+            >
+              {isFetchingModels ? (
+                <div className="flex items-center gap-2">
+                  <LoadingSpinner size={16} /> Loading models...
+                </div>
+              ) : (
+                selectedModel
+                  ? availableModels.find((model) => model === selectedModel)
+                  : "Select a model..."
+              )}
+              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+            <Command>
+              <CommandInput placeholder="Search model..." />
+              <CommandEmpty>No model found.</CommandEmpty>
+              <CommandGroup className="max-h-60 overflow-y-auto">
+                {availableModels.map((model) => (
+                  <CommandItem
+                    key={model}
+                    value={model}
+                    onSelect={(currentValue) => {
+                      setSelectedModel(currentValue === selectedModel ? "" : currentValue);
+                      setIsModelSelectOpen(false);
+                    }}
+                  >
+                    <Check
+                      className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedModel === model ? "opacity-100" : "opacity-0"
+                      )}
+                    />
+                    {model}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div className="grid gap-2">
