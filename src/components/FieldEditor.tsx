@@ -258,7 +258,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
         {/* Field Type Select */}
         <Select value={field.type} onValueChange={handleTypeChange}>
           <SelectTrigger className="w-full sm:w-[180px] shrink-0"> {/* Adjust width for responsiveness */}
-            <FieldTypeIcon type={field.type} className="mr-2 !bg-transparent !border-none !text-foreground h-4 w-4" />
+            <FieldTypeIcon type={field.type} className="mr-2" /> {/* Removed !bg-transparent !border-none !text-foreground h-4 w-4 */}
             <SelectValue placeholder="Select type" />
           </SelectTrigger>
           <SelectContent>
