@@ -315,8 +315,8 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
               <TooltipContent>
                 <p>Convert to Reusable Type</p>
               </TooltipContent>
+              </Tooltip>
             </AlertDialog>
-          </AlertDialog>
         )}
 
         <div className="flex items-center space-x-2 min-w-[100px]"> {/* Added min-w for responsiveness */}

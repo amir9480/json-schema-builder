@@ -435,10 +435,6 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
               }}
               onClearSchemaTrigger={() => setIsClearConfirmOpen(true)}
               onImportSchemaTrigger={() => setIsImportDialogOpen(true)}
-              onPreviewSchemaTrigger={() => { // Modified to open export dialog with preview tab
-                setExportDialogInitialTab("form-preview");
-                setIsExportDialogOpen(true);
-              }}
               onManageTypesTrigger={() => setIsManageTypesOpen(true)}
               onExportSchemaTrigger={() => { // Modified to open export dialog with json-schema tab
                 setExportDialogInitialTab("json-schema");
