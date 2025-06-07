@@ -304,7 +304,7 @@ function mapJsonSchemaTypeToZodType(jsonType: string | string[], format?: string
     case "string":
       if (format === "date") return "z.string().datetime().date()"; // Zod's date validation
       if (format === "date-time") return "z.string().datetime()";
-      if (format === "time") return "z.string().regex(/^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$/)"; // Basic time regex
+      if (format === "time") return "z.string().regex(/^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)$/)"; // HH:MM:SS regex
       return "z.string()";
     case "number":
       return "z.number()";
