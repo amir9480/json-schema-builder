@@ -43,7 +43,7 @@ const LOCAL_STORAGE_SELECTED_MODEL_KEY = "llmBuilderSelectedModel";
 // Default models for initial selection if API fetching fails or is slow
 const DEFAULT_MODELS_FALLBACK = new Map<LLMProvider, string[]>([
   ["openai", ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]],
-  ["gemini", ["gemini-pro"]], // Gemini doesn't have a public /models endpoint like others
+  ["gemini", ["gemini-pro"]], // Fallback for Gemini if API fails
   ["mistral", ["mistral-small-latest", "mistral-large-latest", "mixtral-8x7b-instruct-v0.1"]],
   ["openrouter", ["openai/gpt-4o-mini", "openai/gpt-4o", "mistralai/mistral-small-latest"]],
 ]);
@@ -99,7 +99,8 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
 
   // Function to fetch models
   const fetchModels = React.useCallback(async () => {
-    if (!apiKey && selectedProvider !== "gemini") { // API key not strictly needed for Gemini's single model
+    // For Gemini, API key is needed for fetching models from the new endpoint
+    if (!apiKey && selectedProvider !== "gemini") { 
       setAvailableModels(DEFAULT_MODELS_FALLBACK.get(selectedProvider) || []);
       setSelectedModel(DEFAULT_MODELS_FALLBACK.get(selectedProvider)?.[0] || "");
       return;
@@ -128,9 +129,18 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
           }
           break;
         case "gemini":
-          // Gemini doesn't have a public /models endpoint for listing.
-          // We'll hardcode the common model for now.
-          models = ["gemini-pro"];
+          endpoint = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
+          const geminiResponse = await fetch(endpoint);
+          const geminiData = await geminiResponse.json();
+          if (geminiResponse.ok) {
+            models = geminiData.models
+              .filter((m: any) => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
+              .map((m: any) => m.name.split('/').pop()) // Extract model name from "models/gemini-pro"
+              .sort();
+          } else {
+            console.error("Failed to fetch Gemini models:", geminiData);
+            models = DEFAULT_MODELS_FALLBACK.get("gemini") || [];
+          }
           break;
         case "mistral":
           endpoint = "https://api.mistral.ai/v1/models";
