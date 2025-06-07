@@ -22,6 +22,7 @@ import SchemaAIGenerateDialog from "./SchemaAIGenerateDialog";
 import SchemaMergeReplaceConfirmation from "./SchemaMergeReplaceConfirmation";
 import FieldRefineDialog from "./FieldRefineDialog";
 import SchemaFieldList from "./SchemaFieldList";
+import ReusableTypeNameDialog from "./ReusableTypeNameDialog"; // Import the new dialog
 
 interface SchemaBuilderProps {}
 
@@ -55,6 +56,10 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
   // New states for Field Refinement
   const [isFieldRefineDialogOpen, setIsFieldRefineDialogOpen] = useState(false);
   const [fieldToRefine, setFieldToRefine] = useState<SchemaField | null>(null);
+
+  // States for Reusable Type Naming Dialog
+  const [isReusableTypeNameDialogOpen, setIsReusableTypeNameDialogOpen] = useState(false);
+  const [fieldToConvertForNaming, setFieldToConvertForNaming] = useState<SchemaField | null>(null);
 
   // State to control which tab opens in SchemaExportDialog
   const [exportDialogInitialTab, setExportDialogInitialTab] = useState<string>("json-schema");
@@ -256,98 +261,80 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     return newField;
   }, []);
 
-  const handleConvertToReusableType = useCallback((fieldId: string) => {
-    let foundField: SchemaField | undefined;
-    let parentField: SchemaField | undefined;
+  // Function to initiate the conversion process by opening the naming dialog
+  const handleInitiateConvertToReusableType = useCallback((fieldToConvert: SchemaField) => {
+    setFieldToConvertForNaming(fieldToConvert);
+    setIsReusableTypeNameDialogOpen(true);
+  }, []);
 
-    // Function to find the field and its parent recursively
-    const findFieldAndParent = (fields: SchemaField[], targetId: string, currentParent?: SchemaField): boolean => {
-      for (const field of fields) {
-        if (field.id === targetId) {
-          foundField = field;
-          parentField = currentParent;
-          return true;
-        }
-        if (field.type === "object" && field.children) {
-          if (findFieldAndParent(field.children, targetId, field)) {
-            return true;
-          }
-        }
-      }
-      return false;
+  // Function to perform the actual conversion after naming
+  const handleConfirmConvertToReusableType = useCallback((reusableTypeName: string) => {
+    if (!fieldToConvertForNaming) return;
+
+    // Check for duplicate name
+    if (reusableTypes.some(rt => rt.name === reusableTypeName)) {
+      showError(`A reusable type with the name "${reusableTypeName}" already exists. Please choose a different name.`);
+      return;
+    }
+
+    // 1. Create a new reusable type from the found field
+    const newReusableType: SchemaField = {
+      ...fieldToConvertForNaming, // Copy all properties from the found field
+      id: uuidv4(), // Generate a new ID for the reusable type
+      parentId: undefined, // Reusable types are top-level, so no parentId
+      // Ensure children are deep copied if it's an object, otherwise undefined
+      children: fieldToConvertForNaming.type === "object" ? (fieldToConvertForNaming.children ? fieldToConvertForNaming.children.map(deepCopyField) : []) : undefined,
+      // Reusable types themselves are not 'multiple' or 'required' in the same context as fields
+      isMultiple: false, // Reusable type definition itself is not an array
+      isRequired: false, // Reusable type definition itself is not 'required'
+      // Ensure a name for the reusable type
+      name: reusableTypeName,
+      title: fieldToConvertForNaming.title || `Reusable ${fieldToConvertForNaming.name || "Type"}`,
+      description: fieldToConvertForNaming.description || `Reusable definition for ${fieldToConvertForNaming.name || "an unnamed type"}`,
     };
 
-    findFieldAndParent(schemaFields, fieldId);
+    setReusableTypes((prev) => [...prev, newReusableType]);
 
-    if (foundField) {
-      // 1. Create a new reusable type from the found field
-      const newReusableType: SchemaField = {
-        ...foundField, // Copy all properties from the found field
-        id: uuidv4(), // Generate a new ID for the reusable type
-        parentId: undefined, // Reusable types are top-level, so no parentId
-        // Ensure children are deep copied if it's an object, otherwise undefined
-        children: foundField.type === "object" ? (foundField.children ? foundField.children.map(deepCopyField) : []) : undefined,
-        // Reusable types themselves are not 'multiple' or 'required' in the same context as fields
-        isMultiple: false,
-        isRequired: false,
-        // Ensure a name for the reusable type
-        name: foundField.name || "UnnamedType",
-        title: foundField.title || `Reusable ${foundField.name || "Type"}`,
-        description: foundField.description || `Reusable definition for ${foundField.name || "an unnamed type"}`,
-      };
+    // 2. Update the original field to be a reference to the new reusable type
+    const updatedOriginalField: SchemaField = {
+      ...fieldToConvertForNaming,
+      type: "ref",
+      refId: newReusableType.id,
+      children: undefined, // A reference field does not have children directly
+      // Clear other properties that don't apply to a ref type
+      minValue: undefined,
+      maxValue: undefined,
+      minItems: undefined,
+      maxItems: undefined,
+      currency: undefined,
+      example: undefined,
+      description: undefined,
+      // Keep original title/name for display in the main schema
+      title: fieldToConvertForNaming.title || fieldToConvertForNaming.name,
+      isMultiple: fieldToConvertForNaming.isMultiple, // Keep original isMultiple for the reference field
+      isRequired: fieldToConvertForNaming.isRequired, // Keep original isRequired for the reference field
+    };
 
-      setReusableTypes((prev) => {
-        // Ensure unique name for the new reusable type
-        let uniqueName = newReusableType.name;
-        let counter = 1;
-        while (prev.some(rt => rt.name === uniqueName)) {
-          uniqueName = `${newReusableType.name}${counter++}`;
+    // Function to update the field in the schemaFields tree
+    const updateFieldInSchema = (fields: SchemaField[]): SchemaField[] => {
+      return fields.map((field) => {
+        if (field.id === fieldToConvertForNaming.id) {
+          return updatedOriginalField;
+        } else if (field.type === "object" && field.children) {
+          return {
+            ...field,
+            children: updateFieldInSchema(field.children),
+          };
         }
-        newReusableType.name = uniqueName;
-        return [...prev, newReusableType];
+        return field;
       });
+    };
 
-      // 2. Update the original field to be a reference to the new reusable type
-      const updatedOriginalField: SchemaField = {
-        ...foundField,
-        type: "ref",
-        refId: newReusableType.id,
-        children: undefined, // A reference field does not have children directly
-        // Clear other properties that don't apply to a ref type
-        minValue: undefined,
-        maxValue: undefined,
-        minItems: undefined,
-        maxItems: undefined,
-        currency: undefined,
-        example: undefined,
-        description: undefined,
-        // Keep original title/name for display in the main schema
-        title: foundField.title || foundField.name,
-        isMultiple: foundField.isMultiple, // Keep original isMultiple for the reference field
-        isRequired: foundField.isRequired, // Keep original isRequired for the reference field
-      };
+    setSchemaFields(updateFieldInSchema(schemaFields));
+    showSuccess(`Field "${fieldToConvertForNaming.name}" converted to reusable type "${newReusableType.name}"!`);
+    setFieldToConvertForNaming(null); // Clear the field after conversion
+  }, [fieldToConvertForNaming, reusableTypes, schemaFields, deepCopyField]);
 
-      // Function to update the field in the schemaFields tree
-      const updateFieldInSchema = (fields: SchemaField[]): SchemaField[] => {
-        return fields.map((field) => {
-          if (field.id === fieldId) {
-            return updatedOriginalField;
-          } else if (field.type === "object" && field.children) {
-            return {
-              ...field,
-              children: updateFieldInSchema(field.children),
-            };
-          }
-          return field;
-        });
-      };
-
-      setSchemaFields(updateFieldInSchema(schemaFields));
-      showSuccess(`Field "${foundField.name}" converted to reusable type "${newReusableType.name}"!`);
-    } else {
-      showError("Could not find the field to convert.");
-    }
-  }, [schemaFields, deepCopyField]);
 
   const handleAIGeneratedSchema = useCallback((mainFields: SchemaField[], newReusableTypes: SchemaField[]) => {
     if (schemaFields.length > 0 || reusableTypes.length > 0) {
@@ -465,7 +452,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             setSchemaFields={setSchemaFields}
             reusableTypes={reusableTypes}
             onManageReusableTypes={() => setIsManageTypesOpen(true)}
-            onConvertToReusableType={handleConvertToReusableType}
+            onConvertToReusableType={handleInitiateConvertToReusableType} {/* Updated to new handler */}
             onRefineFieldWithAI={handleRefineFieldWithAI}
             onAIGenerateSchemaTrigger={() => setIsAIGenerateDialogOpen(true)}
           />
@@ -551,6 +538,14 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             fieldToRefine={fieldToRefine}
             reusableTypes={reusableTypes}
             onFieldRefined={handleFieldRefined}
+          />
+
+          {/* Reusable Type Naming Dialog */}
+          <ReusableTypeNameDialog
+            isOpen={isReusableTypeNameDialogOpen}
+            onOpenChange={setIsReusableTypeNameDialogOpen}
+            initialName={fieldToConvertForNaming?.name ? `${fieldToConvertForNaming.name}Type` : "NewReusableType"}
+            onConfirm={handleConfirmConvertToReusableType}
           />
         </div>
       </div>
