@@ -44,22 +44,6 @@ const caseTypeOptions: { value: CaseType; label: string }[] = [
   { value: "kebab-case", label: "kebab-case (e.g., product-name)" },
 ];
 
-// Define available models for schema generation
-const AI_GENERATE_MODELS = new Map<LLMProvider, string[]>([
-  ["openai", ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]],
-  ["gemini", ["gemini-pro"]],
-  ["mistral", ["mistral-large-latest", "mistral-small-latest", "mixtral-8x7b-instruct-v0.1"]],
-  ["openrouter", ["openai/gpt-4o", "openai/gpt-4o-mini", "mistralai/mistral-large-latest"]],
-]);
-
-// Define default models for each provider for schema generation
-const AI_GENERATE_DEFAULT_MODELS = new Map<LLMProvider, string>([
-  ["openai", "gpt-4o"],
-  ["gemini", "gemini-pro"],
-  ["mistral", "mistral-large-latest"],
-  ["openrouter", "openai/gpt-4o-mini"],
-]);
-
 const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
   isOpen,
   onOpenChange,
@@ -67,7 +51,8 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
 }) => {
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
   const [apiKey, setApiKey] = React.useState<string>("");
-  const [selectedModel, setSelectedModel] = React.useState<string>(AI_GENERATE_DEFAULT_MODELS.get("openai") || "");
+  // Initialize selectedModel to an empty string, LLMConfigInputs will handle setting a default
+  const [selectedModel, setSelectedModel] = React.useState<string>(""); 
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -165,6 +150,10 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
       showError("Please enter a prompt for schema generation.");
       return;
     }
+    if (!selectedModel) {
+      showError("Please select an LLM model.");
+      return;
+    }
 
     setIsLoading(true);
 
@@ -242,8 +231,9 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
             setApiKey={setApiKey}
             selectedModel={selectedModel}
             setSelectedModel={setSelectedModel}
-            availableModels={AI_GENERATE_MODELS}
-            defaultModelForProvider={AI_GENERATE_DEFAULT_MODELS}
+            // These props are no longer needed as LLMConfigInputs manages model fetching internally
+            availableModels={new Map()} 
+            defaultModelForProvider={new Map()}
           />
 
           <div className="grid gap-2">

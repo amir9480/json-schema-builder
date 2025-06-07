@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
 
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
@@ -18,13 +19,19 @@ interface LLMConfigInputsProps {
   setApiKey: (key: string) => void;
   selectedModel: string;
   setSelectedModel: (model: string) => void;
-  availableModels: Map<LLMProvider, string[]>;
-  defaultModelForProvider: Map<LLMProvider, string>;
 }
 
 const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
 const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
 const LOCAL_STORAGE_SELECTED_MODEL_KEY = "llmBuilderSelectedModel";
+
+// Default models for initial selection if API fetching fails or is slow
+const DEFAULT_MODELS_FALLBACK = new Map<LLMProvider, string[]>([
+  ["openai", ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]],
+  ["gemini", ["gemini-pro"]], // Gemini doesn't have a public /models endpoint like others
+  ["mistral", ["mistral-small-latest", "mistral-large-latest", "mixtral-8x7b-instruct-v0.1"]],
+  ["openrouter", ["openai/gpt-4o-mini", "openai/gpt-4o", "mistralai/mistral-small-latest"]],
+]);
 
 const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
   selectedProvider,
@@ -33,9 +40,10 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
   setApiKey,
   selectedModel,
   setSelectedModel,
-  availableModels,
-  defaultModelForProvider,
 }) => {
+  const [availableModels, setAvailableModels] = React.useState<string[]>([]);
+  const [isFetchingModels, setIsFetchingModels] = React.useState(false);
+
   // Load from local storage on mount
   React.useEffect(() => {
     if (typeof window !== "undefined") {
@@ -52,7 +60,7 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
         setSelectedModel(savedModel);
       }
     }
-  }, []); // Empty dependency array ensures this runs only once on mount
+  }, []);
 
   // Persist to local storage when state changes
   React.useEffect(() => {
@@ -73,15 +81,92 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
     }
   }, [selectedModel]);
 
-  // Update selected model when provider changes, defaulting to the provider's default model
-  React.useEffect(() => {
-    const defaultModel = defaultModelForProvider.get(selectedProvider);
-    if (defaultModel && selectedModel !== defaultModel) {
-      setSelectedModel(defaultModel);
+  // Function to fetch models
+  const fetchModels = React.useCallback(async () => {
+    if (!apiKey && selectedProvider !== "gemini") { // API key not strictly needed for Gemini's single model
+      setAvailableModels(DEFAULT_MODELS_FALLBACK.get(selectedProvider) || []);
+      setSelectedModel(DEFAULT_MODELS_FALLBACK.get(selectedProvider)?.[0] || "");
+      return;
     }
-  }, [selectedProvider, defaultModelForProvider, selectedModel, setSelectedModel]);
 
-  const currentModels = availableModels.get(selectedProvider) || [];
+    setIsFetchingModels(true);
+    let endpoint = "";
+    let headers: { [key: string]: string } = {};
+    let models: string[] = [];
+
+    try {
+      switch (selectedProvider) {
+        case "openai":
+          endpoint = "https://api.openai.com/v1/models";
+          headers["Authorization"] = `Bearer ${apiKey}`;
+          const openaiResponse = await fetch(endpoint, { headers });
+          const openaiData = await openaiResponse.json();
+          if (openaiResponse.ok) {
+            models = openaiData.data
+              .filter((m: any) => m.id.startsWith("gpt-") || m.id.startsWith("ft:gpt-")) // Filter for chat models
+              .map((m: any) => m.id)
+              .sort();
+          } else {
+            console.error("Failed to fetch OpenAI models:", openaiData);
+            models = DEFAULT_MODELS_FALLBACK.get("openai") || [];
+          }
+          break;
+        case "gemini":
+          // Gemini doesn't have a public /models endpoint for listing.
+          // We'll hardcode the common model for now.
+          models = ["gemini-pro"];
+          break;
+        case "mistral":
+          endpoint = "https://api.mistral.ai/v1/models";
+          headers["Authorization"] = `Bearer ${apiKey}`;
+          const mistralResponse = await fetch(endpoint, { headers });
+          const mistralData = await mistralResponse.json();
+          if (mistralResponse.ok) {
+            models = mistralData.data
+              .map((m: any) => m.id)
+              .sort();
+          } else {
+            console.error("Failed to fetch Mistral models:", mistralData);
+            models = DEFAULT_MODELS_FALLBACK.get("mistral") || [];
+          }
+          break;
+        case "openrouter":
+          endpoint = "https://openrouter.ai/api/v1/models";
+          headers["Authorization"] = `Bearer ${apiKey}`;
+          const openrouterResponse = await fetch(endpoint, { headers });
+          const openrouterData = await openrouterResponse.json();
+          if (openrouterResponse.ok) {
+            models = openrouterData.data
+              .map((m: any) => m.id)
+              .sort();
+          } else {
+            console.error("Failed to fetch OpenRouter models:", openrouterData);
+            models = DEFAULT_MODELS_FALLBACK.get("openrouter") || [];
+          }
+          break;
+        default:
+          models = [];
+      }
+    } catch (error) {
+      console.error(`Error fetching models for ${selectedProvider}:`, error);
+      models = DEFAULT_MODELS_FALLBACK.get(selectedProvider) || [];
+    } finally {
+      setAvailableModels(models);
+      // If the currently selected model is not in the new list, or if no model is selected,
+      // default to the first available model.
+      if (!models.includes(selectedModel) && models.length > 0) {
+        setSelectedModel(models[0]);
+      } else if (models.length === 0) {
+        setSelectedModel(""); // Clear selection if no models are available
+      }
+      setIsFetchingModels(false);
+    }
+  }, [selectedProvider, apiKey, selectedModel, setSelectedModel]);
+
+  // Fetch models whenever provider or API key changes
+  React.useEffect(() => {
+    fetchModels();
+  }, [fetchModels]);
 
   return (
     <>
@@ -102,20 +187,26 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
 
       <div className="grid gap-2">
         <Label htmlFor="llm-model-select">Select Model</Label>
-        <Select value={selectedModel} onValueChange={setSelectedModel}>
+        <Select value={selectedModel} onValueChange={setSelectedModel} disabled={isFetchingModels || availableModels.length === 0}>
           <SelectTrigger id="llm-model-select">
-            <SelectValue placeholder="Select a model" />
+            {isFetchingModels ? (
+              <div className="flex items-center gap-2">
+                <LoadingSpinner size={16} /> Loading models...
+              </div>
+            ) : (
+              <SelectValue placeholder="Select a model" />
+            )}
           </SelectTrigger>
           <SelectContent>
-            {currentModels.length > 0 ? (
-              currentModels.map((model) => (
+            {availableModels.length > 0 ? (
+              availableModels.map((model) => (
                 <SelectItem key={model} value={model}>
                   {model}
                 </SelectItem>
               ))
             ) : (
               <SelectItem value="no-models" disabled>
-                No models available for this provider
+                No models available
               </SelectItem>
             )}
           </SelectContent>
