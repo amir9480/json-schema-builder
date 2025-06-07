@@ -116,8 +116,8 @@ const buildPropertiesAndRequired = (
         fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}$"; // YYYY-MM-DD
       } else if (field.type === "datetime") {
         fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // ISO 8601
-      } else if (field.type === "time") { // Added pattern for time
-        fieldSchema.pattern = "^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$"; // HH:MM:SS.sssZ or HH:MM:SS.sss+/-HH:MM
+      } else if (field.type === "time") { // Updated pattern for time
+        fieldSchema.pattern = "^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)$"; // HH:MM:SS
       } else if (field.type === "currency" && field.currency) {
         // For currency, we just add a custom 'currency' property and the symbol for context,
         // but don't enforce a pattern as it's not a standard JSON Schema feature.
@@ -358,8 +358,8 @@ export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: Sc
       fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}$";
     } else if (field.type === "datetime") {
       fieldSchema.pattern = "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$";
-    } else if (field.type === "time") { // Added pattern for time
-      fieldSchema.pattern = "^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$";
+    } else if (field.type === "time") { // Updated pattern for time
+      fieldSchema.pattern = "^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)$"; // HH:MM:SS
     } else if (field.type === "currency" && field.currency) {
       fieldSchema.currency = field.currency;
       fieldSchema.description = field.description ? `${field.description} (Currency: ${getCurrencySymbol(field.currency)})` : `Currency field (e.g., ${getCurrencySymbol(field.currency)}123.45)`;
