@@ -82,6 +82,16 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = React.memo(({
     onFieldChange({ ...field, pattern: e.target.value });
   };
 
+  const handleMinLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
+    onFieldChange({ ...field, minLength: value });
+  };
+
+  const handleMaxLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
+    onFieldChange({ ...field, maxLength: value });
+  };
+
   const isNumberLikeType = field.type === "int" || field.type === "float" || field.type === "currency";
 
   return (
@@ -204,18 +214,42 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = React.memo(({
           )}
 
           {field.type === "string" && (
-            <div className="grid gap-2 col-span-full">
-              <Label htmlFor={`field-pattern-${field.id}`}>Pattern (Regex, Optional)</Label>
-              <Input
-                id={`field-pattern-${field.id}`}
-                value={field.pattern || ""}
-                onChange={handlePatternChange}
-                placeholder="e.g., ^[A-Z]{2}\\d{4}$"
-              />
-              <p className="text-sm text-muted-foreground">
-                Regular expression to validate string format.
-              </p>
-            </div>
+            <>
+              <div className="grid gap-2 col-span-full">
+                <Label htmlFor={`field-pattern-${field.id}`}>Pattern (Regex, Optional)</Label>
+                <Input
+                  id={`field-pattern-${field.id}`}
+                  value={field.pattern || ""}
+                  onChange={handlePatternChange}
+                  placeholder="e.g., ^[A-Z]{2}\\d{4}$"
+                />
+                <p className="text-sm text-muted-foreground">
+                  Regular expression to validate string format.
+                </p>
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor={`field-min-length-${field.id}`}>Min Length (Optional)</Label>
+                <Input
+                  id={`field-min-length-${field.id}`}
+                  type="number"
+                  value={field.minLength === undefined ? "" : field.minLength}
+                  onChange={handleMinLengthChange}
+                  placeholder="e.g., 5"
+                  min="0"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor={`field-max-length-${field.id}`}>Max Length (Optional)</Label>
+                <Input
+                  id={`field-max-length-${field.id}`}
+                  type="number"
+                  value={field.maxLength === undefined ? "" : field.maxLength}
+                  onChange={handleMaxLengthChange}
+                  placeholder="e.g., 255"
+                  min="0"
+                />
+              </div>
+            </>
           )}
         </div>
       </CustomCollapsibleContent>

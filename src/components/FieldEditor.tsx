@@ -77,7 +77,9 @@ export interface SchemaField {
   options?: string[];
   parentId?: string;
   isValidName?: boolean;
-  pattern?: string; // Added pattern property
+  pattern?: string;
+  minLength?: number; // New: Minimum length for string
+  maxLength?: number; // New: Maximum length for string
 }
 
 interface FieldEditorProps {
@@ -172,7 +174,9 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
       maxValue: (value === "int" || value === "float" || value === "currency") ? field.maxValue : undefined,
       currency: value === "currency" ? field.currency : undefined,
       options: value === "dropdown" ? field.options || [] : undefined,
-      pattern: value === "string" ? field.pattern : undefined, // Preserve pattern for string, clear for others
+      pattern: value === "string" ? field.pattern : undefined,
+      minLength: value === "string" ? field.minLength : undefined, // Preserve minLength for string, clear for others
+      maxLength: value === "string" ? field.maxLength : undefined, // Preserve maxLength for string, clear for others
     });
   };
 
