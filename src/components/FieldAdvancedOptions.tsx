@@ -13,10 +13,17 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, ListPlus } from "lucide-react"; // Import ListPlus icon
 import { toTitleCase } from "@/lib/utils";
 import { SchemaField, SchemaFieldType } from "./FieldEditor";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu, // Import DropdownMenu components
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { REGEX_URL, REGEX_EMAIL, REGEX_IPV4, REGEX_IPV6 } from "@/lib/regexes"; // Import regex constants
 
 interface FieldAdvancedOptionsProps {
   field: SchemaField;
@@ -90,6 +97,12 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = React.memo(({
   const handleMaxLengthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value === "" ? undefined : parseInt(e.target.value, 10);
     onFieldChange({ ...field, maxLength: value });
+  };
+
+  const handleSelectPredefinedPattern = (pattern: RegExp, name: string) => {
+    onFieldChange({ ...field, pattern: pattern.source });
+    // Optionally show a toast message
+    // showSuccess(`Pattern for ${name} applied!`);
   };
 
   const isNumberLikeType = field.type === "int" || field.type === "float" || field.type === "currency";
@@ -217,12 +230,35 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = React.memo(({
             <>
               <div className="grid gap-2 col-span-full">
                 <Label htmlFor={`field-pattern-${field.id}`}>Pattern (Regex, Optional)</Label>
-                <Input
-                  id={`field-pattern-${field.id}`}
-                  value={field.pattern || ""}
-                  onChange={handlePatternChange}
-                  placeholder="e.g., ^[A-Z]{2}\\d{4}$"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id={`field-pattern-${field.id}`}
+                    value={field.pattern || ""}
+                    onChange={handlePatternChange}
+                    placeholder="e.g., ^[A-Z]{2}\\d{4}$"
+                  />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="icon" aria-label="Select predefined pattern">
+                        <ListPlus className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => handleSelectPredefinedPattern(REGEX_URL, "URL")}>
+                        URL
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleSelectPredefinedPattern(REGEX_EMAIL, "Email")}>
+                        Email
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleSelectPredefinedPattern(REGEX_IPV4, "IPv4")}>
+                        IPv4
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => handleSelectPredefinedPattern(REGEX_IPV6, "IPv6")}>
+                        IPv6
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
                 <p className="text-sm text-muted-foreground">
                   Regular expression to validate string format.
                 </p>
