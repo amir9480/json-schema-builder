@@ -11,7 +11,6 @@ interface SchemaBuilderToolbarProps {
   onAddField: () => void;
   onClearSchemaTrigger: () => void;
   onImportSchemaTrigger: () => void;
-  onPreviewSchemaTrigger: () => void; // Re-added for clarity, but now triggers the combined tab
   onManageTypesTrigger: () => void;
   onExportSchemaTrigger: () => void;
   onSaveSchemaTrigger: () => void;
@@ -24,7 +23,6 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
   onAddField,
   onClearSchemaTrigger,
   onImportSchemaTrigger,
-  onPreviewSchemaTrigger, // Destructure
   onManageTypesTrigger,
   onExportSchemaTrigger,
   onSaveSchemaTrigger,
@@ -90,17 +88,6 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
           </TooltipTrigger>
           <TooltipContent>
             <p>Generate with AI</p>
-          </TooltipContent>
-        </Tooltip>
-        
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="default" size="icon" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={onPreviewSchemaTrigger}>
-              <Eye className="h-4 w-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Preview Fields & Generate Data</p>
           </TooltipContent>
         </Tooltip>
         
