@@ -18,7 +18,6 @@ jobs:
         with:
           node-version: '20' # Specify Node.js version (e.g., 20 LTS)
           cache: 'pnpm' # Cache pnpm dependencies for faster builds
-          cache-dependency-path: '**/pnpm-lock.yaml' # Specify lock file for pnpm cache
           registry-url: 'https://registry.npmjs.org' # Ensure registry is set for pnpm
 
       - name: Install pnpm
