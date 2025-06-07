@@ -24,6 +24,7 @@ Welcome to the **JSON Schema Builder & AI Generator**! This application provides
 
 ## 🛠️ Technologies Used
 
+*   **Dyad**: An AI editor for building and modifying web applications.
 *   **React**: A JavaScript library for building user interfaces.
 *   **TypeScript**: A typed superset of JavaScript that compiles to plain JavaScript.
 *   **Tailwind CSS**: A utility-first CSS framework for rapidly building custom designs.
