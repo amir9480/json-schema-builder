@@ -45,6 +45,22 @@ const LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY = "jsonSchemaBuilderSelectedExportTa
 const LOCAL_STORAGE_SELECTED_DEV_EXPORT_TYPE_KEY = "jsonSchemaBuilderSelectedDevExportType";
 const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt";
 
+// Define available models for data generation/developer tools
+const DATA_GENERATE_MODELS = new Map<LLMProvider, string[]>([
+  ["openai", ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]],
+  ["gemini", ["gemini-pro"]],
+  ["mistral", ["mistral-small-latest", "mistral-large-latest", "mixtral-8x7b-instruct-v0.1"]],
+  ["openrouter", ["openai/gpt-4o-mini", "openai/gpt-4o", "mistralai/mistral-small-latest"]],
+]);
+
+// Define default models for each provider for data generation/developer tools
+const DATA_GENERATE_DEFAULT_MODELS = new Map<LLMProvider, string>([
+  ["openai", "gpt-4o-mini"],
+  ["gemini", "gemini-pro"],
+  ["mistral", "mistral-small-latest"],
+  ["openrouter", "openai/gpt-4o-mini"],
+]);
+
 const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   isOpen,
   onOpenChange,
@@ -74,6 +90,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   // LLM configuration states, now managed by LLMConfigInputs but needed here for API calls
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
   const [apiKey, setApiKey] = React.useState<string>("");
+  const [selectedModel, setSelectedModel] = React.useState<string>(DATA_GENERATE_DEFAULT_MODELS.get("openai") || "");
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -112,7 +129,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   }, [selectedDevExportType]);
 
   // LLM request details function
-  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string, schema: any) => {
+  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, model: string, prompt: string, schema: any) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
@@ -128,7 +145,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         endpoint = "https://api.openai.com/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENAI_API_KEY"}`;
         requestBody = {
-          model: "gpt-4o-mini",
+          model: model,
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -141,7 +158,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         };
         break;
       case "gemini":
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         requestBody = {
           contents: [
             { role: "user", parts: [{ text: `${systemMessage}\n\n${prompt}\n\nHere is the JSON Schema:\n\n${JSON.stringify(schema, null, 2)}` }] },
@@ -155,7 +172,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         endpoint = "https://api.mistral.ai/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_MISTRAL_API_KEY"}`;
         requestBody = {
-          model: "mistral-small-latest",
+          model: model,
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -172,7 +189,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
         headers["HTTP-Referer"] = "YOUR_APP_URL";
         requestBody = {
-          model: "openai/gpt-4o-mini",
+          model: model,
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -207,7 +224,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 
     setIsLoading(true);
 
-    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, generatedJsonSchema);
+    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, selectedModel, userPrompt, generatedJsonSchema);
 
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
@@ -278,7 +295,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     setIsLoading(true);
     setIsResponseModalOpen(true);
 
-    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, generatedJsonSchema);
+    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, selectedModel, userPrompt, generatedJsonSchema);
 
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
@@ -361,6 +378,10 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                   setSelectedProvider={setSelectedProvider}
                   apiKey={apiKey}
                   setApiKey={setApiKey}
+                  selectedModel={selectedModel}
+                  setSelectedModel={setSelectedModel}
+                  availableModels={DATA_GENERATE_MODELS}
+                  defaultModelForProvider={DATA_GENERATE_DEFAULT_MODELS}
                 />
 
                 <div className="grid gap-2">
@@ -407,6 +428,10 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                   setSelectedProvider={setSelectedProvider}
                   apiKey={apiKey}
                   setApiKey={setApiKey}
+                  selectedModel={selectedModel}
+                  setSelectedModel={setSelectedModel}
+                  availableModels={DATA_GENERATE_MODELS}
+                  defaultModelForProvider={DATA_GENERATE_DEFAULT_MODELS}
                 />
 
                 <div className="grid gap-2">
