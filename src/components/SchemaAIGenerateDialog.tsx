@@ -44,6 +44,22 @@ const caseTypeOptions: { value: CaseType; label: string }[] = [
   { value: "kebab-case", label: "kebab-case (e.g., product-name)" },
 ];
 
+// Define available models for schema generation
+const AI_GENERATE_MODELS = new Map<LLMProvider, string[]>([
+  ["openai", ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]],
+  ["gemini", ["gemini-pro"]],
+  ["mistral", ["mistral-large-latest", "mistral-small-latest", "mixtral-8x7b-instruct-v0.1"]],
+  ["openrouter", ["openai/gpt-4o", "openai/gpt-4o-mini", "mistralai/mistral-large-latest"]],
+]);
+
+// Define default models for each provider for schema generation
+const AI_GENERATE_DEFAULT_MODELS = new Map<LLMProvider, string>([
+  ["openai", "gpt-4o"],
+  ["gemini", "gemini-pro"],
+  ["mistral", "mistral-large-latest"],
+  ["openrouter", "openai/gpt-4o-mini"],
+]);
+
 const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
   isOpen,
   onOpenChange,
@@ -51,6 +67,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
 }) => {
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
   const [apiKey, setApiKey] = React.useState<string>("");
+  const [selectedModel, setSelectedModel] = React.useState<string>(AI_GENERATE_DEFAULT_MODELS.get("openai") || "");
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -82,7 +99,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
     }
   }, [selectedCaseType]);
 
-  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string, caseType: CaseType) => {
+  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, model: string, prompt: string, caseType: CaseType) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
@@ -98,13 +115,13 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
         endpoint = "https://api.openai.com/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENAI_API_KEY"}`;
         requestBody = {
-          model: "gpt-4o",
+          model: model,
           messages: messages,
           response_format: { type: "json_object" },
         };
         break;
       case "gemini":
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         requestBody = {
           contents: [
             { role: "user", parts: [{ text: `${systemMessage}\n\n${prompt}` }] },
@@ -118,7 +135,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
         endpoint = "https://api.mistral.ai/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_MISTRAL_API_KEY"}`;
         requestBody = {
-          model: "mistral-large-latest",
+          model: model,
           messages: messages,
           response_format: { type: "json_object" },
         };
@@ -128,7 +145,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
         headers["HTTP-Referer"] = "YOUR_APP_URL";
         requestBody = {
-          model: "openai/gpt-4o-mini",
+          model: model,
           messages: messages,
           response_format: { type: "json_object" },
         };
@@ -151,7 +168,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
 
     setIsLoading(true);
 
-    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, selectedCaseType);
+    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, selectedModel, userPrompt, selectedCaseType);
 
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
@@ -223,6 +240,10 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
             setSelectedProvider={setSelectedProvider}
             apiKey={apiKey}
             setApiKey={setApiKey}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+            availableModels={AI_GENERATE_MODELS}
+            defaultModelForProvider={AI_GENERATE_DEFAULT_MODELS}
           />
 
           <div className="grid gap-2">
@@ -250,7 +271,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
               id="user-prompt-input"
               value={userPrompt}
               onChange={(e) => setUserPrompt(e.target.value)}
-              placeholder="e.g., Generate a JSON schema for a 'User' object with fields like name, email, age, and an array of addresses."
+              placeholder="e.g., Generate a JSON schema for a 'Product' object with fields like name (string), price (float), description (string, optional), and categories (array of strings)."
               rows={6}
             />
             <p className="text-sm text-muted-foreground">
