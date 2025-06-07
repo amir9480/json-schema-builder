@@ -20,8 +20,11 @@ jobs:
           cache: 'pnpm' # Cache pnpm dependencies for faster builds
           registry-url: 'https://registry.npmjs.org' # Ensure registry is set for pnpm
 
-      - name: Install pnpm
-        run: npm install -g pnpm # Install pnpm globally
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3 # Use the dedicated pnpm setup action
+        with:
+          version: 8 # Specify pnpm version, e.g., 8
+          run_install: false # We will run pnpm install explicitly later
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile # Install project dependencies using pnpm
