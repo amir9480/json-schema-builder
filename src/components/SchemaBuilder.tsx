@@ -265,11 +265,32 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     return newField;
   }, []);
 
-  // Function to initiate the conversion process by opening the naming dialog
-  const handleInitiateConvertToReusableType = useCallback((fieldToConvert: SchemaField) => {
-    setFieldToConvertForNaming(fieldToConvert);
-    setIsReusableTypeNameDialogOpen(true);
+  // Helper to find a field by ID recursively in the schemaFields tree
+  const findFieldById = useCallback((fields: SchemaField[], id: string): SchemaField | null => {
+    for (const field of fields) {
+      if (field.id === id) {
+        return field;
+      }
+      if (field.type === "object" && field.children) {
+        const found = findFieldById(field.children, id);
+        if (found) {
+          return found;
+        }
+      }
+    }
+    return null;
   }, []);
+
+  // Function to initiate the conversion process by opening the naming dialog
+  const handleInitiateConvertToReusableType = useCallback((fieldId: string) => {
+    const fieldToConvert = findFieldById(schemaFields, fieldId);
+    if (fieldToConvert) {
+      setFieldToConvertForNaming(fieldToConvert);
+      setIsReusableTypeNameDialogOpen(true);
+    } else {
+      showError("Could not find the field to convert.");
+    }
+  }, [schemaFields, findFieldById]);
 
   // Function to perform the actual conversion after naming
   const handleConfirmConvertToReusableType = useCallback((reusableTypeName: string) => {
