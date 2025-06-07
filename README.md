@@ -95,6 +95,11 @@ Your API key is stored locally in your browser for convenience and is never sent
 6.  **Preview & Export**: Use the "Export" button to view the generated JSON Schema, see a live form preview, generate sample data, or get code snippets (cURL, Python, JavaScript).
 7.  **Save/Load**: Use the "Save Schema" and "Load Schema" buttons to manage your schemas in local storage.
 
+## 📸 Screenshots
+
+![Screenshot 1](assets/screenshot1.png)
+![Screenshot 2](assets/screenshot2.png)
+
 ## 🌐 Deployment
 
 This project is configured for automatic deployment to GitHub Pages using a GitHub Actions workflow. Any push to the `main` branch will trigger a build and deploy the static site to the `gh-pages` branch.
