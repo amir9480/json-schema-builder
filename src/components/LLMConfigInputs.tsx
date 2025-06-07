@@ -36,10 +36,6 @@ interface LLMConfigInputsProps {
   setSelectedModel: (model: string) => void;
 }
 
-const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
-const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
-const LOCAL_STORAGE_SELECTED_MODEL_KEY = "llmBuilderSelectedModel";
-
 // Default models for initial selection if API fetching fails or is slow
 const DEFAULT_MODELS_FALLBACK = new Map<LLMProvider, string[]>([
   ["openai", ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]],
@@ -60,51 +56,15 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
   const [isFetchingModels, setIsFetchingModels] = React.useState(false);
   const [isModelSelectOpen, setIsModelSelectOpen] = React.useState(false); // State for Popover
 
-  // Load from local storage on mount
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedProvider = localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY);
-      if (savedProvider) {
-        setSelectedProvider(savedProvider as LLMProvider);
-      }
-      const savedApiKey = localStorage.getItem(LOCAL_STORAGE_API_KEY);
-      if (savedApiKey) {
-        setApiKey(savedApiKey);
-      }
-      const savedModel = localStorage.getItem(LOCAL_STORAGE_SELECTED_MODEL_KEY);
-      if (savedModel) {
-        setSelectedModel(savedModel); // This sets the model from local storage
-      }
-    }
-  }, []);
-
-  // Persist to local storage when state changes
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
-    }
-  }, [selectedProvider]);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
-    }
-  }, [apiKey]);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_SELECTED_MODEL_KEY, selectedModel);
-    }
-  }, [selectedModel]);
-
   // Function to fetch models
   const fetchModels = React.useCallback(async () => {
     // For Gemini, API key is needed for fetching models from the new endpoint
     if (!apiKey && selectedProvider !== "gemini") { 
-      setAvailableModels(DEFAULT_MODELS_FALLBACK.get(selectedProvider) || []);
+      const fallbackModels = DEFAULT_MODELS_FALLBACK.get(selectedProvider) || [];
+      setAvailableModels(fallbackModels);
       // Only set selectedModel if it's currently empty or not in the fallback list
-      if (!selectedModel || !(DEFAULT_MODELS_FALLBACK.get(selectedProvider) || []).includes(selectedModel)) {
-        setSelectedModel(DEFAULT_MODELS_FALLBACK.get(selectedProvider)?.[0] || "");
+      if (!selectedModel || !fallbackModels.includes(selectedModel)) {
+        setSelectedModel(fallbackModels[0] || "");
       }
       return;
     }
@@ -190,7 +150,7 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
       }
       setIsFetchingModels(false);
     }
-  }, [selectedProvider, apiKey]); // Removed selectedModel from dependencies
+  }, [selectedProvider, apiKey, selectedModel, setSelectedModel]);
 
   // Fetch models whenever provider or API key changes
   React.useEffect(() => {
