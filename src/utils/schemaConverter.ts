@@ -10,6 +10,7 @@ const mapJsonSchemaTypeToSchemaFieldType = (jsonType: string, format?: string): 
     case "string":
       if (format === "date") return "date";
       if (format === "date-time") return "datetime";
+      if (format === "time") return "time"; // Added time
       return "string";
     case "number":
       // JSON schema doesn't distinguish int/float directly, default to float.
