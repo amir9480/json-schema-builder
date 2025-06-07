@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 import {
-  Select,
+  Select, // Keep Select for case type
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // Keep Input for user prompt
 import { showSuccess, showError } from "@/utils/toast";
 import {
   Dialog,
@@ -21,7 +21,8 @@ import {
 } from "@/components/ui/dialog";
 import { SchemaField } from "./FieldEditor";
 import { convertFullJsonSchemaToSchemaFieldsAndReusableTypes } from "@/utils/schemaConverter";
-import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
+import LoadingSpinner from "./LoadingSpinner";
+import LLMConfigInputs from "./LLMConfigInputs"; // Import the new component
 
 interface SchemaAIGenerateDialogProps {
   isOpen: boolean;
@@ -32,10 +33,8 @@ interface SchemaAIGenerateDialogProps {
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 type CaseType = "snake_case" | "camelCase" | "PascalCase" | "CONSTANT_CASE" | "kebab-case";
 
-const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
-const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
-const LOCAL_STORAGE_USER_PROMPT_KEY = "llmSchemaBuilderUserPrompt"; // This prompt is specific to schema generation
-const LOCAL_STORAGE_CASE_TYPE_KEY = "llmSchemaBuilderCaseType"; // New key for case type
+const LOCAL_STORAGE_USER_PROMPT_KEY = "llmSchemaBuilderUserPrompt";
+const LOCAL_STORAGE_CASE_TYPE_KEY = "llmSchemaBuilderCaseType";
 
 const caseTypeOptions: { value: CaseType; label: string }[] = [
   { value: "snake_case", label: "snake_case (e.g., product_name)" },
@@ -50,20 +49,8 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
   onOpenChange,
   onSchemaGenerated,
 }) => {
-  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
-    if (typeof window !== "undefined") {
-      const savedProvider = localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY);
-      return (savedProvider as LLMProvider) || "openai";
-    }
-    return "openai";
-  });
-
-  const [apiKey, setApiKey] = React.useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_API_KEY) || "";
-    }
-    return "";
-  });
+  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
+  const [apiKey, setApiKey] = React.useState<string>("");
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -82,19 +69,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
 
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Persist selectedProvider, apiKey, userPrompt, and selectedCaseType to localStorage
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
-    }
-  }, [selectedProvider]);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
-    }
-  }, [apiKey]);
-
+  // Persist userPrompt and selectedCaseType to localStorage
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(LOCAL_STORAGE_USER_PROMPT_KEY, userPrompt);
@@ -125,7 +100,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
         requestBody = {
           model: "gpt-4o",
           messages: messages,
-          response_format: { type: "json_object" }, // Request JSON object, not schema-specific format
+          response_format: { type: "json_object" },
         };
         break;
       case "gemini":
@@ -151,9 +126,9 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
       case "openrouter":
         endpoint = "https://openrouter.ai/api/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
-        headers["HTTP-Referer"] = "YOUR_APP_URL"; // Replace with your app's URL if deployed
+        headers["HTTP-Referer"] = "YOUR_APP_URL";
         requestBody = {
-          model: "openai/gpt-4o-mini", // Using a smaller model for faster responses
+          model: "openai/gpt-4o-mini",
           messages: messages,
           response_format: { type: "json_object" },
         };
@@ -181,7 +156,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
       setIsLoading(false);
-      onOpenChange(false); // Close dialog on invalid provider
+      onOpenChange(false);
       return;
     }
 
@@ -216,7 +191,6 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
         try {
           parsedSchema = typeof generatedContent === 'string' ? JSON.parse(generatedContent) : generatedContent;
           
-          // Convert and pass to parent
           const { mainFields, reusableTypes } = convertFullJsonSchemaToSchemaFieldsAndReusableTypes(parsedSchema);
           onSchemaGenerated(mainFields, reusableTypes);
           showSuccess("Schema generated successfully!");
@@ -230,7 +204,7 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
       showError("Failed to send request. Check your API key, network connection, or browser's CORS policy.");
     } finally {
       setIsLoading(false);
-      onOpenChange(false); // Close the dialog after operation completes
+      onOpenChange(false);
     }
   };
 
@@ -244,34 +218,12 @@ const SchemaAIGenerateDialog: React.FC<SchemaAIGenerateDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="llm-provider-select">Select LLM Provider</Label>
-            <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as LLMProvider)}>
-              <SelectTrigger id="llm-provider-select">
-                <SelectValue placeholder="Select a provider" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="openai">OpenAI (ChatGPT)</SelectItem>
-                <SelectItem value="gemini">Google (Gemini)</SelectItem>
-                <SelectItem value="mistral">Mistral AI</SelectItem>
-                <SelectItem value="openrouter">OpenRouter</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="api-key-input">API Key</Label>
-            <Input
-              id="api-key-input"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={`Enter your ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key`}
-            />
-            <p className="text-sm text-muted-foreground">
-              Your API key is stored locally in your browser for convenience and is not sent to any server.
-            </p>
-          </div>
+          <LLMConfigInputs
+            selectedProvider={selectedProvider}
+            setSelectedProvider={setSelectedProvider}
+            apiKey={apiKey}
+            setApiKey={setApiKey}
+          />
 
           <div className="grid gap-2">
             <Label htmlFor="case-type-select">Field Name Case Type</Label>
