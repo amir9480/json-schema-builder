@@ -36,22 +36,9 @@ interface FieldRefineDialogProps {
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
 const LOCAL_STORAGE_FIELD_PROMPT_KEY = "llmFieldRefinePrompt"; // Specific prompt key for field refinement
-
-// Define available models for field refinement
-const FIELD_REFINE_MODELS = new Map<LLMProvider, string[]>([
-  ["openai", ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]],
-  ["gemini", ["gemini-pro"]],
-  ["mistral", ["mistral-small-latest", "mistral-large-latest", "mixtral-8x7b-instruct-v0.1"]],
-  ["openrouter", ["openai/gpt-4o-mini", "openai/gpt-4o", "mistralai/mistral-small-latest"]],
-]);
-
-// Define default models for each provider for field refinement
-const FIELD_REFINE_DEFAULT_MODELS = new Map<LLMProvider, string>([
-  ["openai", "gpt-4o-mini"],
-  ["gemini", "gemini-pro"],
-  ["mistral", "mistral-small-latest"],
-  ["openrouter", "openai/gpt-4o-mini"],
-]);
+const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider"; // Moved from LLMConfigInputs
+const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey"; // Moved from LLMConfigInputs
+const LOCAL_STORAGE_SELECTED_MODEL_KEY = "llmBuilderSelectedModel"; // Moved from LLMConfigInputs
 
 const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
   isOpen,
@@ -60,9 +47,24 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
   reusableTypes,
   onFieldRefined,
 }) => {
-  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
-  const [apiKey, setApiKey] = React.useState<string>("");
-  const [selectedModel, setSelectedModel] = React.useState<string>(FIELD_REFINE_DEFAULT_MODELS.get("openai") || "");
+  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY) as LLMProvider) || "openai";
+    }
+    return "openai";
+  });
+  const [apiKey, setApiKey] = React.useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_API_KEY) || "";
+    }
+    return "";
+  });
+  const [selectedModel, setSelectedModel] = React.useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_SELECTED_MODEL_KEY) || "";
+    }
+    return "";
+  });
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -79,6 +81,25 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
       localStorage.setItem(LOCAL_STORAGE_FIELD_PROMPT_KEY, userPrompt);
     }
   }, [userPrompt]);
+
+  // Persist LLM config to localStorage
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
+    }
+  }, [selectedProvider]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
+    }
+  }, [apiKey]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_SELECTED_MODEL_KEY, selectedModel);
+    }
+  }, [selectedModel]);
 
   const getRequestDetails = (provider: LLMProvider, currentApiKey: string, model: string, prompt: string, currentFieldSchema: any) => {
     let requestBody: any = {};
@@ -149,6 +170,10 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
     }
     if (!fieldToRefine) {
       showError("No field selected for refinement.");
+      return;
+    }
+    if (!selectedModel) {
+      showError("Please select an LLM model.");
       return;
     }
 
@@ -242,8 +267,6 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
             setApiKey={setApiKey}
             selectedModel={selectedModel}
             setSelectedModel={setSelectedModel}
-            availableModels={FIELD_REFINE_MODELS}
-            defaultModelForProvider={FIELD_REFINE_DEFAULT_MODELS}
           />
 
           <div className="grid gap-2">
