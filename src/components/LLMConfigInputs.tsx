@@ -73,7 +73,7 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
       }
       const savedModel = localStorage.getItem(LOCAL_STORAGE_SELECTED_MODEL_KEY);
       if (savedModel) {
-        setSelectedModel(savedModel);
+        setSelectedModel(savedModel); // This sets the model from local storage
       }
     }
   }, []);
@@ -102,7 +102,10 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
     // For Gemini, API key is needed for fetching models from the new endpoint
     if (!apiKey && selectedProvider !== "gemini") { 
       setAvailableModels(DEFAULT_MODELS_FALLBACK.get(selectedProvider) || []);
-      setSelectedModel(DEFAULT_MODELS_FALLBACK.get(selectedProvider)?.[0] || "");
+      // Only set selectedModel if it's currently empty or not in the fallback list
+      if (!selectedModel || !(DEFAULT_MODELS_FALLBACK.get(selectedProvider) || []).includes(selectedModel)) {
+        setSelectedModel(DEFAULT_MODELS_FALLBACK.get(selectedProvider)?.[0] || "");
+      }
       return;
     }
 
@@ -187,7 +190,7 @@ const LLMConfigInputs: React.FC<LLMConfigInputsProps> = ({
       }
       setIsFetchingModels(false);
     }
-  }, [selectedProvider, apiKey, selectedModel, setSelectedModel]);
+  }, [selectedProvider, apiKey]); // Removed selectedModel from dependencies
 
   // Fetch models whenever provider or API key changes
   React.useEffect(() => {
