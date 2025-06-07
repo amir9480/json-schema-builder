@@ -36,6 +36,7 @@ function mapJsonSchemaTypeToPydanticType(jsonType: string | string[], format?: s
     case "string":
       if (format === "date") return "date";
       if (format === "date-time") return "datetime";
+      if (format === "time") return "time"; // Added time
       return "str";
     case "number":
       return "float"; // Pydantic numbers are floats by default, can be int if no decimal
@@ -140,7 +141,7 @@ export function generatePythonCode(jsonSchema: any, selectedProvider: string, ap
   const rootSchemaName = jsonSchema.title ? toPascalCase(jsonSchema.title) : "MainSchema";
   let code = `from pydantic import BaseModel, Field # Import Field for validation\n`;
   code += `from typing import Optional, Literal, Union, Any, Dict # Import Any and Dict for generic objects\n`;
-  code += `from datetime import date, datetime # For date and datetime formats\n`;
+  code += `from datetime import date, datetime, time # For date, datetime, and time formats\n`; // Added time
   code += `from openai import OpenAI\n\n`;
 
   let clientConfig = "";
@@ -303,6 +304,7 @@ function mapJsonSchemaTypeToZodType(jsonType: string | string[], format?: string
     case "string":
       if (format === "date") return "z.string().datetime().date()"; // Zod's date validation
       if (format === "date-time") return "z.string().datetime()";
+      if (format === "time") return "z.string().regex(/^([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?$/)"; // Basic time regex
       return "z.string()";
     case "number":
       return "z.number()";
