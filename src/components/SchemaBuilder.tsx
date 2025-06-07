@@ -455,7 +455,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
             setSchemaFields={setSchemaFields}
             reusableTypes={reusableTypes}
             onManageReusableTypes={() => setIsManageTypesOpen(true)}
-            onConvertToReusableType={handleInitiateConvertToReusableType} {/* Updated to new handler */}
+            onConvertToReusableType={handleInitiateConvertToReusableType} 
             onRefineFieldWithAI={handleRefineFieldWithAI}
             onAIGenerateSchemaTrigger={() => setIsAIGenerateDialogOpen(true)}
           />
