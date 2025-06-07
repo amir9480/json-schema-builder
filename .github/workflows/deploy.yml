@@ -9,6 +9,12 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest # Use the latest Ubuntu runner
 
+    permissions:
+      contents: write
+
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4 # Action to checkout your repository code
