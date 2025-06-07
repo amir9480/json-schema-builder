@@ -315,7 +315,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
               <TooltipContent>
                 <p>Convert to Reusable Type</p>
               </TooltipContent>
-            </AlertDialogContent>
+            </AlertDialog>
           </AlertDialog>
         )}
 
