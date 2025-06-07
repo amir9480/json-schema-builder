@@ -45,6 +45,9 @@ const LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY = "jsonSchemaBuilderSelectedExportTa
 const LOCAL_STORAGE_SELECTED_DEV_EXPORT_TYPE_KEY = "jsonSchemaBuilderSelectedDevExportType";
 const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt";
 const LOCAL_STORAGE_SHARED_SYSTEM_PROMPT_KEY = "llmBuilderSharedSystemPrompt"; // New local storage key for system prompt
+const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider"; // Moved from LLMConfigInputs
+const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey"; // Moved from LLMConfigInputs
+const LOCAL_STORAGE_SELECTED_MODEL_KEY = "llmBuilderSelectedModel"; // Moved from LLMConfigInputs
 
 const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   isOpen,
@@ -73,10 +76,24 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   const [generatedFormData, setGeneratedFormData] = React.useState<Record<string, any> | undefined>(undefined);
 
   // LLM configuration states, now managed by LLMConfigInputs but needed here for API calls
-  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
-  const [apiKey, setApiKey] = React.useState<string>("");
-  // Initialize selectedModel to an empty string, LLMConfigInputs will handle setting a default
-  const [selectedModel, setSelectedModel] = React.useState<string>(""); 
+  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY) as LLMProvider) || "openai";
+    }
+    return "openai";
+  });
+  const [apiKey, setApiKey] = React.useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_API_KEY) || "";
+    }
+    return "";
+  });
+  const [selectedModel, setSelectedModel] = React.useState<string>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_SELECTED_MODEL_KEY) || "";
+    }
+    return "";
+  }); 
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -108,6 +125,25 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
       localStorage.setItem(LOCAL_STORAGE_SHARED_SYSTEM_PROMPT_KEY, systemPrompt);
     }
   }, [systemPrompt]);
+
+  // Persist LLM config to localStorage
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
+    }
+  }, [selectedProvider]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
+    }
+  }, [apiKey]);
+
+  React.useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_SELECTED_MODEL_KEY, selectedModel);
+    }
+  }, [selectedModel]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -378,9 +414,6 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                   setApiKey={setApiKey}
                   selectedModel={selectedModel}
                   setSelectedModel={setSelectedModel}
-                  // These props are no longer needed as LLMConfigInputs manages model fetching internally
-                  availableModels={new Map()} 
-                  defaultModelForProvider={new Map()}
                 />
 
                 <div className="grid gap-2">
@@ -443,9 +476,6 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                   setApiKey={setApiKey}
                   selectedModel={selectedModel}
                   setSelectedModel={setSelectedModel}
-                  // These props are no longer needed as LLMConfigInputs manages model fetching internally
-                  availableModels={new Map()} 
-                  defaultModelForProvider={new Map()}
                 />
 
                 <div className="grid gap-2">
