@@ -268,8 +268,10 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
           parentField = currentParent;
           return true;
         }
-        if (field.type === "object" && field.children && findFieldAndParent(field.children, targetId, field)) {
-          return true;
+        if (field.type === "object" && field.children) {
+          if (findFieldAndParent(field.children, targetId, field)) {
+            return true;
+          }
         }
       }
       return false;
@@ -279,13 +281,20 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
 
     if (foundField) {
       // 1. Create a new reusable type from the found field
-      const newReusableType = deepCopyField(foundField);
-      newReusableType.name = newReusableType.name || "UnnamedType"; // Ensure a name for the reusable type
-      newReusableType.type = "object"; // Reusable types are always objects
-      newReusableType.isMultiple = false; // Reusable types themselves are not 'multiple'
-      newReusableType.isRequired = false; // Reusable types themselves are not 'required'
-      newReusableType.title = newReusableType.title || `Reusable ${newReusableType.name}`;
-      newReusableType.description = newReusableType.description || `Reusable definition for ${newReusableType.name}`;
+      const newReusableType: SchemaField = {
+        ...foundField, // Copy all properties from the found field
+        id: uuidv4(), // Generate a new ID for the reusable type
+        parentId: undefined, // Reusable types are top-level, so no parentId
+        // Ensure children are deep copied if it's an object, otherwise undefined
+        children: foundField.type === "object" ? (foundField.children ? foundField.children.map(deepCopyField) : []) : undefined,
+        // Reusable types themselves are not 'multiple' or 'required' in the same context as fields
+        isMultiple: false,
+        isRequired: false,
+        // Ensure a name for the reusable type
+        name: foundField.name || "UnnamedType",
+        title: foundField.title || `Reusable ${foundField.name || "Type"}`,
+        description: foundField.description || `Reusable definition for ${foundField.name || "an unnamed type"}`,
+      };
 
       setReusableTypes((prev) => {
         // Ensure unique name for the new reusable type
@@ -312,7 +321,10 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
         currency: undefined,
         example: undefined,
         description: undefined,
-        title: foundField.title || foundField.name, // Keep original title/name for display
+        // Keep original title/name for display in the main schema
+        title: foundField.title || foundField.name,
+        isMultiple: foundField.isMultiple, // Keep original isMultiple for the reference field
+        isRequired: foundField.isRequired, // Keep original isRequired for the reference field
       };
 
       // Function to update the field in the schemaFields tree
