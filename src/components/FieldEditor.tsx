@@ -29,13 +29,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import FieldTypeIcon from "./FieldTypeIcon";
+import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
 // Import new sub-components
-import FieldTypeIcon from "./FieldTypeIcon"; // Ensure this is imported
 import FieldAdvancedOptions from "./FieldAdvancedOptions";
 import FieldDropdownOptions from "./FieldDropdownOptions";
 import FieldObjectProperties from "./FieldObjectProperties";
@@ -218,10 +224,10 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
         level > 0 && currentBorderColor
       )}
     >
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2"> {/* Changed to flex-wrap for responsiveness */}
+      <div className="flex items-center gap-4">
         {/* Drag and Move Buttons */}
         {!isRoot && (
-          <div className="flex flex-col items-center justify-center shrink-0"> {/* Removed h-full py-4 -my-4 */}
+          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -255,28 +261,33 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
           </div>
         )}
 
-        {/* Field Type Select */}
-        <Select value={field.type} onValueChange={handleTypeChange}>
-          <SelectTrigger className="w-full sm:w-[180px] shrink-0"> {/* Adjust width for responsiveness */}
-            <FieldTypeIcon type={field.type} className="mr-2" /> {/* Removed !bg-transparent !border-none !text-foreground h-4 w-4 */}
-            <SelectValue placeholder="Select type" />
-          </SelectTrigger>
-          <SelectContent>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="shrink-0">
+              <FieldTypeIcon type={field.type} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-auto p-0">
             {typeOptions.map((option) => {
               if (hideRefTypeOption && option.value === "ref") return null;
               return (
-                <SelectItem key={option.value} value={option.value}>
-                  <div className="flex items-center gap-2">
-                    <FieldTypeIcon type={option.value} className="!bg-transparent !border-none !text-foreground h-4 w-4" />
-                    <span>{option.label}</span>
-                  </div>
-                </SelectItem>
+                <DropdownMenuItem
+                  key={option.value}
+                  onSelect={() => handleTypeChange(option.value)}
+                  className={cn(
+                    "flex items-center gap-2 cursor-pointer",
+                    field.type === option.value && "font-bold bg-accent text-accent-foreground"
+                  )}
+                >
+                  <FieldTypeIcon type={option.value} className="!bg-transparent !border-none !text-foreground" />
+                  <span>{option.label}</span>
+                </DropdownMenuItem>
               );
             })}
-          </SelectContent>
-        </Select>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-        <div className="flex-1 flex flex-col gap-2 w-full sm:w-auto"> {/* Changed to flex-col to stack input and error, added w-full for mobile */}
+        <div className="flex-1 flex flex-col gap-2"> {/* Changed to flex-col to stack input and error */}
           <div className="grid gap-2 flex-1">
             <Input
               id={`field-name-${field.id}`}
@@ -465,7 +476,6 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
           hideRefTypeOption={hideRefTypeOption}
           onManageReusableTypes={onManageReusableTypes}
           onConvertToReusableType={onConvertToReusableType}
-          onRefineFieldWithAI={onRefineFieldWithAI}
         />
       )}
     </div>
