@@ -1,0 +1,34 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main # Trigger the workflow on pushes to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4 # Action to checkout your repository code
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4 # Action to set up Node.js environment
+        with:
+          node-version: '20' # Specify Node.js version (e.g., 20 LTS)
+          cache: 'npm' # Cache npm dependencies for faster builds
+
+      - name: Install dependencies
+        run: npm install # Install project dependencies
+
+      - name: Build project
+        run: npm run build # Run the build command defined in your package.json
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4 # Third-party action for deploying to GitHub Pages
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }} # GitHub token for authentication
+          publish_dir: ./dist # The directory containing your built website files (Vite's default)
+          publish_branch: gh-pages # The branch to which the built files will be pushed
+          # cname: your-custom-domain.com # Uncomment and replace with your custom domain if you have one
