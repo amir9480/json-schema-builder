@@ -10,19 +10,20 @@ interface CurlCommandGeneratorProps {
   selectedProvider: "openai" | "gemini" | "mistral" | "openrouter";
   apiKey: string;
   userPrompt: string;
+  systemPrompt: string; // New prop for system prompt
 }
 
-const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema, selectedProvider, apiKey, userPrompt }) => {
+const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema, selectedProvider, apiKey, userPrompt, systemPrompt }) => {
   const jsonString = JSON.stringify(jsonSchema, null, 2);
 
   // Refactored to return request details as an object
-  const getRequestDetails = (provider: "openai" | "gemini" | "mistral" | "openrouter", currentApiKey: string, prompt: string) => {
+  const getRequestDetails = (provider: "openai" | "gemini" | "mistral" | "openrouter", currentApiKey: string, prompt: string, currentSystemPrompt: string) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
 
     const messages = [
-      { role: "system", content: "You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema." },
+      { role: "system", content: currentSystemPrompt }, // Use the provided systemPrompt
       { role: "user", content: prompt },
     ];
 
@@ -47,7 +48,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema,
         endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         requestBody = {
           contents: [
-            { role: "user", parts: [{ text: `${prompt}\n\nHere is the schema:\n\n${jsonString}` }] },
+            { role: "user", parts: [{ text: `${currentSystemPrompt}\n\n${prompt}\n\nHere is the schema:\n\n${jsonString}` }] },
           ],
           generationConfig: {
             responseMimeType: "application/json",
@@ -110,7 +111,7 @@ const CurlCommandGenerator: React.FC<CurlCommandGeneratorProps> = ({ jsonSchema,
     };
   };
 
-  const { curlCommand } = React.useMemo(() => getRequestDetails(selectedProvider, apiKey, userPrompt), [selectedProvider, apiKey, userPrompt, jsonSchema]);
+  const { curlCommand } = React.useMemo(() => getRequestDetails(selectedProvider, apiKey, userPrompt, systemPrompt), [selectedProvider, apiKey, userPrompt, systemPrompt, jsonSchema]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(curlCommand)
