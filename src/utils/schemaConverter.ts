@@ -48,7 +48,9 @@ const convertPropertiesToSchemaFields = (
     let options: string[] | undefined = undefined;
     let isRequired = requiredFields.has(key);
     let currency: string | undefined = undefined;
-    let pattern: string | undefined = undefined; // Added pattern
+    let pattern: string | undefined = undefined;
+    let minLength: number | undefined = undefined; // New: minLength
+    let maxLength: number | undefined = undefined; // New: maxLength
 
     // Handle $ref first
     if (prop.$ref) {
@@ -91,8 +93,14 @@ const convertPropertiesToSchemaFields = (
             fieldType = "currency";
             currency = itemSchema.currency;
           }
-          if (itemSchema.pattern) { // Read pattern for array items
+          if (itemSchema.pattern) {
             pattern = itemSchema.pattern;
+          }
+          if (itemSchema.minLength !== undefined) { // Read minLength for array items
+            minLength = itemSchema.minLength;
+          }
+          if (itemSchema.maxLength !== undefined) { // Read maxLength for array items
+            maxLength = itemSchema.maxLength;
           }
         }
       } else {
@@ -119,8 +127,14 @@ const convertPropertiesToSchemaFields = (
         fieldType = "currency";
         currency = prop.currency;
       }
-      if (prop.pattern) { // Read pattern for primitive types
+      if (prop.pattern) {
         pattern = prop.pattern;
+      }
+      if (prop.minLength !== undefined) { // Read minLength
+        minLength = prop.minLength;
+      }
+      if (prop.maxLength !== undefined) { // Read maxLength
+        maxLength = prop.maxLength;
       }
     }
 
@@ -144,6 +158,8 @@ const convertPropertiesToSchemaFields = (
       parentId: parentId,
       isValidName: true, // Assume valid name from imported schema
       pattern: pattern, // Assign the detected pattern
+      minLength: minLength, // Assign minLength
+      maxLength: maxLength, // Assign maxLength
     };
     fields.push(field);
   }
@@ -176,7 +192,9 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
       let defMaxValue: number | undefined = undefined;
       let defMinItems: number | undefined = undefined;
       let defMaxItems: number | undefined = undefined;
-      let defPattern: string | undefined = undefined; // Added defPattern
+      let defPattern: string | undefined = undefined;
+      let defMinLength: number | undefined = undefined; // New: defMinLength
+      let defMaxLength: number | undefined = undefined; // New: defMaxLength
 
       if (def.type === "array" && def.items) {
         defIsMultiple = true;
@@ -198,6 +216,12 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
           if (itemSchema.pattern) {
             defPattern = itemSchema.pattern;
           }
+          if (itemSchema.minLength !== undefined) {
+            defMinLength = itemSchema.minLength;
+          }
+          if (itemSchema.maxLength !== undefined) {
+            defMaxLength = itemSchema.maxLength;
+          }
         }
         defMinItems = def.minItems;
         defMaxItems = def.maxItems;
@@ -217,6 +241,12 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
         }
         if (def.pattern) {
           defPattern = def.pattern;
+        }
+        if (def.minLength !== undefined) {
+          defMinLength = def.minLength;
+        }
+        if (def.maxLength !== undefined) {
+          defMaxLength = def.maxLength;
         }
         defMinValue = def.minimum;
         defMaxValue = def.maximum;
@@ -238,7 +268,9 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
         maxValue: defMaxValue,
         minItems: defMinItems,
         maxItems: defMaxItems,
-        pattern: defPattern, // Assign the detected pattern
+        pattern: defPattern,
+        minLength: defMinLength, // Assign defMinLength
+        maxLength: defMaxLength, // Assign defMaxLength
         isValidName: true,
       };
       definitionsMap.set(defName, newReusableType);
@@ -296,7 +328,9 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
   let options: string[] | undefined = undefined;
   let isRequired = true; // Default to required for a single field, adjust if 'null' type is present
   let currency: string | undefined = undefined;
-  let pattern: string | undefined = undefined; // Added pattern
+  let pattern: string | undefined = undefined;
+  let minLength: number | undefined = undefined; // New: minLength
+  let maxLength: number | undefined = undefined; // New: maxLength
 
   // Check for 'null' type to determine if it's required
   if (Array.isArray(jsonSchema.type) && jsonSchema.type.includes("null")) {
@@ -336,6 +370,12 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
         if (itemSchema.pattern) {
           pattern = itemSchema.pattern;
         }
+        if (itemSchema.minLength !== undefined) {
+          minLength = itemSchema.minLength;
+        }
+        if (itemSchema.maxLength !== undefined) {
+          maxLength = itemSchema.maxLength;
+        }
       }
     } else {
       fieldType = "string"; // Default for untyped array items
@@ -367,6 +407,12 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
     if (jsonSchema.pattern) {
       pattern = jsonSchema.pattern;
     }
+    if (jsonSchema.minLength !== undefined) {
+      minLength = jsonSchema.minLength;
+    }
+    if (jsonSchema.maxLength !== undefined) {
+      maxLength = jsonSchema.maxLength;
+    }
   }
 
   const convertedField: SchemaField = {
@@ -387,6 +433,8 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
     currency: currency, // Assign the detected currency
     options: options,
     pattern: pattern, // Assign the detected pattern
+    minLength: minLength, // Assign minLength
+    maxLength: maxLength, // Assign maxLength
     isValidName: true, // Assume valid name from AI
   };
 
