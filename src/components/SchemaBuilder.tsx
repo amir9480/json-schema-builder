@@ -255,8 +255,12 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       id: uuidv4(), // Generate a new ID for the copied field
       parentId: undefined, // Clear parentId as it's now a root of a reusable type
     };
-    if (newField.children) {
-      newField.children = newField.children.map(deepCopyField); // Recursively copy children
+    // Recursively copy children if it's an object type
+    if (newField.type === "object" && newField.children) {
+      newField.children = newField.children.map(deepCopyField);
+    } else {
+      // Explicitly set children to undefined for non-object types
+      newField.children = undefined;
     }
     return newField;
   }, []);
@@ -278,28 +282,28 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
     }
 
     // 1. Create a new reusable type from the found field
+    // Use deepCopyField for the entire fieldToConvertForNaming to ensure all nested properties are new instances
+    const newReusableTypeBase = deepCopyField(fieldToConvertForNaming);
+
     const newReusableType: SchemaField = {
-      ...fieldToConvertForNaming, // Copy all properties from the found field
-      id: uuidv4(), // Generate a new ID for the reusable type
-      parentId: undefined, // Reusable types are top-level, so no parentId
-      // Ensure children are deep copied if it's an object, otherwise undefined
-      children: fieldToConvertForNaming.type === "object" ? (fieldToConvertForNaming.children ? fieldToConvertForNaming.children.map(deepCopyField) : []) : undefined,
-      // Reusable types themselves are not 'multiple' or 'required' in the same context as fields
+      ...newReusableTypeBase, // Start with a deep copy of the field
+      // Override properties specific to a reusable type definition
+      id: uuidv4(), // Ensure a new ID for the reusable type itself
+      parentId: undefined, // Reusable types are top-level
       isMultiple: false, // Reusable type definition itself is not an array
       isRequired: false, // Reusable type definition itself is not 'required'
-      // Ensure a name for the reusable type
-      name: reusableTypeName,
-      title: fieldToConvertForNaming.title || `Reusable ${fieldToConvertForNaming.name || "Type"}`,
-      description: fieldToConvertForNaming.description || `Reusable definition for ${fieldToConvertForNaming.name || "an unnamed type"}`,
+      name: reusableTypeName, // Set the user-provided name
+      title: newReusableTypeBase.title || `Reusable ${newReusableTypeBase.name || "Type"}`,
+      description: newReusableTypeBase.description || `Reusable definition for ${newReusableTypeBase.name || "an unnamed type"}`,
     };
 
     setReusableTypes((prev) => [...prev, newReusableType]);
 
     // 2. Update the original field to be a reference to the new reusable type
     const updatedOriginalField: SchemaField = {
-      ...fieldToConvertForNaming,
-      type: "ref",
-      refId: newReusableType.id,
+      ...fieldToConvertForNaming, // Start with the original field's properties
+      type: "ref", // Change type to 'ref'
+      refId: newReusableType.id, // Link to the newly created reusable type
       children: undefined, // A reference field does not have children directly
       // Clear other properties that don't apply to a ref type
       minValue: undefined,
@@ -310,9 +314,8 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
       example: undefined,
       description: undefined,
       // Keep original title/name for display in the main schema
-      title: fieldToConvertForNaming.title || fieldToConvertForNaming.name,
-      isMultiple: fieldToConvertForNaming.isMultiple, // Keep original isMultiple for the reference field
-      isRequired: fieldToConvertForNaming.isRequired, // Keep original isRequired for the reference field
+      // isMultiple and isRequired should be kept from the original field, as they apply to the *reference* itself
+      // e.g., an array of references, or a required reference.
     };
 
     // Function to update the field in the schemaFields tree
