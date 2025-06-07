@@ -448,6 +448,7 @@ const SchemaBuilder: React.FC<SchemaBuilderProps> = () => {
               onLoadSchemaTrigger={() => setIsLoadConfirmOpen(true)}
               onAIGenerateSchemaTrigger={() => setIsAIGenerateDialogOpen(true)} 
               hasSchemaFields={schemaFields.length > 0}
+              hasUnsavedChanges={hasUnsavedChanges} // Pass the new prop
             />
           </div>
 
