@@ -37,6 +37,22 @@ type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
 const LOCAL_STORAGE_FIELD_PROMPT_KEY = "llmFieldRefinePrompt"; // Specific prompt key for field refinement
 
+// Define available models for field refinement
+const FIELD_REFINE_MODELS = new Map<LLMProvider, string[]>([
+  ["openai", ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]],
+  ["gemini", ["gemini-pro"]],
+  ["mistral", ["mistral-small-latest", "mistral-large-latest", "mixtral-8x7b-instruct-v0.1"]],
+  ["openrouter", ["openai/gpt-4o-mini", "openai/gpt-4o", "mistralai/mistral-small-latest"]],
+]);
+
+// Define default models for each provider for field refinement
+const FIELD_REFINE_DEFAULT_MODELS = new Map<LLMProvider, string>([
+  ["openai", "gpt-4o-mini"],
+  ["gemini", "gemini-pro"],
+  ["mistral", "mistral-small-latest"],
+  ["openrouter", "openai/gpt-4o-mini"],
+]);
+
 const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
   isOpen,
   onOpenChange,
@@ -46,6 +62,7 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
 }) => {
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
   const [apiKey, setApiKey] = React.useState<string>("");
+  const [selectedModel, setSelectedModel] = React.useState<string>(FIELD_REFINE_DEFAULT_MODELS.get("openai") || "");
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -63,7 +80,7 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
     }
   }, [userPrompt]);
 
-  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string, currentFieldSchema: any) => {
+  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, model: string, prompt: string, currentFieldSchema: any) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
@@ -80,13 +97,13 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
         endpoint = "https://api.openai.com/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENAI_API_KEY"}`;
         requestBody = {
-          model: "gpt-4o-mini", // Using a smaller model for faster responses
+          model: model, // Using the selected model
           messages: messages,
           response_format: { type: "json_object" },
         };
         break;
       case "gemini":
-        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
+        endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         requestBody = {
           contents: [
             { role: "user", parts: [{ text: `${systemMessage}\n\n${messages[1].content}` }] },
@@ -100,7 +117,7 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
         endpoint = "https://api.mistral.ai/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_MISTRAL_API_KEY"}`;
         requestBody = {
-          model: "mistral-small-latest", // Using a smaller model for faster responses
+          model: model, // Using the selected model
           messages: messages,
           response_format: { type: "json_object" },
         };
@@ -110,7 +127,7 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
         headers["HTTP-Referer"] = "YOUR_APP_URL"; // Replace with your app's URL if deployed
         requestBody = {
-          model: "openai/gpt-4o-mini",
+          model: model, // Using the selected model
           messages: messages,
           response_format: { type: "json_object" },
         };
@@ -140,7 +157,7 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
     const currentFieldSchema = buildSingleFieldJsonSchema(fieldToRefine, reusableTypes);
     console.log("JSON Schema sent to LLM for refinement:", JSON.stringify(currentFieldSchema, null, 2)); // Debug log
     
-    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, currentFieldSchema);
+    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, selectedModel, userPrompt, currentFieldSchema);
 
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
@@ -223,6 +240,10 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
             setSelectedProvider={setSelectedProvider}
             apiKey={apiKey}
             setApiKey={setApiKey}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+            availableModels={FIELD_REFINE_MODELS}
+            defaultModelForProvider={FIELD_REFINE_DEFAULT_MODELS}
           />
 
           <div className="grid gap-2">
