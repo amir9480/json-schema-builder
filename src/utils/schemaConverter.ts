@@ -158,31 +158,95 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
   if (defs && typeof defs === 'object') {
     for (const defName in defs) {
       const def = defs[defName];
-      if (def.type === "object" && def.properties) {
-        const newReusableType: SchemaField = {
-          id: uuidv4(),
-          name: defName,
-          type: "object",
-          isMultiple: false,
-          isRequired: false, // Reusable types themselves are not 'required'
-          title: def.title || defName,
-          description: def.description,
-          children: [], // Will be populated in second pass
-          isValidName: true,
-        };
-        definitionsMap.set(defName, newReusableType);
-        reusableTypes.push(newReusableType);
+      // Determine the type of the definition
+      let defType: SchemaFieldType = "string"; // Default
+      let defIsMultiple = false;
+      let defChildren: SchemaField[] | undefined = undefined;
+      let defOptions: string[] | undefined = undefined;
+      let defCurrency: string | undefined = undefined;
+      let defMinValue: number | undefined = undefined;
+      let defMaxValue: number | undefined = undefined;
+      let defMinItems: number | undefined = undefined;
+      let defMaxItems: number | undefined = undefined;
+
+      if (def.type === "array" && def.items) {
+        defIsMultiple = true;
+        const itemSchema = def.items;
+        if (itemSchema.type === "object") {
+          defType = "object";
+          // Children will be populated in the second pass
+        } else {
+          const actualType = Array.isArray(itemSchema.type) ? itemSchema.type.find((t: string) => t !== "null") : itemSchema.type;
+          defType = mapJsonSchemaTypeToSchemaFieldType(actualType || "string", itemSchema.format);
+          if (itemSchema.enum) {
+            defType = "dropdown";
+            defOptions = itemSchema.enum;
+          }
+          if (itemSchema.currency) {
+            defType = "currency";
+            defCurrency = itemSchema.currency;
+          }
+        }
+        defMinItems = def.minItems;
+        defMaxItems = def.maxItems;
+      } else if (def.type === "object") {
+        defType = "object";
+        // Children will be populated in the second pass
       } else {
-        console.warn(`Definition '${defName}' is not a valid object schema and will be skipped.`);
+        const actualType = Array.isArray(def.type) ? def.type.find((t: string) => t !== "null") : def.type;
+        defType = mapJsonSchemaTypeToSchemaFieldType(actualType || "string", def.format);
+        if (def.enum) {
+          defType = "dropdown";
+          defOptions = def.enum;
+        }
+        if (def.currency) {
+          defType = "currency";
+          defCurrency = def.currency;
+        }
+        defMinValue = def.minimum;
+        defMaxValue = def.maximum;
       }
+
+      const newReusableType: SchemaField = {
+        id: uuidv4(),
+        name: defName,
+        type: defType,
+        isMultiple: defIsMultiple,
+        isRequired: false, // Reusable types themselves are not 'required'
+        title: def.title || defName,
+        description: def.description,
+        example: def.example !== undefined ? String(def.example) : undefined,
+        children: defChildren, // Will be populated for objects in second pass
+        options: defOptions,
+        currency: defCurrency,
+        minValue: defMinValue,
+        maxValue: defMaxValue,
+        minItems: defMinItems,
+        maxItems: defMaxItems,
+        isValidName: true,
+      };
+      definitionsMap.set(defName, newReusableType);
+      reusableTypes.push(newReusableType);
     }
   }
 
-  // Second pass: Populate children for reusable types and main fields, resolving references.
+  // Second pass: Populate children for reusable types that are objects
   reusableTypes.forEach(rt => {
-    const originalDef = (jsonSchema.definitions || jsonSchema.$defs)?.[rt.name];
-    if (originalDef && originalDef.properties) {
-      rt.children = convertPropertiesToSchemaFields(originalDef.properties, new Set(originalDef.required || []), definitionsMap, rt.id);
+    if (rt.type === "object") {
+      const originalDef = (jsonSchema.definitions || jsonSchema.$defs)?.[rt.name];
+      if (originalDef && originalDef.properties) {
+        rt.children = convertPropertiesToSchemaFields(originalDef.properties, new Set(originalDef.required || []), definitionsMap, rt.id);
+      }
+    } else if (rt.isMultiple && rt.type === "ref") {
+      // If it's an array of references, the item schema needs to be processed
+      const originalDef = (jsonSchema.definitions || jsonSchema.$defs)?.[rt.name];
+      if (originalDef && originalDef.items && originalDef.items.$ref) {
+        const refName = originalDef.items.$ref.split('/').pop();
+        const referencedField = definitionsMap.get(refName);
+        if (referencedField) {
+          rt.refId = referencedField.id;
+        }
+      }
     }
   });
 
@@ -290,7 +354,7 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
     isRequired: isRequired,
     title: jsonSchema.title,
     description: jsonSchema.description,
-    example: jsonSchema.example !== undefined ? String(json.example) : undefined,
+    example: jsonSchema.example !== undefined ? String(jsonSchema.example) : undefined, // Corrected to jsonSchema.example
     children: children,
     refId: refId,
     minValue: jsonSchema.minimum,
