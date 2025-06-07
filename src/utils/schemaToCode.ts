@@ -108,11 +108,15 @@ function _buildPydanticModelContent(
       pydanticType = nestedModelName;
     } else {
       pydanticType = mapJsonSchemaTypeToPydanticType(prop.type, prop.format, prop.enum);
-      if (prop.minimum !== undefined) comment += `${comment ? ", " : "  # "}Min value: ${prop.minimum}`;
-      if (prop.maximum !== undefined) comment += `${comment ? ", " : "  # "}Max value: ${prop.maximum}`;
-      if (prop.pattern) {
-        // Pydantic v2 uses Field for pattern validation
-        fieldDefinition = `, Field(pattern=r"${prop.pattern.replace(/\\/g, "\\\\")}")`; // Escape backslashes for Python regex
+      let fieldArgs: string[] = [];
+      if (prop.minimum !== undefined) fieldArgs.push(`ge=${prop.minimum}`);
+      if (prop.maximum !== undefined) fieldArgs.push(`le=${prop.maximum}`);
+      if (prop.pattern) fieldArgs.push(`pattern=r"${prop.pattern.replace(/\\/g, "\\\\")}"`);
+      if (prop.minLength !== undefined) fieldArgs.push(`min_length=${prop.minLength}`); // New: min_length
+      if (prop.maxLength !== undefined) fieldArgs.push(`max_length=${prop.maxLength}`); // New: max_length
+
+      if (fieldArgs.length > 0) {
+        fieldDefinition = `, Field(${fieldArgs.join(", ")})`;
       }
     }
 
@@ -273,7 +277,9 @@ function generateZodSchema(
       zodType = mapJsonSchemaTypeToZodType(prop.type, prop.format, prop.enum);
       if (prop.minimum !== undefined) zodType += `.min(${prop.minimum})`;
       if (prop.maximum !== undefined) zodType += `.max(${prop.maximum})`;
-      if (prop.pattern) zodType += `.regex(/${prop.pattern.replace(/\\/g, "\\\\")}/)`; // Escape backslashes for JS regex
+      if (prop.pattern) zodType += `.regex(/${prop.pattern.replace(/\\/g, "\\\\")}/)`;
+      if (prop.minLength !== undefined) zodType += `.min(${prop.minLength})`; // New: minLength
+      if (prop.maxLength !== undefined) zodType += `.max(${prop.maxLength})`; // New: maxLength
     }
 
     if (!isRequired) {

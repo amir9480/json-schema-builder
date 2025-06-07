@@ -217,6 +217,12 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
               {displayField.type === "string" && displayField.pattern && (
                 <span>Pattern: <code>{displayField.pattern}</code></span>
               )}
+              {displayField.type === "string" && displayField.minLength !== undefined && (
+                <span>Min Length: {displayField.minLength}</span>
+              )}
+              {displayField.type === "string" && displayField.maxLength !== undefined && (
+                <span>Max Length: {displayField.maxLength}</span>
+              )}
             </div>
           </div>
         );
