@@ -2,7 +2,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Copy, Play } from "lucide-react";
 import {
-  Select,
+  Select, // Keep Select for case type
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // Keep Input for user prompt
 import { showSuccess, showError } from "@/utils/toast";
 import {
   Dialog,
@@ -23,6 +23,7 @@ import { SchemaField } from "./FieldEditor";
 import { buildSingleFieldJsonSchema } from "@/utils/jsonSchemaBuilder";
 import { convertSingleJsonSchemaToSchemaField } from "@/utils/schemaConverter";
 import LoadingSpinner from "./LoadingSpinner"; // Import LoadingSpinner
+import LLMConfigInputs from "./LLMConfigInputs"; // Import the new component
 
 interface FieldRefineDialogProps {
   isOpen: boolean;
@@ -34,8 +35,6 @@ interface FieldRefineDialogProps {
 
 type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
-const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
-const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
 const LOCAL_STORAGE_FIELD_PROMPT_KEY = "llmFieldRefinePrompt"; // Specific prompt key for field refinement
 
 const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
@@ -45,20 +44,8 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
   reusableTypes,
   onFieldRefined,
 }) => {
-  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
-    if (typeof window !== "undefined") {
-      const savedProvider = localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY);
-      return (savedProvider as LLMProvider) || "openai";
-    }
-    return "openai";
-  });
-
-  const [apiKey, setApiKey] = React.useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_API_KEY) || "";
-    }
-    return "";
-  });
+  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
+  const [apiKey, setApiKey] = React.useState<string>("");
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -69,19 +56,7 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
 
   const [isLoading, setIsLoading] = React.useState(false);
 
-  // Persist selectedProvider, apiKey, and userPrompt to localStorage
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
-    }
-  }, [selectedProvider]);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
-    }
-  }, [apiKey]);
-
+  // Persist userPrompt to localStorage
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(LOCAL_STORAGE_FIELD_PROMPT_KEY, userPrompt);
@@ -243,34 +218,12 @@ const FieldRefineDialog: React.FC<FieldRefineDialogProps> = ({
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label htmlFor="llm-provider-select">Select LLM Provider</Label>
-            <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as LLMProvider)}>
-              <SelectTrigger id="llm-provider-select">
-                <SelectValue placeholder="Select a provider" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="openai">OpenAI (ChatGPT)</SelectItem>
-                <SelectItem value="gemini">Google (Gemini)</SelectItem>
-                <SelectItem value="mistral">Mistral AI</SelectItem>
-                <SelectItem value="openrouter">OpenRouter</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="grid gap-2">
-            <Label htmlFor="api-key-input">API Key</Label>
-            <Input
-              id="api-key-input"
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={`Enter your ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key`}
-            />
-            <p className="text-sm text-muted-foreground">
-              Your API key is stored locally in your browser for convenience and is not sent to any server.
-            </p>
-          </div>
+          <LLMConfigInputs
+            selectedProvider={selectedProvider}
+            setSelectedProvider={setSelectedProvider}
+            apiKey={apiKey}
+            setApiKey={setApiKey}
+          />
 
           <div className="grid gap-2">
             <Label htmlFor="user-prompt-input">Refinement Instructions</Label>

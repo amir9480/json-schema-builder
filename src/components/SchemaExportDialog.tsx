@@ -15,7 +15,7 @@ import SchemaFormPreview from "./SchemaFormPreview";
 import PythonCodeGenerator from "./PythonCodeGenerator";
 import JavaScriptCodeGenerator from "./JavaScriptCodeGenerator";
 import {
-  Select,
+  Select, // Keep Select for dev export type
   SelectContent,
   SelectItem,
   SelectTrigger,
@@ -24,11 +24,12 @@ import {
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input"; // Keep Input for user prompt
 import { Sparkles, Play } from "lucide-react";
 import { showSuccess, showError } from "@/utils/toast";
 import LoadingSpinner from "./LoadingSpinner";
 import ApiResponseDisplay from "./ApiResponseDisplay";
+import LLMConfigInputs from "./LLMConfigInputs"; // Import the new component
 
 interface SchemaExportDialogProps {
   isOpen: boolean;
@@ -42,8 +43,6 @@ type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 
 const LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY = "jsonSchemaBuilderSelectedExportTab";
 const LOCAL_STORAGE_SELECTED_DEV_EXPORT_TYPE_KEY = "jsonSchemaBuilderSelectedDevExportType";
-const LOCAL_STORAGE_SELECTED_PROVIDER_KEY = "llmBuilderSelectedProvider";
-const LOCAL_STORAGE_API_KEY = "llmBuilderApiKey";
 const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt";
 
 const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
@@ -55,13 +54,9 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 }) => {
   const [selectedTab, setSelectedTab] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
-      // Prioritize initialTab prop if provided and is not the default "json-schema",
-      // which indicates an action (e.g., after data generation) is trying to force the tab.
-      // Otherwise, use the saved tab from localStorage, or default to "json-schema".
       if (initialTab && initialTab !== "json-schema") {
         return initialTab;
       }
-      // Ensure "generate-data" is not a default option anymore
       const savedTab = localStorage.getItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY);
       return (savedTab === "generate-data" ? "form-preview" : savedTab) || "json-schema";
     }
@@ -76,21 +71,9 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   const [generatedJsonSchema, setGeneratedJsonSchema] = React.useState<any>(null);
   const [generatedFormData, setGeneratedFormData] = React.useState<Record<string, any> | undefined>(undefined);
 
-  // LLM configuration states, moved here from SchemaDataGenerator
-  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>(() => {
-    if (typeof window !== "undefined") {
-      const savedProvider = localStorage.getItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY);
-      return (savedProvider as LLMProvider) || "openai";
-    }
-    return "openai";
-  });
-
-  const [apiKey, setApiKey] = React.useState<string>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(LOCAL_STORAGE_API_KEY) || "";
-    }
-    return "";
-  });
+  // LLM configuration states, now managed by LLMConfigInputs but needed here for API calls
+  const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
+  const [apiKey, setApiKey] = React.useState<string>("");
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -103,19 +86,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false);
   const [responseJson, setResponseJson] = React.useState<string>("");
 
-  // Persist LLM config states
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_SELECTED_PROVIDER_KEY, selectedProvider);
-    }
-  }, [selectedProvider]);
-
-  React.useEffect(() => {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(LOCAL_STORAGE_API_KEY, apiKey);
-    }
-  }, [apiKey]);
-
+  // Persist userPrompt to localStorage
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY, userPrompt);
@@ -129,7 +100,6 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   }, [isOpen, schemaFields, reusableTypes]);
 
   React.useEffect(() => {
-    // Persist selectedTab to localStorage whenever it changes
     if (typeof window !== "undefined") {
       localStorage.setItem(LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY, selectedTab);
     }
@@ -141,7 +111,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
   }, [selectedDevExportType]);
 
-  // LLM request details function, moved here from SchemaDataGenerator
+  // LLM request details function
   const getRequestDetails = (provider: LLMProvider, currentApiKey: string, prompt: string, schema: any) => {
     let requestBody: any = {};
     let endpoint = "";
@@ -158,7 +128,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         endpoint = "https://api.openai.com/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENAI_API_KEY"}`;
         requestBody = {
-          model: "gpt-4o-mini", // Using a smaller model for faster responses
+          model: "gpt-4o-mini",
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -185,7 +155,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         endpoint = "https://api.mistral.ai/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_MISTRAL_API_KEY"}`;
         requestBody = {
-          model: "mistral-small-latest", // Using a smaller model for faster responses
+          model: "mistral-small-latest",
           messages: messages,
           response_format: {
             type: "json_schema",
@@ -200,7 +170,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
       case "openrouter":
         endpoint = "https://openrouter.ai/api/v1/chat/completions";
         headers["Authorization"] = `Bearer ${currentApiKey || "YOUR_OPENROUTER_API_KEY"}`;
-        headers["HTTP-Referer"] = "YOUR_APP_URL"; // Replace with your app's URL if deployed
+        headers["HTTP-Referer"] = "YOUR_APP_URL";
         requestBody = {
           model: "openai/gpt-4o-mini",
           messages: messages,
@@ -220,7 +190,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     return { endpoint, headers, requestBody };
   };
 
-  // Handle "Generate Data" button click, moved here from SchemaDataGenerator
+  // Handle "Generate Data" button click
   const handleGenerateData = async () => {
     if (!apiKey) {
       showError("Please enter your API Key before generating data.");
@@ -275,7 +245,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         let parsedData: any;
         try {
           parsedData = typeof generatedContent === 'string' ? JSON.parse(generatedContent) : generatedContent;
-          setGeneratedFormData(parsedData); // Update generated form data
+          setGeneratedFormData(parsedData);
           showSuccess("Data generated successfully!");
         } catch (parseError) {
           console.error("Failed to parse generated content as JSON:", parseError);
@@ -306,7 +276,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     }
 
     setIsLoading(true);
-    setIsResponseModalOpen(true); // Open the response modal immediately
+    setIsResponseModalOpen(true);
 
     const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, userPrompt, generatedJsonSchema);
 
@@ -367,9 +337,9 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         </DialogHeader>
         <div className="py-4 flex-1 flex flex-col overflow-y-auto">
           <Tabs value={selectedTab} onValueChange={setSelectedTab} className="w-full flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-3"> {/* Changed to 3 columns */}
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="json-schema">JSON Schema</TabsTrigger>
-              <TabsTrigger value="form-preview">Form Preview & Data</TabsTrigger> {/* Updated tab name */}
+              <TabsTrigger value="form-preview">Form Preview & Data</TabsTrigger>
               <TabsTrigger value="for-developers">For Developers</TabsTrigger>
             </TabsList>
             <TabsContent value="json-schema" className="mt-4 flex-1">
@@ -386,34 +356,12 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 <p className="text-sm text-muted-foreground">
                   Use AI to generate realistic data based on your current schema.
                 </p>
-                <div className="grid gap-2">
-                  <Label htmlFor="llm-provider-select-data">Select LLM Provider</Label>
-                  <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as LLMProvider)}>
-                    <SelectTrigger id="llm-provider-select-data">
-                      <SelectValue placeholder="Select a provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="openai">OpenAI (ChatGPT)</SelectItem>
-                      <SelectItem value="gemini">Google (Gemini)</SelectItem>
-                      <SelectItem value="mistral">Mistral AI</SelectItem>
-                      <SelectItem value="openrouter">OpenRouter</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="api-key-input-data">API Key</Label>
-                  <Input
-                    id="api-key-input-data"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder={`Enter your ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key`}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Your API key is stored locally in your browser for convenience and is not sent to any server.
-                  </p>
-                </div>
+                <LLMConfigInputs
+                  selectedProvider={selectedProvider}
+                  setSelectedProvider={setSelectedProvider}
+                  apiKey={apiKey}
+                  setApiKey={setApiKey}
+                />
 
                 <div className="grid gap-2">
                   <Label htmlFor="user-prompt-input-data">Prompt for Data Generation</Label>
@@ -454,34 +402,12 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
             </TabsContent>
             <TabsContent value="for-developers" className="mt-4 flex-1 flex flex-col">
               <div className="grid gap-4 mb-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="llm-provider-select">Select LLM Provider</Label>
-                  <Select value={selectedProvider} onValueChange={(value) => setSelectedProvider(value as LLMProvider)}>
-                    <SelectTrigger id="llm-provider-select">
-                      <SelectValue placeholder="Select a provider" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="openai">OpenAI (ChatGPT)</SelectItem>
-                      <SelectItem value="gemini">Google (Gemini)</SelectItem>
-                      <SelectItem value="mistral">Mistral AI</SelectItem>
-                      <SelectItem value="openrouter">OpenRouter</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="api-key-input">API Key</Label>
-                  <Input
-                    id="api-key-input"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder={`Enter your ${selectedProvider.charAt(0).toUpperCase() + selectedProvider.slice(1)} API Key`}
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    Your API key is stored locally in your browser for convenience and is not sent to any server.
-                  </p>
-                </div>
+                <LLMConfigInputs
+                  selectedProvider={selectedProvider}
+                  setSelectedProvider={setSelectedProvider}
+                  apiKey={apiKey}
+                  setApiKey={setApiKey}
+                />
 
                 <div className="grid gap-2">
                   <Label htmlFor="user-prompt-input">User Prompt</Label>
