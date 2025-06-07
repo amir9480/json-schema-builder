@@ -35,7 +35,7 @@ jobs:
         run: pnpm install --frozen-lockfile # Install project dependencies using pnpm
 
       - name: Build project
-        run: pnpm run build # Run the build command defined in your package.json using pnpm
+        run: pnpm run build --base=/json-schema-builder # Run the build command defined in your package.json using pnpm
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4 # Third-party action for deploying to GitHub Pages
