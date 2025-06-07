@@ -29,4 +29,5 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }} # GitHub token for authentication
           publish_dir: ./dist # The directory containing your built website files (Vite's default)
           publish_branch: gh-pages # The branch to which the built files will be pushed
+          force_orphan: true # Delete the branch if it already exists
           # cname: your-custom-domain.com # Uncomment and replace with your custom domain if you have one
