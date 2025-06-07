@@ -64,6 +64,7 @@ function _buildPydanticModelContent(
     let pydanticType = "Any";
     let defaultValue = "";
     let comment = "";
+    let fieldDefinition = "";
 
     if (prop.description) {
       comment += `  # ${prop.description}`;
@@ -109,7 +110,10 @@ function _buildPydanticModelContent(
       pydanticType = mapJsonSchemaTypeToPydanticType(prop.type, prop.format, prop.enum);
       if (prop.minimum !== undefined) comment += `${comment ? ", " : "  # "}Min value: ${prop.minimum}`;
       if (prop.maximum !== undefined) comment += `${comment ? ", " : "  # "}Max value: ${prop.maximum}`;
-      if (prop.pattern) comment += `${comment ? ", " : "  # "}Pattern: ${prop.pattern}`;
+      if (prop.pattern) {
+        // Pydantic v2 uses Field for pattern validation
+        fieldDefinition = `, Field(pattern=r"${prop.pattern.replace(/\\/g, "\\\\")}")`; // Escape backslashes for Python regex
+      }
     }
 
     const fieldName = toSnakeCase(propName);
@@ -119,7 +123,7 @@ function _buildPydanticModelContent(
       defaultValue = " = None";
     }
 
-    modelContent += `${indent}${fieldName}: ${pydanticType}${defaultValue}${comment}\n`;
+    modelContent += `${indent}${fieldName}: ${pydanticType}${defaultValue}${fieldDefinition}${comment}\n`;
   }
   return modelContent;
 }
@@ -130,7 +134,7 @@ export function generatePythonCode(jsonSchema: any, selectedProvider: string, ap
 
   const definitions = jsonSchema.definitions || {};
   const rootSchemaName = jsonSchema.title ? toPascalCase(jsonSchema.title) : "MainSchema";
-  let code = `from pydantic import BaseModel\n`;
+  let code = `from pydantic import BaseModel, Field # Import Field for validation\n`;
   code += `from typing import Optional, Literal, Union, Any, Dict # Import Any and Dict for generic objects\n`;
   code += `from datetime import date, datetime # For date and datetime formats\n`;
   code += `from openai import OpenAI\n\n`;
