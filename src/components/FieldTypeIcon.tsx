@@ -35,6 +35,7 @@ const typeIconMap: Record<
   currency: { icon: DollarSign, name: "Currency" },
   date: { icon: Calendar, name: "Date" },
   datetime: { icon: Clock, name: "DateTime" },
+  time: { icon: Clock, name: "Time" }, // Added icon for time
   object: { icon: Box, name: "Object" },
   ref: { icon: Link, name: "Reference" },
   dropdown: { icon: List, name: "Dropdown" },

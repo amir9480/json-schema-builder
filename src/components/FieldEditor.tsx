@@ -51,6 +51,7 @@ export type SchemaFieldType =
   | "int"
   | "date"
   | "datetime"
+  | "time" // Added new 'time' type
   | "float"
   | "currency"
   | "object"
@@ -174,7 +175,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
       maxValue: (value === "int" || value === "float" || value === "currency") ? field.maxValue : undefined,
       currency: value === "currency" ? field.currency : undefined,
       options: value === "dropdown" ? field.options || [] : undefined,
-      pattern: value === "string" ? field.pattern : undefined,
+      pattern: (value === "string" || value === "date" || value === "datetime" || value === "time") ? field.pattern : undefined, // Keep pattern for string, date, datetime, time
       minLength: value === "string" ? field.minLength : undefined, // Preserve minLength for string, clear for others
       maxLength: value === "string" ? field.maxLength : undefined, // Preserve maxLength for string, clear for others
     });
@@ -216,6 +217,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
     { value: "currency", label: "Currency" },
     { value: "date", label: "Date" },
     { value: "datetime", label: "DateTime" },
+    { value: "time", label: "Time" }, // Added new 'time' option
     { value: "object", label: "Object" },
     { value: "dropdown", label: "Dropdown" },
     { value: "boolean", label: "Boolean" },
