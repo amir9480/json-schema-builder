@@ -6,6 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils"; // Import cn for conditional class names
 
 interface SchemaBuilderToolbarProps {
   onAddField: () => void;
@@ -17,6 +18,7 @@ interface SchemaBuilderToolbarProps {
   onLoadSchemaTrigger: () => void;
   onAIGenerateSchemaTrigger: () => void;
   hasSchemaFields: boolean;
+  hasUnsavedChanges: boolean; // New prop
 }
 
 const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
@@ -29,11 +31,24 @@ const SchemaBuilderToolbar: React.FC<SchemaBuilderToolbarProps> = ({
   onLoadSchemaTrigger,
   onAIGenerateSchemaTrigger,
   hasSchemaFields,
+  hasUnsavedChanges, // Destructure new prop
 }) => {
   return (
     <div className="flex items-center justify-between gap-4">
       <div className="flex items-center gap-4">
-        <h2 className="text-2xl font-semibold">Define Your Schema Fields</h2>
+        <h2 className="text-2xl font-semibold">
+          Define Your Schema Fields
+          {hasUnsavedChanges && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="ml-2 inline-block h-3 w-3 rounded-full bg-yellow-500 animate-pulse" aria-label="Unsaved changes"></span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Unsaved changes</p>
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </h2>
       </div>
       <div className="flex flex-wrap gap-2">
         <Tooltip>
