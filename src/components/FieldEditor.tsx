@@ -221,7 +221,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2"> {/* Changed to flex-wrap for responsiveness */}
         {/* Drag and Move Buttons */}
         {!isRoot && (
-          <div className="flex flex-col items-center justify-center h-full py-4 -my-4 shrink-0">
+          <div className="flex flex-col items-center justify-center shrink-0"> {/* Removed h-full py-4 -my-4 */}
             <Button
               variant="ghost"
               size="icon"
@@ -465,6 +465,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
           hideRefTypeOption={hideRefTypeOption}
           onManageReusableTypes={onManageReusableTypes}
           onConvertToReusableType={onConvertToReusableType}
+          onRefineFieldWithAI={onRefineFieldWithAI}
         />
       )}
     </div>
