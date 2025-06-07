@@ -97,8 +97,8 @@ Your API key is stored locally in your browser for convenience and is never sent
 
 ## 📸 Screenshots
 
-![Screenshot 1](assets/screenshot1.png)
-![Screenshot 2](assets/screenshot2.png)
+![Screenshot 1](./assets/screenshot1.jpg)
+![Screenshot 2](./assets/screenshot2.jpg)
 
 ## 🌐 Deployment
 
