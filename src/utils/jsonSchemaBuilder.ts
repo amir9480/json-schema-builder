@@ -120,8 +120,16 @@ const buildPropertiesAndRequired = (
         fieldSchema.description = field.description ? `${field.description} (Currency: ${getCurrencySymbol(field.currency)})` : `Currency field (e.g., ${getCurrencySymbol(field.currency)}123.45)`;
       } else if (field.type === "dropdown" && field.options && field.options.length > 0) {
         fieldSchema.enum = field.options;
-      } else if (field.type === "string" && field.pattern) { // Add pattern for generic string type
-        fieldSchema.pattern = field.pattern;
+      } else if (field.type === "string") { // Apply pattern, minLength, maxLength for generic string type
+        if (field.pattern) {
+          fieldSchema.pattern = field.pattern;
+        }
+        if (field.minLength !== undefined) {
+          fieldSchema.minLength = field.minLength;
+        }
+        if (field.maxLength !== undefined) {
+          fieldSchema.maxLength = field.maxLength;
+        }
       }
 
       // Add min/max values for number types (int and float only)
@@ -263,7 +271,6 @@ export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: Sc
               additionalProperties: false,
             };
           } else {
-            // For non-object reusable types, build their schema directly
             const singleFieldSchema = buildSingleFieldJsonSchema(referencedType, reusableTypes);
             const { $schema, title, description, ...restOfSchema } = singleFieldSchema; // Remove root-level schema properties
             definitions[referencedType.name] = restOfSchema;
@@ -351,8 +358,16 @@ export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: Sc
       fieldSchema.description = field.description ? `${field.description} (Currency: ${getCurrencySymbol(field.currency)})` : `Currency field (e.g., ${getCurrencySymbol(field.currency)}123.45)`;
     } else if (field.type === "dropdown" && field.options && field.options.length > 0) {
       fieldSchema.enum = field.options;
-    } else if (field.type === "string" && field.pattern) { // Add pattern for generic string type
-      fieldSchema.pattern = field.pattern;
+    } else if (field.type === "string") { // Apply pattern, minLength, maxLength for generic string type
+      if (field.pattern) {
+        fieldSchema.pattern = field.pattern;
+      }
+      if (field.minLength !== undefined) {
+        fieldSchema.minLength = field.minLength;
+      }
+      if (field.maxLength !== undefined) {
+        fieldSchema.maxLength = field.maxLength;
+      }
     }
 
     if (field.type === "int" || field.type === "float") {
