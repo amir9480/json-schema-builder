@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { MadeWithDyad } from "@/components/made-with-dyad";
 import SchemaBuilder from "@/components/SchemaBuilder";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import GitHubStarButton from "@/components/GitHubStarButton"; // Import the new component
 import { toast } from "sonner"; // Import toast from sonner
 
 const LOCAL_STORAGE_VISITED_KEY = "dyadSchemaBuilderVisited";
@@ -29,7 +30,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
-      <header className="flex justify-end p-4">
+      <header className="flex justify-between items-center p-4"> {/* Changed to justify-between */}
+        <GitHubStarButton repoUrl="https://github.com/amir9480/json-schema-builder/" /> {/* Add the GitHub Star Button */}
         <ThemeToggle />
       </header>
       <main className="flex-1">
