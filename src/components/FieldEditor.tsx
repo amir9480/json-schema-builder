@@ -56,7 +56,7 @@ export type SchemaFieldType =
   | "object"
   | "ref"
   | "dropdown"
-  | "boolean"; // Add boolean
+  | "boolean";
 
 export interface SchemaField {
   id: string;
@@ -76,7 +76,8 @@ export interface SchemaField {
   currency?: string;
   options?: string[];
   parentId?: string;
-  isValidName?: boolean; // New property for name validation
+  isValidName?: boolean;
+  pattern?: string; // Added pattern property
 }
 
 interface FieldEditorProps {
@@ -95,7 +96,7 @@ interface FieldEditorProps {
   isLastItem?: boolean;
   onManageReusableTypes?: () => void;
   onConvertToReusableType?: (fieldId: string) => void;
-  onRefineFieldWithAI?: (field: SchemaField) => void; // New prop for AI refinement
+  onRefineFieldWithAI?: (field: SchemaField) => void;
 }
 
 const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
@@ -114,7 +115,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
   isLastItem = false,
   onManageReusableTypes,
   onConvertToReusableType,
-  onRefineFieldWithAI, // Destructure new prop
+  onRefineFieldWithAI,
 }) => {
   const [nameError, setNameError] = React.useState<string | null>(null);
 
@@ -171,6 +172,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
       maxValue: (value === "int" || value === "float" || value === "currency") ? field.maxValue : undefined,
       currency: value === "currency" ? field.currency : undefined,
       options: value === "dropdown" ? field.options || [] : undefined,
+      pattern: value === "string" ? field.pattern : undefined, // Preserve pattern for string, clear for others
     });
   };
 
@@ -212,19 +214,19 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
     { value: "datetime", label: "DateTime" },
     { value: "object", label: "Object" },
     { value: "dropdown", label: "Dropdown" },
-    { value: "boolean", label: "Boolean" }, // Added boolean
+    { value: "boolean", label: "Boolean" },
     { value: "ref", label: "Reference ($ref)" },
   ];
 
   return (
     <div
       className={cn(
-        "flex flex-col gap-4 py-4 border rounded-md px-6", // px-6 is correctly here for the main container
+        "flex flex-col gap-4 py-4 border rounded-md px-6",
         getBackgroundClasses(level),
         level > 0 && currentBorderColor
       )}
     >
-      <div className="flex flex-wrap items-center gap-4"> {/* Changed to flex-wrap */}
+      <div className="flex flex-wrap items-center gap-4">
         {/* Drag and Move Buttons */}
         {!isRoot && (
           <div className="flex flex-col items-center justify-center h-full py-4 -my-4 shrink-0">
@@ -287,7 +289,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex-1 flex flex-col gap-2 min-w-[150px]"> {/* Added min-w for responsiveness */}
+        <div className="flex-1 flex flex-col gap-2 min-w-[150px]">
           <div className="grid gap-2 flex-1">
             <Input
               id={`field-name-${field.id}`}
@@ -315,7 +317,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
           </Tooltip>
         )}
 
-        <div className="flex items-center space-x-2 min-w-[100px]"> {/* Added min-w for responsiveness */}
+        <div className="flex items-center space-x-2 min-w-[100px]">
           <Tooltip>
             <TooltipTrigger asChild>
               <div className="flex items-center space-x-2 cursor-pointer">
@@ -334,7 +336,7 @@ const FieldEditor: React.FC<FieldEditorProps> = React.memo(({
         </div>
 
         {!isRoot && (
-          <div className="flex items-center space-x-2 min-w-[100px]"> {/* Added min-w for responsiveness */}
+          <div className="flex items-center space-x-2 min-w-[100px]">
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center space-x-2 cursor-pointer">
