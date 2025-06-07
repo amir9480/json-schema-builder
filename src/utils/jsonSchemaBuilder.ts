@@ -196,16 +196,22 @@ export const buildFullJsonSchema = (schemaFields: SchemaField[], reusableTypes: 
       }
       buildingDefinitions.add(rt.id); // Mark as currently building
 
-      // Recursively build properties for the reusable type's children
-      // Note: For reusable types, we still use the standard 'required' logic (only truly required fields)
-      // as they are definitions, not the direct root schema for LLM response formatting.
-      const nestedSchema = buildPropertiesAndRequired(rt.children || [], reusableTypes, definitions);
-      definitions[rt.name] = {
-        type: "object",
-        properties: nestedSchema.properties,
-        required: nestedSchema.required,
-        additionalProperties: false,
-      };
+      if (rt.type === "object") {
+        // Recursively build properties for the reusable type's children
+        const nestedSchema = buildPropertiesAndRequired(rt.children || [], reusableTypes, definitions);
+        definitions[rt.name] = {
+          type: "object",
+          properties: nestedSchema.properties,
+          required: nestedSchema.required,
+          additionalProperties: false,
+        };
+      } else {
+        // For non-object reusable types, build their schema directly
+        const singleFieldSchema = buildSingleFieldJsonSchema(rt, reusableTypes);
+        // Remove $schema, title, description from the definition itself, as they are for the root schema
+        const { $schema, title, description, ...restOfSchema } = singleFieldSchema;
+        definitions[rt.name] = restOfSchema;
+      }
       buildingDefinitions.delete(rt.id); // Unmark after building
     }
   });
@@ -246,16 +252,25 @@ export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: Sc
         const referencedType = reusableTypes.find(rt => rt.id === f.refId);
         if (referencedType && referencedType.name && !definitions[referencedType.name] && !buildingDefinitions.has(referencedType.id)) {
           buildingDefinitions.add(referencedType.id);
-          const nestedSchema = buildPropertiesAndRequired(referencedType.children || [], reusableTypes, definitions);
-          definitions[referencedType.name] = {
-            type: "object",
-            properties: nestedSchema.properties,
-            required: nestedSchema.required,
-            additionalProperties: false,
-          };
+          if (referencedType.type === "object") {
+            const nestedSchema = buildPropertiesAndRequired(referencedType.children || [], reusableTypes, definitions);
+            definitions[referencedType.name] = {
+              type: "object",
+              properties: nestedSchema.properties,
+              required: nestedSchema.required,
+              additionalProperties: false,
+            };
+          } else {
+            // For non-object reusable types, build their schema directly
+            const singleFieldSchema = buildSingleFieldJsonSchema(referencedType, reusableTypes);
+            const { $schema, title, description, ...restOfSchema } = singleFieldSchema; // Remove root-level schema properties
+            definitions[referencedType.name] = restOfSchema;
+          }
           buildingDefinitions.delete(referencedType.id);
-          // Also collect types referenced by this reusable type's children
-          collectReferencedTypes(referencedType.children || []);
+          // Also collect types referenced by this reusable type's children (if it's an object)
+          if (referencedType.type === "object") {
+            collectReferencedTypes(referencedType.children || []);
+          }
         }
       } else if (f.type === "object" && f.children) {
         collectReferencedTypes(f.children);
@@ -263,15 +278,23 @@ export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: Sc
         const referencedType = reusableTypes.find(rt => rt.id === f.refId);
         if (referencedType && referencedType.name && !definitions[referencedType.name] && !buildingDefinitions.has(referencedType.id)) {
           buildingDefinitions.add(referencedType.id);
-          const nestedSchema = buildPropertiesAndRequired(referencedType.children || [], reusableTypes, definitions);
-          definitions[referencedType.name] = {
-            type: "object",
-            properties: nestedSchema.properties,
-            required: nestedSchema.required,
-            additionalProperties: false,
-          };
+          if (referencedType.type === "object") {
+            const nestedSchema = buildPropertiesAndRequired(referencedType.children || [], reusableTypes, definitions);
+            definitions[referencedType.name] = {
+              type: "object",
+              properties: nestedSchema.properties,
+              required: nestedSchema.required,
+              additionalProperties: false,
+            };
+          } else {
+            const singleFieldSchema = buildSingleFieldJsonSchema(referencedType, reusableTypes);
+            const { $schema, title, description, ...restOfSchema } = singleFieldSchema;
+            definitions[referencedType.name] = restOfSchema;
+          }
           buildingDefinitions.delete(referencedType.id);
-          collectReferencedTypes(referencedType.children || []);
+          if (referencedType.type === "object") {
+            collectReferencedTypes(referencedType.children || []);
+          }
         }
       }
     });
