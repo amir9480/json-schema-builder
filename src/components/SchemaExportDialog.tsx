@@ -44,6 +44,7 @@ type LLMProvider = "openai" | "gemini" | "mistral" | "openrouter";
 const LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY = "jsonSchemaBuilderSelectedExportTab";
 const LOCAL_STORAGE_SELECTED_DEV_EXPORT_TYPE_KEY = "jsonSchemaBuilderSelectedDevExportType";
 const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt";
+const LOCAL_STORAGE_SHARED_SYSTEM_PROMPT_KEY = "llmBuilderSharedSystemPrompt"; // New local storage key for system prompt
 
 const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   isOpen,
@@ -84,16 +85,29 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     return "Generate a realistic JSON object based on the provided schema.";
   });
 
+  const [systemPrompt, setSystemPrompt] = React.useState<string>(() => { // New state for system prompt
+    if (typeof window !== "undefined") {
+      return localStorage.getItem(LOCAL_STORAGE_SHARED_SYSTEM_PROMPT_KEY) || "You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema. Do not include any additional text or markdown outside the JSON object.";
+    }
+    return "You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema. Do not include any additional text or markdown outside the JSON object.";
+  });
+
   const [isLoading, setIsLoading] = React.useState(false);
   const [isResponseModalOpen, setIsResponseModalOpen] = React.useState(false);
   const [responseJson, setResponseJson] = React.useState<string>("");
 
-  // Persist userPrompt to localStorage
+  // Persist userPrompt and systemPrompt to localStorage
   React.useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem(LOCAL_STORAGE_SHARED_USER_PROMPT_KEY, userPrompt);
     }
   }, [userPrompt]);
+
+  React.useEffect(() => { // New useEffect for system prompt persistence
+    if (typeof window !== "undefined") {
+      localStorage.setItem(LOCAL_STORAGE_SHARED_SYSTEM_PROMPT_KEY, systemPrompt);
+    }
+  }, [systemPrompt]);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -114,15 +128,14 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   }, [selectedDevExportType]);
 
   // LLM request details function
-  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, model: string, prompt: string, schema: any) => {
+  const getRequestDetails = (provider: LLMProvider, currentApiKey: string, model: string, currentSystemPrompt: string, currentUserPrompt: string, schema: any) => {
     let requestBody: any = {};
     let endpoint = "";
     let headers: { [key: string]: string } = { "Content-Type": "application/json" };
 
-    const systemMessage = "You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema. Do not include any additional text or markdown outside the JSON object.";
     const messages = [
-      { role: "system", content: systemMessage },
-      { role: "user", content: prompt },
+      { role: "system", content: currentSystemPrompt },
+      { role: "user", content: currentUserPrompt },
     ];
 
     switch (provider) {
@@ -146,7 +159,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
         endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${currentApiKey || "YOUR_GEMINI_API_KEY"}`;
         requestBody = {
           contents: [
-            { role: "user", parts: [{ text: `${systemMessage}\n\n${prompt}\n\nHere is the JSON Schema:\n\n${JSON.stringify(schema, null, 2)}` }] },
+            { role: "user", parts: [{ text: `${currentSystemPrompt}\n\n${currentUserPrompt}\n\nHere is the JSON Schema:\n\n${JSON.stringify(schema, null, 2)}` }] },
           ],
           generationConfig: {
             responseMimeType: "application/json",
@@ -209,7 +222,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
 
     setIsLoading(true);
 
-    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, selectedModel, userPrompt, generatedJsonSchema);
+    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, selectedModel, systemPrompt, userPrompt, generatedJsonSchema);
 
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
@@ -280,7 +293,7 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
     setIsLoading(true);
     setIsResponseModalOpen(true);
 
-    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, selectedModel, userPrompt, generatedJsonSchema);
+    const { endpoint, headers, requestBody } = getRequestDetails(selectedProvider, apiKey, selectedModel, systemPrompt, userPrompt, generatedJsonSchema);
 
     if (!endpoint) {
       showError("Please select a valid LLM provider.");
@@ -371,6 +384,20 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                 />
 
                 <div className="grid gap-2">
+                  <Label htmlFor="system-prompt-input-data">System Prompt</Label> {/* New System Prompt for Data Generation */}
+                  <Textarea
+                    id="system-prompt-input-data"
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    placeholder="e.g., You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema."
+                    rows={4}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    This prompt sets the role and behavior of the AI.
+                  </p>
+                </div>
+
+                <div className="grid gap-2">
                   <Label htmlFor="user-prompt-input-data">Prompt for Data Generation</Label>
                   <Textarea
                     id="user-prompt-input-data"
@@ -420,6 +447,20 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                   availableModels={new Map()} 
                   defaultModelForProvider={new Map()}
                 />
+
+                <div className="grid gap-2">
+                  <Label htmlFor="system-prompt-input">System Prompt</Label> {/* New System Prompt for For Developers tab */}
+                  <Textarea
+                    id="system-prompt-input"
+                    value={systemPrompt}
+                    onChange={(e) => setSystemPrompt(e.target.value)}
+                    placeholder="e.g., You are a helpful assistant designed to output JSON data strictly according to the provided JSON schema."
+                    rows={4}
+                  />
+                  <p className="text-sm text-muted-foreground">
+                    This prompt sets the role and behavior of the AI.
+                  </p>
+                </div>
 
                 <div className="grid gap-2">
                   <Label htmlFor="user-prompt-input">User Prompt</Label>
