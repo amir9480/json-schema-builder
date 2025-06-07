@@ -45,22 +45,6 @@ const LOCAL_STORAGE_SELECTED_EXPORT_TAB_KEY = "jsonSchemaBuilderSelectedExportTa
 const LOCAL_STORAGE_SELECTED_DEV_EXPORT_TYPE_KEY = "jsonSchemaBuilderSelectedDevExportType";
 const LOCAL_STORAGE_SHARED_USER_PROMPT_KEY = "llmBuilderSharedUserPrompt";
 
-// Define available models for data generation/developer tools
-const DATA_GENERATE_MODELS = new Map<LLMProvider, string[]>([
-  ["openai", ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"]],
-  ["gemini", ["gemini-pro"]],
-  ["mistral", ["mistral-small-latest", "mistral-large-latest", "mixtral-8x7b-instruct-v0.1"]],
-  ["openrouter", ["openai/gpt-4o-mini", "openai/gpt-4o", "mistralai/mistral-small-latest"]],
-]);
-
-// Define default models for each provider for data generation/developer tools
-const DATA_GENERATE_DEFAULT_MODELS = new Map<LLMProvider, string>([
-  ["openai", "gpt-4o-mini"],
-  ["gemini", "gemini-pro"],
-  ["mistral", "mistral-small-latest"],
-  ["openrouter", "openai/gpt-4o-mini"],
-]);
-
 const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   isOpen,
   onOpenChange,
@@ -90,7 +74,8 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
   // LLM configuration states, now managed by LLMConfigInputs but needed here for API calls
   const [selectedProvider, setSelectedProvider] = React.useState<LLMProvider>("openai");
   const [apiKey, setApiKey] = React.useState<string>("");
-  const [selectedModel, setSelectedModel] = React.useState<string>(DATA_GENERATE_DEFAULT_MODELS.get("openai") || "");
+  // Initialize selectedModel to an empty string, LLMConfigInputs will handle setting a default
+  const [selectedModel, setSelectedModel] = React.useState<string>(""); 
 
   const [userPrompt, setUserPrompt] = React.useState<string>(() => {
     if (typeof window !== "undefined") {
@@ -380,8 +365,9 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                   setApiKey={setApiKey}
                   selectedModel={selectedModel}
                   setSelectedModel={setSelectedModel}
-                  availableModels={DATA_GENERATE_MODELS}
-                  defaultModelForProvider={DATA_GENERATE_DEFAULT_MODELS}
+                  // These props are no longer needed as LLMConfigInputs manages model fetching internally
+                  availableModels={new Map()} 
+                  defaultModelForProvider={new Map()}
                 />
 
                 <div className="grid gap-2">
@@ -430,8 +416,9 @@ const SchemaExportDialog: React.FC<SchemaExportDialogProps> = ({
                   setApiKey={setApiKey}
                   selectedModel={selectedModel}
                   setSelectedModel={setSelectedModel}
-                  availableModels={DATA_GENERATE_MODELS}
-                  defaultModelForProvider={DATA_GENERATE_DEFAULT_MODELS}
+                  // These props are no longer needed as LLMConfigInputs manages model fetching internally
+                  availableModels={new Map()} 
+                  defaultModelForProvider={new Map()}
                 />
 
                 <div className="grid gap-2">
