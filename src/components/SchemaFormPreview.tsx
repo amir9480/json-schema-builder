@@ -214,6 +214,9 @@ const SchemaFormPreview: React.FC<SchemaFormPreviewProps> = ({ fields, level = 0
               {displayField.type === "currency" && displayField.currency && (
                 <span>Currency: {displayField.currency}</span>
               )}
+              {displayField.type === "string" && displayField.pattern && (
+                <span>Pattern: <code>{displayField.pattern}</code></span>
+              )}
             </div>
           </div>
         );

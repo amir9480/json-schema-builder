@@ -48,6 +48,7 @@ const convertPropertiesToSchemaFields = (
     let options: string[] | undefined = undefined;
     let isRequired = requiredFields.has(key);
     let currency: string | undefined = undefined;
+    let pattern: string | undefined = undefined; // Added pattern
 
     // Handle $ref first
     if (prop.$ref) {
@@ -90,6 +91,9 @@ const convertPropertiesToSchemaFields = (
             fieldType = "currency";
             currency = itemSchema.currency;
           }
+          if (itemSchema.pattern) { // Read pattern for array items
+            pattern = itemSchema.pattern;
+          }
         }
       } else {
         fieldType = "string"; // Default for untyped array items
@@ -115,6 +119,9 @@ const convertPropertiesToSchemaFields = (
         fieldType = "currency";
         currency = prop.currency;
       }
+      if (prop.pattern) { // Read pattern for primitive types
+        pattern = prop.pattern;
+      }
     }
 
     const field: SchemaField = {
@@ -136,6 +143,7 @@ const convertPropertiesToSchemaFields = (
       options: options,
       parentId: parentId,
       isValidName: true, // Assume valid name from imported schema
+      pattern: pattern, // Assign the detected pattern
     };
     fields.push(field);
   }
@@ -168,6 +176,7 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
       let defMaxValue: number | undefined = undefined;
       let defMinItems: number | undefined = undefined;
       let defMaxItems: number | undefined = undefined;
+      let defPattern: string | undefined = undefined; // Added defPattern
 
       if (def.type === "array" && def.items) {
         defIsMultiple = true;
@@ -186,6 +195,9 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
             defType = "currency";
             defCurrency = itemSchema.currency;
           }
+          if (itemSchema.pattern) {
+            defPattern = itemSchema.pattern;
+          }
         }
         defMinItems = def.minItems;
         defMaxItems = def.maxItems;
@@ -202,6 +214,9 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
         if (def.currency) {
           defType = "currency";
           defCurrency = def.currency;
+        }
+        if (def.pattern) {
+          defPattern = def.pattern;
         }
         defMinValue = def.minimum;
         defMaxValue = def.maximum;
@@ -223,6 +238,7 @@ export const convertFullJsonSchemaToSchemaFieldsAndReusableTypes = (jsonSchema: 
         maxValue: defMaxValue,
         minItems: defMinItems,
         maxItems: defMaxItems,
+        pattern: defPattern, // Assign the detected pattern
         isValidName: true,
       };
       definitionsMap.set(defName, newReusableType);
@@ -280,6 +296,7 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
   let options: string[] | undefined = undefined;
   let isRequired = true; // Default to required for a single field, adjust if 'null' type is present
   let currency: string | undefined = undefined;
+  let pattern: string | undefined = undefined; // Added pattern
 
   // Check for 'null' type to determine if it's required
   if (Array.isArray(jsonSchema.type) && jsonSchema.type.includes("null")) {
@@ -316,6 +333,9 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
           fieldType = "currency";
           currency = itemSchema.currency;
         }
+        if (itemSchema.pattern) {
+          pattern = itemSchema.pattern;
+        }
       }
     } else {
       fieldType = "string"; // Default for untyped array items
@@ -344,6 +364,9 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
       fieldType = "currency";
       currency = jsonSchema.currency;
     }
+    if (jsonSchema.pattern) {
+      pattern = jsonSchema.pattern;
+    }
   }
 
   const convertedField: SchemaField = {
@@ -363,6 +386,7 @@ export const convertSingleJsonSchemaToSchemaField = (jsonSchema: any, reusableTy
     maxItems: jsonSchema.maxItems,
     currency: currency, // Assign the detected currency
     options: options,
+    pattern: pattern, // Assign the detected pattern
     isValidName: true, // Assume valid name from AI
   };
 
