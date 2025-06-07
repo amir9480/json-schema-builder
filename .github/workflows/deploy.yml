@@ -17,13 +17,18 @@ jobs:
         uses: actions/setup-node@v4 # Action to set up Node.js environment
         with:
           node-version: '20' # Specify Node.js version (e.g., 20 LTS)
-          cache: 'npm' # Cache npm dependencies for faster builds
+          cache: 'pnpm' # Cache pnpm dependencies for faster builds
+          cache-dependency-path: '**/pnpm-lock.yaml' # Specify lock file for pnpm cache
+          registry-url: 'https://registry.npmjs.org' # Ensure registry is set for pnpm
+
+      - name: Install pnpm
+        run: npm install -g pnpm # Install pnpm globally
 
       - name: Install dependencies
-        run: npm install # Install project dependencies
+        run: pnpm install --frozen-lockfile # Install project dependencies using pnpm
 
       - name: Build project
-        run: npm run build # Run the build command defined in your package.json
+        run: pnpm run build # Run the build command defined in your package.json using pnpm
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4 # Third-party action for deploying to GitHub Pages
