@@ -120,6 +120,8 @@ const buildPropertiesAndRequired = (
         fieldSchema.description = field.description ? `${field.description} (Currency: ${getCurrencySymbol(field.currency)})` : `Currency field (e.g., ${getCurrencySymbol(field.currency)}123.45)`;
       } else if (field.type === "dropdown" && field.options && field.options.length > 0) {
         fieldSchema.enum = field.options;
+      } else if (field.type === "string" && field.pattern) { // Add pattern for generic string type
+        fieldSchema.pattern = field.pattern;
       }
 
       // Add min/max values for number types (int and float only)
@@ -349,6 +351,8 @@ export const buildSingleFieldJsonSchema = (field: SchemaField, reusableTypes: Sc
       fieldSchema.description = field.description ? `${field.description} (Currency: ${getCurrencySymbol(field.currency)})` : `Currency field (e.g., ${getCurrencySymbol(field.currency)}123.45)`;
     } else if (field.type === "dropdown" && field.options && field.options.length > 0) {
       fieldSchema.enum = field.options;
+    } else if (field.type === "string" && field.pattern) { // Add pattern for generic string type
+      fieldSchema.pattern = field.pattern;
     }
 
     if (field.type === "int" || field.type === "float") {

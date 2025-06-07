@@ -12,7 +12,7 @@ import {
   Collapsible,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent"; // Import CustomCollapsibleContent
+import { CustomCollapsibleContent } from "@/components/CustomCollapsibleContent";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { toTitleCase } from "@/lib/utils";
 import { SchemaField, SchemaFieldType } from "./FieldEditor";
@@ -78,6 +78,10 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = React.memo(({
     onFieldChange({ ...field, currency: value });
   };
 
+  const handlePatternChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    onFieldChange({ ...field, pattern: e.target.value });
+  };
+
   const isNumberLikeType = field.type === "int" || field.type === "float" || field.type === "currency";
 
   return (
@@ -96,7 +100,7 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = React.memo(({
           Advanced options
         </Button>
       </CollapsibleTrigger>
-      <CustomCollapsibleContent className="space-y-4"> {/* Use CustomCollapsibleContent */}
+      <CustomCollapsibleContent className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="grid gap-2">
             <Label htmlFor={`field-title-${field.id}`}>Title (Optional)</Label>
@@ -196,6 +200,21 @@ const FieldAdvancedOptions: React.FC<FieldAdvancedOptionsProps> = React.memo(({
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+          )}
+
+          {field.type === "string" && (
+            <div className="grid gap-2 col-span-full">
+              <Label htmlFor={`field-pattern-${field.id}`}>Pattern (Regex, Optional)</Label>
+              <Input
+                id={`field-pattern-${field.id}`}
+                value={field.pattern || ""}
+                onChange={handlePatternChange}
+                placeholder="e.g., ^[A-Z]{2}\\d{4}$"
+              />
+              <p className="text-sm text-muted-foreground">
+                Regular expression to validate string format.
+              </p>
             </div>
           )}
         </div>
